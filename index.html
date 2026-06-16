@@ -905,31 +905,31 @@ body{
   </div>
   <div class="nav-section-label">영역별 현황</div>
   <div class="nav-item" onclick="showPage('pmo')" data-page="pmo">
-    <span class="nav-icon"><i data-lucide="briefcase"></i></span> PMO/사업기획
+    <span class="nav-icon"><i data-lucide="briefcase"></i></span> <span class="nav-label" data-area="pmo">PMO/사업기획</span>
     <span class="nav-badge">33</span>
   </div>
   <div class="nav-item" onclick="showPage('curriculum')" data-page="curriculum">
-    <span class="nav-icon"><i data-lucide="book-open"></i></span> 커리큘럼
+    <span class="nav-icon"><i data-lucide="book-open"></i></span> <span class="nav-label" data-area="curriculum">커리큘럼</span>
     <span class="nav-badge">33</span>
   </div>
   <div class="nav-item" onclick="showPage('marketing')" data-page="marketing">
-    <span class="nav-icon"><i data-lucide="megaphone"></i></span> 홍보
+    <span class="nav-icon"><i data-lucide="megaphone"></i></span> <span class="nav-label" data-area="marketing">홍보</span>
     <span class="nav-badge">20</span>
   </div>
   <div class="nav-item" onclick="showPage('recruit')" data-page="recruit">
-    <span class="nav-icon"><i data-lucide="target"></i></span> 모집선발
+    <span class="nav-icon"><i data-lucide="target"></i></span> <span class="nav-label" data-area="recruit">모집선발</span>
     <span class="nav-badge">25</span>
   </div>
   <div class="nav-item" onclick="showPage('infra')" data-page="infra">
-    <span class="nav-icon"><i data-lucide="server"></i></span> 인프라
+    <span class="nav-icon"><i data-lucide="server"></i></span> <span class="nav-label" data-area="infra">인프라</span>
     <span class="nav-badge">23</span>
   </div>
   <div class="nav-section-label">DATA</div>
   <div class="nav-item" onclick="showPage('meeting')" data-page="meeting">
-    <span class="nav-icon"><i data-lucide="file-text"></i></span> 회의록
+    <span class="nav-icon"><i data-lucide="file-text"></i></span> <span class="nav-label" data-area="meeting">회의록</span>
   </div>
   <div class="nav-item" onclick="showPage('archive')" data-page="archive">
-    <span class="nav-icon"><i data-lucide="folder-open"></i></span> 자료실
+    <span class="nav-icon"><i data-lucide="folder-open"></i></span> <span class="nav-label" data-area="archive">자료실</span>
   </div>
   <!-- 관리자 전용 메뉴 (로그인 후 동적으로 표시) -->
   <div id="admin-nav-section" style="display:none">
@@ -1023,7 +1023,7 @@ body{
   <div id="page-meeting" class="page">
     <div class="page-header">
       <div class="page-header-left">
-        <h2><i data-lucide="file-text" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">회의록</span></h2>
+        <h2><i data-lucide="file-text" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl" id="page-title-meeting">회의록</span></h2>
         <p>PDF 회의록을 업로드하면 자동으로 요약과 전문이 등록됩니다</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -1042,7 +1042,7 @@ body{
   <div id="page-archive" class="page">
     <div class="page-header">
       <div class="page-header-left">
-        <h2><i data-lucide="folder-open" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">자료실</span></h2>
+        <h2><i data-lucide="folder-open" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl" id="page-title-archive">자료실</span></h2>
         <p>영역/과제에서 업로드된 모든 자료를 한 곳에서 확인합니다</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -1094,6 +1094,7 @@ body{
     </div>
     <div class="admin-tabs">
       <div class="admin-tab active" onclick="switchAdminTab('users')"><i data-lucide="users" style="width:14px;height:14px;vertical-align:middle;margin-right:5px;"></i>회원 관리</div>
+      <div class="admin-tab" onclick="switchAdminTab('menu')"><i data-lucide="menu" style="width:14px;height:14px;vertical-align:middle;margin-right:5px;"></i>메뉴 관리</div>
     </div>
     <div id="admin-tab-users" class="admin-tab-panel active">
       <div class="section">
@@ -1103,6 +1104,17 @@ body{
         </div>
         <div class="section-body" style="padding:0">
           <table class="user-table" id="user-table"></table>
+        </div>
+      </div>
+    </div>
+    <div id="admin-tab-menu" class="admin-tab-panel">
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title"><div class="dot"></div>좌측 메뉴명 수정</span>
+        </div>
+        <div class="section-body" style="padding:16px 20px">
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px">영역별 현황 / DATA 메뉴의 표시 이름을 변경할 수 있습니다.</p>
+          <div id="menu-edit-list" style="display:flex;flex-direction:column;gap:10px;max-width:480px"></div>
         </div>
       </div>
     </div>
@@ -2219,6 +2231,60 @@ function switchAdminTab(tab) {
   document.querySelectorAll('.admin-tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelector(`.admin-tab[onclick*="${tab}"]`).classList.add('active');
   document.getElementById(`admin-tab-${tab}`).classList.add('active');
+  if (tab === 'menu') renderMenuEditList();
+}
+
+// =================== ADMIN – 메뉴명 관리 ===================
+let uiLabels = { meeting: '회의록', archive: '자료실' };
+function syncUiLabelsToFirebase() {
+  _db.ref('uiLabels').set(JSON.parse(JSON.stringify(uiLabels))).catch(e => console.warn('메뉴 라벨 저장 실패:', e));
+}
+function loadUiLabelsFromFirebase(onDone) {
+  _db.ref('uiLabels').once('value').then(snap => {
+    const val = snap.val();
+    if (val) Object.assign(uiLabels, val);
+    onDone();
+  }).catch(e => { console.warn('메뉴 라벨 로드 실패:', e); onDone(); });
+}
+function applyMenuLabels() {
+  Object.keys(taskData).forEach(k => {
+    const lbl = document.querySelector(`.nav-label[data-area="${k}"]`);
+    if (lbl) lbl.textContent = taskData[k].title;
+  });
+  const mLbl = document.querySelector('.nav-label[data-area="meeting"]');
+  if (mLbl) mLbl.textContent = uiLabels.meeting;
+  const aLbl = document.querySelector('.nav-label[data-area="archive"]');
+  if (aLbl) aLbl.textContent = uiLabels.archive;
+  const pt1 = document.getElementById('page-title-meeting');
+  if (pt1) pt1.textContent = uiLabels.meeting;
+  const pt2 = document.getElementById('page-title-archive');
+  if (pt2) pt2.textContent = uiLabels.archive;
+}
+function renderMenuEditList() {
+  const wrap = document.getElementById('menu-edit-list');
+  if (!wrap) return;
+  const rows = Object.keys(taskData).map(k => ({ key: k, label: taskData[k].title }))
+    .concat([{ key: 'meeting', label: uiLabels.meeting }, { key: 'archive', label: uiLabels.archive }]);
+  wrap.innerHTML = rows.map(r => `
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="width:90px;font-size:12px;color:var(--text2);flex-shrink:0;">${r.key}</span>
+      <input class="field-input" id="menu-label-${r.key}" value="${r.label}" style="flex:1">
+      <button class="btn-sm" onclick="saveMenuLabel('${r.key}')">저장</button>
+    </div>`).join('');
+}
+function saveMenuLabel(key) {
+  const input = document.getElementById(`menu-label-${key}`);
+  const val = input.value.trim();
+  if (!val) return;
+  if (key === 'meeting' || key === 'archive') {
+    uiLabels[key] = val;
+    syncUiLabelsToFirebase();
+  } else if (taskData[key]) {
+    taskData[key].title = val;
+    syncToFirebase();
+  }
+  applyMenuLabels();
+  showSave();
 }
 
 function renderUserTable() {
@@ -2739,6 +2805,9 @@ loadFromFirebase(function() {
     renderMeetingList();
     renderArchiveList();
     initIcons();
+  });
+  loadUiLabelsFromFirebase(function() {
+    applyMenuLabels();
   });
   initIcons();
 });
