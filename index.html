@@ -414,6 +414,7 @@ body{
 .msg-channel-item .msg-dot.idle{background:#f5a623;}
 .msg-channel-item .msg-dot.offline{background:#e63946;}
 .msg-channel-item .msg-channel-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.msg-channel-mention-badge{background:#e63946;color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px;flex-shrink:0;}
 .msg-channel-edit-btns{display:flex;gap:4px;flex-shrink:0;}
 .msg-channel-edit-btns span{opacity:0.55;font-size:12px;cursor:pointer;}
 .msg-channel-edit-btns span:hover{opacity:1;}
@@ -432,6 +433,9 @@ body{
 .msg-input-bar .field-input{flex:1;}
 .msg-empty{padding:40px;text-align:center;color:var(--text2);font-size:13px;}
 .mention-tag{color:var(--accent);font-weight:700;background:rgba(67,97,238,0.08);border-radius:4px;padding:0 3px;}
+.mention-tag.mention-task{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;}
+.mention-tag.mention-task:hover{background:rgba(67,97,238,0.18);}
+.msg-bubble-row.mentioned{background:#fff8e1;border-radius:10px;padding:6px 8px;margin:-6px -8px;}
 .mention-dropdown{
   position:fixed;z-index:1100;background:#fff;border:1px solid var(--border);border-radius:10px;
   box-shadow:0 12px 28px rgba(15,18,40,0.18);max-height:220px;overflow-y:auto;padding:4px;
@@ -2508,6 +2512,7 @@ function doLogin() {
     document.getElementById('admin-nav-section').style.display = 'block';
   }
   startPresence();
+  loadMentionReads();
 }
 
 function renderSidebarUser() {
@@ -2767,7 +2772,9 @@ function loadMessagesFromFirebase(onDone) {
     messages = val || {};
     if (document.getElementById('page-messages').classList.contains('active')) {
       renderMsgThread();
+      renderMsgChannelList();
     }
+    updateMsgUnreadBadge();
   });
   _db.ref('customChannels').once('value').then(snap => {
     customChannels = snap.val() || [];
@@ -2831,6 +2838,7 @@ function renderMsgChannelList() {
     ${chans.filter(c => c.group === g).map(c => `
       <div class="msg-channel-item ${_curChannel===c.key?'active':''}" onclick="openMsgChannel('${c.key}')">
         ${g==='DM' ? `<span class="msg-dot ${getPresenceStatus(c.label)}" title="${getPresenceStatus(c.label)==='online'?'접속 중':getPresenceStatus(c.label)==='idle'?'자리 비움':'오프라인'}"></span>` : ''}<span class="msg-channel-label">${c.label}</span>
+        ${countUnreadMentionsInChannel(c.key) > 0 ? `<span class="msg-channel-mention-badge">${countUnreadMentionsInChannel(c.key)}</span>` : ''}
         ${c.custom ? `<span class="msg-channel-edit-btns">
           <span onclick="renameCustomChannel('${c.id}',event)" title="수정">✎</span>
           <span onclick="deleteCustomChannel('${c.id}',event)" title="삭제">✕</span>
@@ -2843,8 +2851,38 @@ function openMsgChannel(key) {
   const chans = _msgChannels();
   const c = chans.find(x => x.key === key);
   document.getElementById('msg-header').textContent = c ? c.label : '';
+  markChannelMentionsRead(key);
   renderMsgChannelList();
   renderMsgThread();
+}
+
+// ── 멘션 읽음/안읽음 추적 ──
+let _mentionReads = {};
+function loadMentionReads() {
+  if (!currentUser) return;
+  _db.ref('mentionReads/' + currentUser.id).once('value').then(snap => {
+    _mentionReads = snap.val() || {};
+    updateMsgUnreadBadge();
+  }).catch(e => console.warn('멘션 읽음 정보 로드 실패:', e));
+}
+function markChannelMentionsRead(key) {
+  if (!currentUser) return;
+  _mentionReads[key] = Date.now();
+  _db.ref('mentionReads/' + currentUser.id + '/' + key).set(_mentionReads[key]).catch(() => {});
+  updateMsgUnreadBadge();
+}
+function countUnreadMentionsInChannel(key) {
+  if (!currentUser) return 0;
+  const list = messages[key] || [];
+  const lastRead = _mentionReads[key] || 0;
+  return list.filter(m => m.mentions && m.mentions.includes(currentUser.id) && m.from !== currentUser.id && (m.ts || 0) > lastRead).length;
+}
+function updateMsgUnreadBadge() {
+  const badge = document.getElementById('msg-unread-badge');
+  if (!badge || !currentUser) return;
+  const total = _msgChannels().reduce((sum, c) => sum + countUnreadMentionsInChannel(c.key), 0);
+  badge.textContent = total;
+  badge.style.display = total > 0 ? 'inline-flex' : 'none';
 }
 function renderMsgThread() {
   const wrap = document.getElementById('msg-thread');
@@ -2854,28 +2892,56 @@ function renderMsgThread() {
     wrap.innerHTML = `<div class="msg-empty">아직 메시지가 없습니다. 첫 메시지를 보내보세요.</div>`;
     return;
   }
-  wrap.innerHTML = list.map(m => `
-    <div class="msg-bubble-row">
+  wrap.innerHTML = list.map(m => {
+    const mentioned = currentUser && m.mentions && m.mentions.includes(currentUser.id) && m.from !== currentUser.id;
+    return `
+    <div class="msg-bubble-row${mentioned ? ' mentioned' : ''}">
       <div class="msg-avatar">${m.from.charAt(0)}</div>
       <div class="msg-bubble-body">
         <div class="msg-bubble-meta"><span class="msg-who">${m.from}</span><span class="msg-time">${m.time}</span></div>
         <div class="msg-bubble-text">${highlightMentions(m.text.replace(/</g,'&lt;'))}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   wrap.scrollTop = wrap.scrollHeight;
+  updateMsgUnreadBadge();
 }
 // ── @멘션 자동완성 (메시지 입력 / 과제 비고란 공용) ──
 let _mentionState = { el: null, dropdown: null, items: [], activeIdx: 0, matchLen: 0 };
 function getMentionCandidates() {
   const list = [];
-  users.forEach(u => list.push({ label: u.id, sub: '사용자' }));
+  users.forEach(u => list.push({ label: u.id, sub: '사용자', type: 'user' }));
   Object.keys(taskData).forEach(areaKey => {
     const areaLabel = _areaLabelMap[areaKey] || taskData[areaKey].title;
     taskData[areaKey].tasks.forEach(cat => {
-      cat.tasks.forEach(t => list.push({ label: t.name, sub: areaLabel }));
+      cat.tasks.forEach(t => list.push({ label: t.name, sub: areaLabel, type: 'task' }));
     });
   });
   return list;
+}
+function findTaskByName(name) {
+  for (const areaKey of Object.keys(taskData)) {
+    for (let ci = 0; ci < taskData[areaKey].tasks.length; ci++) {
+      const ti = taskData[areaKey].tasks[ci].tasks.findIndex(t => t.name === name);
+      if (ti !== -1) return { areaKey, ci, ti };
+    }
+  }
+  return null;
+}
+function openTaskMentionByName(name) {
+  const loc = findTaskByName(name);
+  if (!loc) { alert('해당 과제를 찾을 수 없습니다.'); return; }
+  openModal(loc.areaKey, loc.areaKey, loc.ci, loc.ti);
+}
+function extractMentionedUsers(text) {
+  const userLabels = getMentionCandidates().filter(c => c.type === 'user').map(c => c.label).sort((a, b) => b.length - a.length);
+  if (!userLabels.length) return [];
+  const escaped = userLabels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp('@(' + escaped.join('|') + ')(?!\\S)', 'g');
+  const found = new Set();
+  let m;
+  while ((m = re.exec(text))) found.add(m[1]);
+  return [...found];
 }
 function setupMentionAutocomplete(elId, opts) {
   const el = document.getElementById(elId);
@@ -2948,11 +3014,19 @@ function handleMentionKeydown(el, e, opts) {
   if (e.key === 'Enter' && opts && opts.onEnter) { opts.onEnter(); }
 }
 function highlightMentions(text) {
-  const labels = getMentionCandidates().map(c => c.label).sort((a, b) => b.length - a.length);
-  if (!labels.length) return text;
-  const escaped = labels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const candidates = getMentionCandidates().sort((a, b) => b.label.length - a.label.length);
+  if (!candidates.length) return text;
+  const byLabel = {};
+  candidates.forEach(c => { if (!(c.label in byLabel)) byLabel[c.label] = c; });
+  const escaped = candidates.map(c => c.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const re = new RegExp('@(' + escaped.join('|') + ')(?!\\S)', 'g');
-  return text.replace(re, '<span class="mention-tag">@$1</span>');
+  return text.replace(re, (full, label) => {
+    const c = byLabel[label];
+    if (c && c.type === 'task') {
+      return `<span class="mention-tag mention-task" onclick="openTaskMentionByName(decodeURIComponent('${encodeURIComponent(label)}'))">@${label}</span>`;
+    }
+    return `<span class="mention-tag mention-user">@${label}</span>`;
+  });
 }
 
 function sendMessage() {
@@ -2961,8 +3035,11 @@ function sendMessage() {
   if (!text || !_curChannel || !currentUser) return;
   if (!messages[_curChannel]) messages[_curChannel] = [];
   messages[_curChannel].push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+    ts: Date.now(),
     from: currentUser.id,
     text,
+    mentions: extractMentionedUsers(text),
     time: new Date().toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
   });
   input.value = '';
