@@ -1157,7 +1157,7 @@ body{
         <span class="section-title"><div class="dot"></div>비밀번호 변경</span>
       </div>
       <div class="section-body" style="padding:20px 22px;">
-        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;max-width:560px;">
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;max-width:760px;">
           <div class="field-group" style="flex:1;min-width:160px;">
             <div class="field-label">현재 비밀번호</div>
             <input id="mp-cur-pw" class="field-input" type="password" placeholder="현재 비밀번호">
@@ -1170,7 +1170,7 @@ body{
             <div class="field-label">새 비밀번호 확인</div>
             <input id="mp-new-pw2" class="field-input" type="password" placeholder="새 비밀번호 확인">
           </div>
-          <button class="btn-add" onclick="changeMyPassword()">변경</button>
+          <button class="btn-add" style="flex-shrink:0;" onclick="changeMyPassword()">변경</button>
         </div>
       </div>
     </div>
@@ -1179,6 +1179,12 @@ body{
         <span class="section-title"><div class="dot"></div>내가 담당하는 과제</span>
       </div>
       <div class="section-body" style="padding:20px 22px;">
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+          <select id="mypage-task-area" class="field-input" style="max-width:160px;" onchange="renderMyPageTasks()">
+            <option value="">전체 영역</option>
+          </select>
+          <input id="mypage-task-search" class="field-input" style="flex:1;min-width:160px;" placeholder="과제명 검색" oninput="renderMyPageTasks()">
+        </div>
         <div id="mypage-task-list" class="lib-list"></div>
       </div>
     </div>
@@ -2602,11 +2608,32 @@ function renderMyPageTasks() {
       });
     });
   });
+
+  const areaSelect = document.getElementById('mypage-task-area');
+  if (areaSelect && areaSelect.options.length <= 1) {
+    const areaKeys = [...new Set(mine.map(m => m.areaKey))];
+    areaSelect.innerHTML = '<option value="">전체 영역</option>' +
+      areaKeys.map(k => `<option value="${k}">${_areaLabelMap[k] || k}</option>`).join('');
+  }
+
   if (mine.length === 0) {
     wrap.innerHTML = `<div class="msg-empty">담당으로 등록된 과제가 없습니다.</div>`;
     return;
   }
-  wrap.innerHTML = mine.map(m => `
+
+  const selectedArea = areaSelect ? areaSelect.value : '';
+  const q = (document.getElementById('mypage-task-search')?.value || '').trim().toLowerCase();
+  const filtered = mine.filter(m =>
+    (!selectedArea || m.areaKey === selectedArea) &&
+    (!q || m.t.name.toLowerCase().includes(q))
+  );
+
+  if (filtered.length === 0) {
+    wrap.innerHTML = `<div class="msg-empty">조건에 맞는 과제가 없습니다.</div>`;
+    return;
+  }
+
+  const itemHtml = m => `
     <div class="lib-item">
       <div class="lib-icon"><i data-lucide="check-square"></i></div>
       <div style="flex:1;min-width:0;">
@@ -2614,7 +2641,18 @@ function renderMyPageTasks() {
         <div style="font-size:12px;color:var(--text2);">${m.area} · ${m.cat} · ${m.t.start||''} ~ ${m.t.end||''}</div>
       </div>
       <span class="role-badge ${m.t.status==='done'?'role-admin':'role-member'}">${m.t.status==='done'?'완료':m.t.status==='progress'?'진행중':'예정'}</span>
-    </div>`).join('');
+    </div>`;
+
+  if (selectedArea) {
+    wrap.innerHTML = filtered.map(itemHtml).join('');
+  } else {
+    const groups = {};
+    filtered.forEach(m => { (groups[m.areaKey] = groups[m.areaKey] || []).push(m); });
+    wrap.innerHTML = Object.keys(groups).map(k => `
+      <div class="lib-group-label" style="font-size:12px;font-weight:700;color:var(--text2);margin:14px 0 6px;">${_areaLabelMap[k] || k} (${groups[k].length})</div>
+      ${groups[k].map(itemHtml).join('')}
+    `).join('');
+  }
   initIcons();
 }
 
