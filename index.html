@@ -427,6 +427,15 @@ body{
 .msg-input-bar{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--border);}
 .msg-input-bar .field-input{flex:1;}
 .msg-empty{padding:40px;text-align:center;color:var(--text2);font-size:13px;}
+.mention-tag{color:var(--accent);font-weight:700;background:rgba(67,97,238,0.08);border-radius:4px;padding:0 3px;}
+.mention-dropdown{
+  position:fixed;z-index:1100;background:#fff;border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 12px 28px rgba(15,18,40,0.18);max-height:220px;overflow-y:auto;padding:4px;
+}
+.mention-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:13px;}
+.mention-item:hover,.mention-item.active{background:#eff3ff;}
+.mention-item .mention-label{font-weight:600;color:var(--text1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mention-item .mention-sub{font-size:11px;color:var(--text2);flex-shrink:0;}
 .lib-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:#fff;transition:box-shadow .15s;}
 .lib-item:hover{box-shadow:0 2px 10px rgba(0,0,0,0.06);}
 .lib-icon{width:36px;height:36px;border-radius:8px;background:#eef1ff;color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -1216,7 +1225,7 @@ body{
         <div class="msg-header" id="msg-header">채널을 선택하세요</div>
         <div class="msg-thread" id="msg-thread"></div>
         <div class="msg-input-bar">
-          <input id="msg-input" class="field-input" placeholder="메시지를 입력하세요..." onkeydown="if(event.key==='Enter')sendMessage()">
+          <input id="msg-input" class="field-input" placeholder="메시지를 입력하세요... (@로 과제/사용자 태그)">
           <button class="btn-add" onclick="sendMessage()">전송</button>
         </div>
       </div>
@@ -2309,6 +2318,7 @@ function openModal(areaKey, pid, ci, ti) {
 
   document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('m-name').focus();
+  setupMentionAutocomplete('m-note');
 }
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
@@ -2788,11 +2798,102 @@ function renderMsgThread() {
       <div class="msg-avatar">${m.from.charAt(0)}</div>
       <div class="msg-bubble-body">
         <div class="msg-bubble-meta"><span class="msg-who">${m.from}</span><span class="msg-time">${m.time}</span></div>
-        <div class="msg-bubble-text">${m.text.replace(/</g,'&lt;')}</div>
+        <div class="msg-bubble-text">${highlightMentions(m.text.replace(/</g,'&lt;'))}</div>
       </div>
     </div>`).join('');
   wrap.scrollTop = wrap.scrollHeight;
 }
+// ── @멘션 자동완성 (메시지 입력 / 과제 비고란 공용) ──
+let _mentionState = { el: null, dropdown: null, items: [], activeIdx: 0, matchLen: 0 };
+function getMentionCandidates() {
+  const list = [];
+  users.forEach(u => list.push({ label: u.id, sub: '사용자' }));
+  Object.keys(taskData).forEach(areaKey => {
+    const areaLabel = _areaLabelMap[areaKey] || taskData[areaKey].title;
+    taskData[areaKey].tasks.forEach(cat => {
+      cat.tasks.forEach(t => list.push({ label: t.name, sub: areaLabel }));
+    });
+  });
+  return list;
+}
+function setupMentionAutocomplete(elId, opts) {
+  const el = document.getElementById(elId);
+  if (!el || el._mentionBound) return;
+  el._mentionBound = true;
+  el.addEventListener('input', () => handleMentionInput(el));
+  el.addEventListener('blur', () => setTimeout(closeMentionDropdown, 150));
+  el.addEventListener('keydown', (e) => handleMentionKeydown(el, e, opts));
+}
+function handleMentionInput(el) {
+  const pos = el.selectionStart;
+  const before = el.value.slice(0, pos);
+  const m = before.match(/@([^\s@]{0,20})$/);
+  if (!m) { closeMentionDropdown(); return; }
+  const query = m[1].toLowerCase();
+  const filtered = getMentionCandidates()
+    .filter(c => c.label.toLowerCase().includes(query))
+    .slice(0, 8);
+  if (filtered.length === 0) { closeMentionDropdown(); return; }
+  showMentionDropdown(el, filtered, m[0].length);
+}
+function showMentionDropdown(el, items, matchLen) {
+  closeMentionDropdown();
+  const rect = el.getBoundingClientRect();
+  const dd = document.createElement('div');
+  dd.className = 'mention-dropdown';
+  dd.style.left = rect.left + 'px';
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.width = Math.max(Math.min(rect.width, 280), 160) + 'px';
+  dd.innerHTML = items.map((it, i) => `
+    <div class="mention-item${i === 0 ? ' active' : ''}" data-idx="${i}">
+      <span class="mention-label">${it.label}</span><span class="mention-sub">${it.sub}</span>
+    </div>`).join('');
+  document.body.appendChild(dd);
+  dd.querySelectorAll('.mention-item').forEach(node => {
+    node.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      selectMention(el, items[+node.dataset.idx], matchLen);
+    });
+  });
+  _mentionState = { el, dropdown: dd, items, activeIdx: 0, matchLen };
+}
+function closeMentionDropdown() {
+  if (_mentionState.dropdown) _mentionState.dropdown.remove();
+  _mentionState = { el: null, dropdown: null, items: [], activeIdx: 0, matchLen: 0 };
+}
+function updateMentionActive() {
+  _mentionState.dropdown.querySelectorAll('.mention-item').forEach((node, i) =>
+    node.classList.toggle('active', i === _mentionState.activeIdx));
+}
+function selectMention(el, item, matchLen) {
+  const pos = el.selectionStart;
+  const before = el.value.slice(0, pos - matchLen);
+  const after = el.value.slice(pos);
+  const insertText = '@' + item.label + ' ';
+  el.value = before + insertText + after;
+  const newPos = before.length + insertText.length;
+  el.focus();
+  el.setSelectionRange(newPos, newPos);
+  closeMentionDropdown();
+}
+function handleMentionKeydown(el, e, opts) {
+  if (_mentionState.dropdown && _mentionState.el === el) {
+    const items = _mentionState.items;
+    if (e.key === 'ArrowDown') { e.preventDefault(); _mentionState.activeIdx = (_mentionState.activeIdx + 1) % items.length; updateMentionActive(); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); _mentionState.activeIdx = (_mentionState.activeIdx - 1 + items.length) % items.length; updateMentionActive(); return; }
+    if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); selectMention(el, items[_mentionState.activeIdx], _mentionState.matchLen); return; }
+    if (e.key === 'Escape') { e.preventDefault(); closeMentionDropdown(); return; }
+  }
+  if (e.key === 'Enter' && opts && opts.onEnter) { opts.onEnter(); }
+}
+function highlightMentions(text) {
+  const labels = getMentionCandidates().map(c => c.label).sort((a, b) => b.length - a.length);
+  if (!labels.length) return text;
+  const escaped = labels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp('@(' + escaped.join('|') + ')(?!\\S)', 'g');
+  return text.replace(re, '<span class="mention-tag">@$1</span>');
+}
+
 function sendMessage() {
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
@@ -2811,6 +2912,7 @@ function renderMessagesPage() {
   renderMsgChannelList();
   if (!_curChannel) openMsgChannel('general');
   else renderMsgThread();
+  setupMentionAutocomplete('msg-input', { onEnter: sendMessage });
 }
 
 function renderMenuEditList() {
