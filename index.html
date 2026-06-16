@@ -338,6 +338,7 @@ body{
   width:230px;min-width:230px;font-size:12px;color:var(--text2);
   padding:6px 14px 6px 16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;
   background:#fff;border-right:1px solid var(--border);
+  position:sticky;left:0;z-index:6;
 }
 .gantt-label.cat{font-weight:700;color:var(--accent);font-size:12px;padding-left:14px;}
 .gantt-label.sub{padding-left:26px;color:var(--text2);}
@@ -363,6 +364,7 @@ body{
 .gs-overdue{color:#e63946;font-weight:700;}
 .gantt-row[data-overdue="true"] .gantt-label{color:#e63946;}
 .gantt-today-line{position:absolute;top:0;bottom:0;width:2px;background:var(--red);opacity:0.8;z-index:5;}
+.gantt-drag-tip{position:fixed;background:#1d2233;color:#fff;font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;pointer-events:none;z-index:999;box-shadow:0 4px 14px rgba(0,0,0,0.25);white-space:nowrap;}
 .gantt-today-line::before{
   content:'TODAY';position:absolute;top:-18px;left:50%;transform:translateX(-50%);
   font-size:9px;font-weight:700;color:var(--red);white-space:nowrap;font-family:'Freesentation',sans-serif;
@@ -1738,6 +1740,11 @@ function applyZoom(pid) {
 
     bar.classList.add('dragging');
     drag = { bar, areaKey, pid, ci, ti, mode, startX: e.clientX, origLeft, origWidth, timelineW, task };
+
+    const tip = document.createElement('div');
+    tip.className = 'gantt-drag-tip';
+    tip.id = 'gantt-drag-tip';
+    document.body.appendChild(tip);
   });
 
   document.addEventListener('mousemove', function(e) {
@@ -1763,29 +1770,50 @@ function applyZoom(pid) {
     const newStart = pctToDate(newLeft);
     const newEnd   = pctToDate(newRight);
     bar.title = `${drag.task.name}\n${newStart} ~ ${newEnd}\n상태: ${(statusCfg[drag.task.status]||statusCfg['']).label}`;
+
+    const tip = document.getElementById('gantt-drag-tip');
+    if (tip) {
+      tip.textContent = `${newStart} ~ ${newEnd}`;
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY - 28) + 'px';
+    }
   });
 
   document.addEventListener('mouseup', function(e) {
     if (!drag) return;
-    const { bar, areaKey, ci, ti, mode, origLeft, origWidth, timelineW } = drag;
+    const { bar, areaKey, pid, ci, ti, mode, origLeft, origWidth, timelineW } = drag;
     const deltaPct = ((e.clientX - drag.startX) / timelineW) * 100;
     const task = taskData[areaKey].tasks[ci].tasks[ti];
+    let changed = false;
 
     if (mode === 'move') {
       const newLeft = Math.max(0, Math.min(100 - origWidth, origLeft + deltaPct));
       const newRight = newLeft + origWidth;
       task.start = pctToDate(newLeft);
       task.end   = pctToDate(newRight);
+      changed = true;
     } else if (mode === 'left') {
       const newLeft  = Math.max(0, Math.min(origLeft + origWidth - 0.5, origLeft + deltaPct));
       task.start = pctToDate(newLeft);
+      changed = true;
     } else if (mode === 'right') {
       const newRight = Math.max(origLeft + 0.5, Math.min(100, origLeft + origWidth + deltaPct));
       task.end = pctToDate(newRight);
+      changed = true;
     }
 
     bar.classList.remove('dragging');
     drag = null;
+    const tip = document.getElementById('gantt-drag-tip');
+    if (tip) tip.remove();
+
+    if (changed) {
+      renderDetailPage(pid, areaKey);
+      applyZoom(pid);
+      initIcons();
+      syncToFirebase();
+      showSave();
+    }
   });
 })();
 
