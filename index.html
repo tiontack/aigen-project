@@ -1092,10 +1092,6 @@ body{
         <button class="cal-today-btn" onclick="calGoToday()">오늘</button>
         <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;" id="cal-legend"></div>
       </div>
-      <div class="cal-toolbar" style="border-top:none;padding-top:0">
-        <span style="font-size:12px;color:var(--text2);margin-right:4px">담당자</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cal-person-filter"></div>
-      </div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
   </div>
@@ -3021,7 +3017,7 @@ function calGoToday() {
   renderCalendar();
 }
 
-let _calHiddenAreas = new Set(); // 체크 해제(숨김)된 영역
+let _calHiddenAreas = new Set(['pmo','curriculum','marketing','recruit','infra']); // 처음엔 Google 일정만 노출, 영역은 클릭해서 표시
 
 function getAllTasks() {
   const tasks = [];
@@ -3041,12 +3037,6 @@ function toggleCalArea(area) {
   renderCalendar();
 }
 
-let _calSelectedPerson = null;
-function selectCalPerson(name) {
-  _calSelectedPerson = (_calSelectedPerson === name) ? null : name;
-  renderCalendar();
-}
-
 function renderCalendar() {
   const yr = _calYear, mo = _calMonth;
   document.getElementById('cal-title').textContent =
@@ -3062,16 +3052,6 @@ function renderCalendar() {
     </div>`;
   }).join('') + (_gcalEvents.length ? `<div class="cal-legend-chip" style="cursor:default;"><div class="cal-legend-dot" style="background:#4285f4;border:2px solid #4285f4"></div>Google</div>` : '');
 
-  // 담당자 필터 (클릭하면 해당 사람 과제만 캘린더에 표시, 다시 클릭하면 전체 표시)
-  const personFilter = document.getElementById('cal-person-filter');
-  const allOwners = new Set();
-  getAllTasks().forEach(t => (t.owner || '').split(',').map(s => s.trim()).filter(Boolean).forEach(o => allOwners.add(o)));
-  personFilter.innerHTML = [...allOwners].sort().map(name => {
-    const on = _calSelectedPerson === name;
-    const dim = _calSelectedPerson && !on;
-    return `<div class="cal-legend-chip${dim?' off':''}" title="클릭하여 ${on?'전체 표시':'이 담당자만 표시'}" onclick="selectCalPerson('${name}')">${name}</div>`;
-  }).join('');
-
   const grid = document.getElementById('cal-grid');
   const days = ['일','월','화','수','목','금','토'];
   let headH = `<div class="cal-head-row">${days.map((d,i) => `<div class="cal-day-hdr${i===0||i===6?' weekend':''}">${d}</div>`).join('')}</div>`;
@@ -3081,8 +3061,7 @@ function renderCalendar() {
   const prevLast = new Date(yr, mo, 0).getDate();
   const today = new Date(); today.setHours(0,0,0,0);
 
-  const allTasks = getAllTasks().filter(t => !_calHiddenAreas.has(t.area))
-    .filter(t => !_calSelectedPerson || (t.owner || '').split(',').map(s => s.trim()).includes(_calSelectedPerson));
+  const allTasks = getAllTasks().filter(t => !_calHiddenAreas.has(t.area));
 
   // 6주(42칸) 그리드의 날짜 모델 구성
   const cellDates = []; // {dateStr, dayNum, inMonth, isToday}
