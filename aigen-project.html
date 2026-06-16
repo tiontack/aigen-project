@@ -897,6 +897,19 @@ body{
   /* 섹션 패딩 줄이기 */
   .section-header{padding:12px 16px;}
   .gantt-wrap{padding:12px 14px;}
+
+  /* 메시지: 채널목록을 위로, 채팅을 아래로 적층 */
+  .msg-wrap{flex-direction:column;height:auto;min-height:0;}
+  .msg-sidebar{width:100%;max-height:160px;border-right:none;border-bottom:1px solid var(--border);}
+  .msg-main{height:520px;}
+  .msg-input-bar{padding:12px 14px;}
+  .msg-header{padding:12px 14px;}
+
+  /* 마이페이지 담당 과제 필터 줄바꿈 */
+  #mypage-task-area{max-width:none;width:100%;}
+
+  /* 히어로 주요 이슈: 1열 */
+  .hero-issues-grid{grid-template-columns:1fr;}
 }
 
 @media (max-width: 480px) {
@@ -1252,8 +1265,8 @@ body{
           <span class="section-title"><div class="dot"></div>등록된 사용자</span>
           <button class="btn-add-user" onclick="openUserModal()">＋ 사용자 추가</button>
         </div>
-        <div class="section-body" style="padding:0">
-          <table class="user-table" id="user-table"></table>
+        <div class="section-body" style="padding:0;overflow-x:auto">
+          <table class="user-table" id="user-table" style="min-width:640px"></table>
         </div>
       </div>
     </div>
