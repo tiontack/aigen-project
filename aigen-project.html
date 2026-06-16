@@ -1276,6 +1276,18 @@ body{
           <div id="area-owner-edit-list" style="display:flex;flex-direction:column;gap:10px;max-width:480px"></div>
         </div>
       </div>
+      <div class="section" style="margin-top:18px">
+        <div class="section-header">
+          <span class="section-title"><div class="dot"></div>Google 캘린더 연동</span>
+        </div>
+        <div class="section-body" style="padding:16px 20px">
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px">공유받은 구글 캘린더의 비공개 iCal(.ics) 주소를 입력하면 캘린더 화면에 일정이 함께 표시됩니다. 이 주소는 Firebase에만 저장되며 코드에는 노출되지 않습니다.</p>
+          <div style="display:flex;gap:8px;max-width:640px">
+            <input id="gcal-url-input" class="field-input" placeholder="https://calendar.google.com/calendar/ical/.../private-xxxx/basic.ics" style="flex:1">
+            <button class="btn-modal-save" onclick="saveGcalUrl()">저장</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="admin-tab-log" class="admin-tab-panel">
       <div class="section">
@@ -2964,7 +2976,44 @@ const areaColors = {
   pmo:'#00d4ff', curriculum:'#10b981', marketing:'#8b5cf6', recruit:'#f59e0b', infra:'#ef4444'
 };
 let _calYear, _calMonth;
-let _gcalEvents = []; // Google Calendar 이벤트 캐시
+let _gcalEvents = []; // Google Calendar 이벤트 캐시 (scripts/sync-gcal.js가 Firebase에 채워둠)
+let _gcalIcsUrl = '';
+
+function loadGcalConfigFromFirebase(onDone) {
+  _db.ref('gcalConfig').once('value').then(snap => {
+    const val = snap.val();
+    _gcalIcsUrl = (val && val.icsUrl) || '';
+    const input = document.getElementById('gcal-url-input');
+    if (input) input.value = _gcalIcsUrl;
+    if (onDone) onDone();
+  }).catch(e => { console.warn('구글 캘린더 설정 로드 실패:', e); if (onDone) onDone(); });
+}
+function saveGcalUrl() {
+  const url = document.getElementById('gcal-url-input').value.trim();
+  _gcalIcsUrl = url;
+  _db.ref('gcalConfig').set({ icsUrl: url }).catch(e => console.warn('구글 캘린더 설정 저장 실패:', e));
+  logActivity('Google 캘린더 연동 설정 변경', url ? '주소 등록' : '주소 삭제');
+  showSave();
+  if (!url) { _gcalEvents = []; renderCalendar(); updateGcalBtn(false); }
+  else alert('주소가 저장되었습니다. scripts/sync-gcal.js를 실행하면 일정이 캘린더에 반영됩니다.');
+}
+function loadGcalEventsFromFirebase() {
+  return _db.ref('gcalEvents').once('value').then(snap => {
+    const val = snap.val();
+    _gcalEvents = Array.isArray(val) ? val.filter(Boolean) : [];
+    renderCalendar();
+    updateGcalBtn(_gcalEvents.length > 0);
+  }).catch(e => { console.warn('구글 캘린더 일정 로드 실패:', e); updateGcalBtn(false); });
+}
+function updateGcalBtn(connected) {
+  const btn = document.getElementById('gcal-btn');
+  if (!btn) return;
+  btn.classList.toggle('connected', !!connected);
+  btn.innerHTML = connected
+    ? '<i data-lucide="check-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>Google 캘린더 연동됨'
+    : '<i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>Google 캘린더 연동';
+  initIcons();
+}
 
 function calInit() {
   const t = new Date();
@@ -3114,9 +3163,8 @@ function fmtDate(dt) {
 }
 
 function connectGoogleCal() {
-  const clientId = prompt('Google OAuth Client ID를 입력하세요:\n(Google Cloud Console에서 발급 필요)');
-  if (!clientId || !clientId.trim()) return;
-  alert('Google OAuth는 Client ID 설정 후 사용 가능합니다.\n현재는 과제 데이터만 표시됩니다.');
+  if (_gcalIcsUrl) { loadGcalEventsFromFirebase(); return; }
+  alert('관리자 탭 > Google 캘린더 연동에서 캘린더 주소를 먼저 등록해주세요.');
 }
 
 // ── DATA: 회의록 / 자료실 ──
@@ -3416,6 +3464,8 @@ loadFromFirebase(function() {
   loadActivityLogFromFirebase(function() {
     renderActivityLog();
   });
+  loadGcalConfigFromFirebase();
+  loadGcalEventsFromFirebase();
   loadAreaOwnersFromFirebase(function() {
     Object.keys(taskData).forEach(k => {
       const el = document.querySelector(`#page-${k} .area-owner-val`);
