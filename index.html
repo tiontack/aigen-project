@@ -132,6 +132,7 @@ body{
 .hero-issues-grid.fading{opacity:0;}
 .meeting-page-img{width:100%;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
 .hero-issue-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:7px 12px;border-radius:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hero-issue-item.overdue{background:rgba(230,57,70,0.35);border:1px solid rgba(255,255,255,0.4);font-weight:700;}
 .hero-issue-empty{opacity:0.85;background:rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;display:inline-block;}
 .hero-ticker{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.14);padding:8px 14px;border-radius:8px;width:100%;overflow:hidden;}
 .hero-ticker-badge{background:#fff;color:var(--accent);font-weight:800;font-size:11px;padding:3px 9px;border-radius:12px;flex-shrink:0;white-space:nowrap;}
@@ -408,7 +409,10 @@ body{
 .msg-channel-item{padding:8px 16px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:8px;border-radius:6px;margin:0 6px;color:var(--text);}
 .msg-channel-item:hover{background:rgba(67,97,238,0.08);}
 .msg-channel-item.active{background:var(--accent);color:#fff;font-weight:600;}
-.msg-channel-item .msg-dot{width:6px;height:6px;border-radius:50%;background:#3ecf6a;flex-shrink:0;}
+.msg-channel-item .msg-dot{width:6px;height:6px;border-radius:50%;background:#9298ad;flex-shrink:0;}
+.msg-channel-item .msg-dot.online{background:#3ecf6a;}
+.msg-channel-item .msg-dot.idle{background:#f5a623;}
+.msg-channel-item .msg-dot.offline{background:#e63946;}
 .msg-channel-item .msg-channel-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .msg-channel-edit-btns{display:flex;gap:4px;flex-shrink:0;}
 .msg-channel-edit-btns span{opacity:0.55;font-size:12px;cursor:pointer;}
@@ -1760,7 +1764,7 @@ function renderHero() {
         const owners = (t.owner || '').split(',').map(s => s.trim()).filter(Boolean);
         if (!currentUser || !owners.includes(currentUser.id)) return;
         if (isOverdue(t)) {
-          issues.push({ html: `⚠ <strong>${_areaLabelMap[areaKey]||areaKey}</strong> · ${t.name} ~ ${_dotDate(t.end)}` });
+          issues.push({ html: `⚠ <strong>${_areaLabelMap[areaKey]||areaKey}</strong> · ${t.name} ~ ${_dotDate(t.end)}`, overdue: true });
         } else if (t.status !== 'done' && t.end) {
           const ed = new Date(t.end); ed.setHours(0,0,0,0);
           if (ed >= _today && ed <= soon) {
@@ -1776,6 +1780,7 @@ function renderHero() {
       });
     });
   });
+  issues.sort((a, b) => (b.overdue ? 1 : 0) - (a.overdue ? 1 : 0));
   renderHeroIssues(issues);
 }
 
@@ -1793,7 +1798,7 @@ function renderHeroIssues(issues) {
   let pageIdx = 0;
   const renderPage = () => {
     issuesWrap.innerHTML = `<div class="hero-issues-grid" id="hero-issues-grid">${
-      pages[pageIdx].map(i => `<div class="hero-issue-item">${i.html}</div>`).join('')
+      pages[pageIdx].map(i => `<div class="hero-issue-item${i.overdue ? ' overdue' : ''}">${i.html}</div>`).join('')
     }</div>`;
   };
   renderPage();
@@ -2502,6 +2507,7 @@ function doLogin() {
   if (user.role === 'admin') {
     document.getElementById('admin-nav-section').style.display = 'block';
   }
+  startPresence();
 }
 
 function renderSidebarUser() {
@@ -2519,6 +2525,7 @@ function renderSidebarUser() {
 }
 
 function doLogout() {
+  stopPresence();
   currentUser = null;
   document.getElementById('login-id').value = '';
   document.getElementById('login-pw').value = '';
@@ -2528,6 +2535,54 @@ function doLogout() {
   document.getElementById('admin-nav-section').style.display = 'none';
   // summary로 초기화
   showPage('summary');
+}
+
+// =================== 접속 상태(presence) ===================
+let _presence = {};
+let _presenceHeartbeat = null;
+let _presenceActivityBound = false;
+const _PRESENCE_IDLE_MS = 2 * 60 * 1000;     // 2분간 활동 없으면 '노랑'
+const _PRESENCE_OFFLINE_MS = 3 * 60 * 60 * 1000; // 3시간 이상 활동 없으면 '빨강'
+
+function loadPresenceListener() {
+  _db.ref('presence').on('value', snap => {
+    _presence = snap.val() || {};
+    renderMsgChannelList();
+  });
+}
+function startPresence() {
+  if (!currentUser) return;
+  const ref = _db.ref('presence/' + currentUser.id);
+  const touch = () => ref.update({ online: true, lastActive: Date.now() }).catch(() => {});
+  touch();
+  ref.onDisconnect().update({ online: false, lastActive: Date.now() });
+  if (_presenceHeartbeat) clearInterval(_presenceHeartbeat);
+  _presenceHeartbeat = setInterval(touch, 30000);
+  if (!_presenceActivityBound) {
+    _presenceActivityBound = true;
+    let lastTouch = 0;
+    const onActivity = () => {
+      const now = Date.now();
+      if (now - lastTouch < 20000) return;
+      lastTouch = now;
+      if (currentUser) touch();
+    };
+    ['mousemove', 'keydown', 'click', 'touchstart'].forEach(ev => document.addEventListener(ev, onActivity));
+  }
+}
+function stopPresence() {
+  if (_presenceHeartbeat) { clearInterval(_presenceHeartbeat); _presenceHeartbeat = null; }
+  if (currentUser) {
+    _db.ref('presence/' + currentUser.id).update({ online: false, lastActive: Date.now() }).catch(() => {});
+  }
+}
+function getPresenceStatus(userId) {
+  const p = _presence[userId];
+  if (!p) return 'offline';
+  const idleMs = Date.now() - (p.lastActive || 0);
+  if (!p.online || idleMs >= _PRESENCE_OFFLINE_MS) return 'offline';
+  if (idleMs >= _PRESENCE_IDLE_MS) return 'idle';
+  return 'online';
 }
 
 // =================== ADMIN – 사용자 관리 ===================
@@ -2775,7 +2830,7 @@ function renderMsgChannelList() {
     <div class="msg-channel-group-label">${g}</div>
     ${chans.filter(c => c.group === g).map(c => `
       <div class="msg-channel-item ${_curChannel===c.key?'active':''}" onclick="openMsgChannel('${c.key}')">
-        ${g==='DM' ? '<span class="msg-dot"></span>' : ''}<span class="msg-channel-label">${c.label}</span>
+        ${g==='DM' ? `<span class="msg-dot ${getPresenceStatus(c.label)}" title="${getPresenceStatus(c.label)==='online'?'접속 중':getPresenceStatus(c.label)==='idle'?'자리 비움':'오프라인'}"></span>` : ''}<span class="msg-channel-label">${c.label}</span>
         ${c.custom ? `<span class="msg-channel-edit-btns">
           <span onclick="renameCustomChannel('${c.id}',event)" title="수정">✎</span>
           <span onclick="deleteCustomChannel('${c.id}',event)" title="삭제">✕</span>
@@ -3604,6 +3659,8 @@ loadFromFirebase(function() {
   });
   loadGcalConfigFromFirebase();
   loadGcalEventsFromFirebase();
+  loadPresenceListener();
+  setInterval(renderMsgChannelList, 30000);
   loadAreaOwnersFromFirebase(function() {
     Object.keys(taskData).forEach(k => {
       const el = document.querySelector(`#page-${k} .area-owner-val`);
