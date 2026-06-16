@@ -9,6 +9,7 @@
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
   const _fbConfig = {
     apiKey: "AIzaSyC_Ly14rZI7QvL8GvJrZYUpv46Y1g1NmVA",
@@ -365,6 +366,19 @@ body{
 .gantt-row[data-overdue="true"] .gantt-label{color:#e63946;}
 .gantt-today-line{position:absolute;top:0;bottom:0;width:2px;background:var(--red);opacity:0.8;z-index:5;}
 .gantt-drag-tip{position:fixed;background:#1d2233;color:#fff;font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;pointer-events:none;z-index:999;box-shadow:0 4px 14px rgba(0,0,0,0.25);white-space:nowrap;}
+.lib-list{display:flex;flex-direction:column;gap:10px;}
+.lib-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:10px;background:#fff;transition:box-shadow .15s;}
+.lib-item:hover{box-shadow:0 2px 10px rgba(0,0,0,0.06);}
+.lib-icon{width:36px;height:36px;border-radius:8px;background:#eef1ff;color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lib-info{flex:1;min-width:0;}
+.lib-title{font-weight:600;font-size:14px;color:var(--text1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
+.lib-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.lib-tag{display:inline-block;background:#eef1ff;color:var(--accent);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-right:6px;}
+.lib-actions{display:flex;gap:6px;flex-shrink:0;}
+.lib-btn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:5px 9px;font-size:12px;cursor:pointer;color:var(--text2);}
+.lib-btn:hover{background:#f5f7ff;}
+.lib-btn.del:hover{background:#fde9ea;color:#e63946;border-color:#f3c4c7;}
+.lib-empty{padding:40px;text-align:center;color:var(--text2);font-size:13px;}
 .gantt-today-line::before{
   content:'TODAY';position:absolute;top:-18px;left:50%;transform:translateX(-50%);
   font-size:9px;font-weight:700;color:var(--red);white-space:nowrap;font-family:'Freesentation',sans-serif;
@@ -910,6 +924,13 @@ body{
     <span class="nav-icon"><i data-lucide="server"></i></span> 인프라
     <span class="nav-badge">23</span>
   </div>
+  <div class="nav-section-label">DATA</div>
+  <div class="nav-item" onclick="showPage('meeting')" data-page="meeting">
+    <span class="nav-icon"><i data-lucide="file-text"></i></span> 회의록
+  </div>
+  <div class="nav-item" onclick="showPage('archive')" data-page="archive">
+    <span class="nav-icon"><i data-lucide="folder-open"></i></span> 자료실
+  </div>
   <!-- 관리자 전용 메뉴 (로그인 후 동적으로 표시) -->
   <div id="admin-nav-section" style="display:none">
     <div class="nav-section-label">관리</div>
@@ -998,6 +1019,70 @@ body{
   <div id="page-marketing" class="page"></div>
   <div id="page-recruit" class="page"></div>
   <div id="page-infra" class="page"></div>
+
+  <div id="page-meeting" class="page">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2><i data-lucide="file-text" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">회의록</span></h2>
+        <p>PDF 회의록을 업로드하면 자동으로 요약과 전문이 등록됩니다</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select id="meeting-area-select" class="field-select" style="width:160px"></select>
+        <label class="btn-add" style="cursor:pointer">
+          <i data-lucide="upload" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>PDF 업로드
+          <input type="file" accept="application/pdf" id="meeting-upload-input" style="display:none" onchange="handleMeetingUpload(event)">
+        </label>
+      </div>
+    </div>
+    <div class="section">
+      <div id="meeting-list" class="lib-list"></div>
+    </div>
+  </div>
+
+  <div id="page-archive" class="page">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2><i data-lucide="folder-open" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">자료실</span></h2>
+        <p>영역/과제에서 업로드된 모든 자료를 한 곳에서 확인합니다</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select id="archive-area-filter" class="field-select" style="width:140px"><option value="">전체 영역</option></select>
+        <select id="archive-cat-filter" class="field-select" style="width:140px"><option value="">전체 구분</option></select>
+        <select id="archive-upload-area" class="field-select" style="width:120px"></select>
+        <input type="text" id="archive-upload-cat" class="field-select" placeholder="구분(예: 양식)" style="width:120px">
+        <label class="btn-add" style="cursor:pointer">
+          <i data-lucide="upload" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>자료 업로드
+          <input type="file" id="archive-upload-input" style="display:none" onchange="handleArchiveUpload(event)">
+        </label>
+      </div>
+    </div>
+    <div class="section">
+      <div id="archive-list" class="lib-list"></div>
+    </div>
+  </div>
+
+  <!-- Meeting Full Text Modal -->
+  <div class="modal-overlay" id="meeting-modal-overlay" onclick="if(event.target===this)closeMeetingModal()">
+    <div class="modal" style="width:640px;max-height:80vh;">
+      <div class="modal-head"><h3 id="meeting-modal-title">회의록</h3><button class="modal-close" onclick="closeMeetingModal()">✕</button></div>
+      <div class="modal-body" style="max-height:60vh;overflow:auto;">
+        <div class="field-group">
+          <div class="field-label">자동 요약</div>
+          <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">전문</div>
+          <div id="meeting-modal-fulltext" style="font-size:12px;line-height:1.6;color:var(--text2);white-space:pre-wrap;max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:10px;"></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-modal-save" onclick="closeMeetingModal()">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Admin page -->
   <div id="page-admin" class="page">
@@ -2309,6 +2394,221 @@ function connectGoogleCal() {
   alert('Google OAuth는 Client ID 설정 후 사용 가능합니다.\n현재는 과제 데이터만 표시됩니다.');
 }
 
+// ── DATA: 회의록 / 자료실 ──
+let libraryData = { meetings: [], resources: [] };
+const _areaLabelMap = {pmo:'PMO',curriculum:'커리큘럼',marketing:'홍보',recruit:'모집선발',infra:'인프라'};
+
+function syncLibraryToFirebase() {
+  _db.ref('libraryData').set(JSON.parse(JSON.stringify(libraryData)))
+    .catch(e => console.warn('자료 저장 실패:', e));
+}
+function loadLibraryFromFirebase(onDone) {
+  _db.ref('libraryData').once('value').then(snap => {
+    const val = snap.val();
+    if (val) { libraryData.meetings = val.meetings || []; libraryData.resources = val.resources || []; }
+    onDone();
+  }).catch(e => { console.warn('자료 로드 실패, 로컬 데이터 사용:', e); onDone(); });
+}
+
+function fillAreaSelect(sel, withAll) {
+  if (!sel) return;
+  sel.innerHTML = (withAll ? '<option value="">전체 영역</option>' : '') +
+    Object.keys(taskData).map(k => `<option value="${k}">${_areaLabelMap[k]||k}</option>`).join('');
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+}
+function readFileAsArrayBuffer(file) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsArrayBuffer(file); });
+}
+async function extractPdfText(arrayBuffer) {
+  if (!window.pdfjsLib) return '';
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    return text.trim();
+  } catch (e) {
+    console.warn('PDF 텍스트 추출 실패:', e);
+    return '';
+  }
+}
+function summarize(text, maxLen) {
+  if (!text) return '(PDF에서 텍스트를 추출할 수 없습니다 - 전문을 직접 확인해주세요)';
+  const clean = text.replace(/\s+/g, ' ').trim();
+  const sentences = clean.split(/(?<=[.!?])\s/).filter(Boolean);
+  let out = '';
+  for (const s of sentences) {
+    if ((out + s).length > maxLen) break;
+    out += s + ' ';
+  }
+  out = out.trim() || clean.slice(0, maxLen);
+  return out + (clean.length > out.length ? '...' : '');
+}
+function fmtTs(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function handleMeetingUpload(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { alert('4MB 이하 PDF 파일만 업로드할 수 있습니다.'); return; }
+  const areaKey = document.getElementById('meeting-area-select').value || Object.keys(taskData)[0];
+  try {
+    const [dataUrl, buf] = await Promise.all([readFileAsDataURL(file), readFileAsArrayBuffer(file)]);
+    const fullText = await extractPdfText(buf);
+    const summary = summarize(fullText, 300);
+    libraryData.meetings.unshift({
+      id: 'm' + Date.now(), title: file.name.replace(/\.pdf$/i, ''), area: areaKey,
+      fileName: file.name, fileData: dataUrl, fullText, summary, ts: Date.now()
+    });
+    syncLibraryToFirebase();
+    renderMeetingList();
+    syncResourceFromMeeting(libraryData.meetings[0]);
+    showSave();
+  } catch (e) {
+    console.warn('회의록 업로드 실패:', e);
+    alert('업로드 중 오류가 발생했습니다.');
+  }
+}
+
+function syncResourceFromMeeting(m) {
+  libraryData.resources.unshift({
+    id: 'r' + m.id, title: m.title, area: m.area, category: '회의록',
+    fileName: m.fileName, fileData: m.fileData, ts: m.ts
+  });
+  syncLibraryToFirebase();
+  renderArchiveList();
+}
+
+async function handleArchiveUpload(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { alert('4MB 이하 파일만 업로드할 수 있습니다.'); return; }
+  const areaKey = document.getElementById('archive-upload-area').value || '';
+  const category = document.getElementById('archive-upload-cat').value.trim() || '기타';
+  try {
+    const dataUrl = await readFileAsDataURL(file);
+    libraryData.resources.unshift({
+      id: 'r' + Date.now(), title: file.name, area: areaKey, category,
+      fileName: file.name, fileData: dataUrl, ts: Date.now()
+    });
+    syncLibraryToFirebase();
+    renderArchiveList();
+    showSave();
+  } catch (e) {
+    console.warn('자료 업로드 실패:', e);
+    alert('업로드 중 오류가 발생했습니다.');
+  }
+}
+
+function renderMeetingList() {
+  fillAreaSelect(document.getElementById('meeting-area-select'), false);
+  const wrap = document.getElementById('meeting-list');
+  if (!wrap) return;
+  if (!libraryData.meetings.length) {
+    wrap.innerHTML = '<div class="lib-empty">아직 등록된 회의록이 없습니다. PDF를 업로드해보세요.</div>';
+    return;
+  }
+  wrap.innerHTML = libraryData.meetings.map((m, i) => `
+    <div class="lib-item">
+      <div class="lib-icon"><i data-lucide="file-text" style="width:18px;height:18px;"></i></div>
+      <div class="lib-info">
+        <div class="lib-title" onclick="openMeetingModal(${i})">${m.title}</div>
+        <div class="lib-meta"><span class="lib-tag">${_areaLabelMap[m.area]||m.area}</span>${m.fileName} · ${fmtTs(m.ts)}</div>
+      </div>
+      <div class="lib-actions">
+        <button class="lib-btn" onclick="openMeetingModal(${i})">보기</button>
+        <a class="lib-btn" href="${m.fileData}" download="${m.fileName}" style="text-decoration:none;display:inline-block;">다운로드</a>
+        <button class="lib-btn del" onclick="deleteMeeting(${i})">삭제</button>
+      </div>
+    </div>`).join('');
+  initIcons();
+}
+
+function openMeetingModal(i) {
+  const m = libraryData.meetings[i];
+  if (!m) return;
+  document.getElementById('meeting-modal-title').textContent = m.title;
+  document.getElementById('meeting-modal-summary').textContent = m.summary || '';
+  document.getElementById('meeting-modal-fulltext').textContent = m.fullText || '(전문 없음)';
+  document.getElementById('meeting-modal-overlay').classList.add('open');
+}
+function closeMeetingModal() {
+  document.getElementById('meeting-modal-overlay').classList.remove('open');
+}
+function deleteMeeting(i) {
+  if (!confirm('이 회의록을 삭제하시겠습니까?')) return;
+  const [m] = libraryData.meetings.splice(i, 1);
+  if (m) libraryData.resources = libraryData.resources.filter(r => r.id !== 'r' + m.id);
+  syncLibraryToFirebase();
+  renderMeetingList();
+  renderArchiveList();
+  showSave();
+}
+
+function renderArchiveList() {
+  const areaSel = document.getElementById('archive-area-filter');
+  const uploadAreaSel = document.getElementById('archive-upload-area');
+  if (areaSel && areaSel.options.length <= 1) {
+    areaSel.innerHTML = '<option value="">전체 영역</option>' +
+      Object.keys(taskData).map(k => `<option value="${k}">${_areaLabelMap[k]||k}</option>`).join('');
+  }
+  fillAreaSelect(uploadAreaSel, true);
+
+  const catSel = document.getElementById('archive-cat-filter');
+  const cats = [...new Set(libraryData.resources.map(r => r.category))];
+  if (catSel) {
+    const cur = catSel.value;
+    catSel.innerHTML = '<option value="">전체 구분</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    catSel.value = cur;
+  }
+
+  const fArea = areaSel ? areaSel.value : '';
+  const fCat = catSel ? catSel.value : '';
+  const list = libraryData.resources.filter(r => (!fArea || r.area === fArea) && (!fCat || r.category === fCat));
+
+  const wrap = document.getElementById('archive-list');
+  if (!wrap) return;
+  if (!list.length) {
+    wrap.innerHTML = '<div class="lib-empty">등록된 자료가 없습니다.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(r => {
+    const idx = libraryData.resources.indexOf(r);
+    return `
+    <div class="lib-item">
+      <div class="lib-icon"><i data-lucide="file" style="width:18px;height:18px;"></i></div>
+      <div class="lib-info">
+        <div class="lib-title">${r.title}</div>
+        <div class="lib-meta">${r.area ? `<span class="lib-tag">${_areaLabelMap[r.area]||r.area}</span>` : ''}<span class="lib-tag">${r.category}</span>${fmtTs(r.ts)}</div>
+      </div>
+      <div class="lib-actions">
+        <a class="lib-btn" href="${r.fileData}" download="${r.fileName}" style="text-decoration:none;display:inline-block;">다운로드</a>
+        <button class="lib-btn del" onclick="deleteResource(${idx})">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+  initIcons();
+}
+
+function deleteResource(idx) {
+  if (!confirm('이 자료를 삭제하시겠습니까?')) return;
+  libraryData.resources.splice(idx, 1);
+  syncLibraryToFirebase();
+  renderArchiveList();
+  showSave();
+}
+
 // ── Firebase 동기화 ──
 let _fbLoaded = false;
 
@@ -2346,6 +2646,11 @@ loadFromFirebase(function() {
     renderDetailPage(pid, pid);
     applyZoom(pid);
   });
+  loadLibraryFromFirebase(function() {
+    renderMeetingList();
+    renderArchiveList();
+    initIcons();
+  });
   initIcons();
 });
 
@@ -2355,6 +2660,8 @@ window.showPage = function(id) {
   _origShowPage(id);
   setTimeout(initIcons, 50);
   if (id === 'calendar') setTimeout(calInit, 60);
+  if (id === 'meeting') setTimeout(renderMeetingList, 60);
+  if (id === 'archive') setTimeout(renderArchiveList, 60);
 };
 </script>
 </body>
