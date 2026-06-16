@@ -1095,6 +1095,7 @@ body{
     <div class="admin-tabs">
       <div class="admin-tab active" onclick="switchAdminTab('users')"><i data-lucide="users" style="width:14px;height:14px;vertical-align:middle;margin-right:5px;"></i>회원 관리</div>
       <div class="admin-tab" onclick="switchAdminTab('menu')"><i data-lucide="menu" style="width:14px;height:14px;vertical-align:middle;margin-right:5px;"></i>메뉴 관리</div>
+      <div class="admin-tab" onclick="switchAdminTab('log')"><i data-lucide="activity" style="width:14px;height:14px;vertical-align:middle;margin-right:5px;"></i>활동 로그</div>
     </div>
     <div id="admin-tab-users" class="admin-tab-panel active">
       <div class="section">
@@ -1115,6 +1116,16 @@ body{
         <div class="section-body" style="padding:16px 20px">
           <p style="font-size:12px;color:var(--text2);margin-bottom:14px">영역별 현황 / DATA 메뉴의 표시 이름을 변경할 수 있습니다.</p>
           <div id="menu-edit-list" style="display:flex;flex-direction:column;gap:10px;max-width:480px"></div>
+        </div>
+      </div>
+    </div>
+    <div id="admin-tab-log" class="admin-tab-panel">
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title"><div class="dot"></div>전체 활동 로그</span>
+        </div>
+        <div class="section-body" style="padding:0">
+          <div id="activity-log-list" class="lib-list"></div>
         </div>
       </div>
     </div>
@@ -1951,6 +1962,7 @@ function addCategory(areaKey, pid) {
   if (!name || !name.trim()) return;
   taskData[areaKey].tasks.push({ cat: name.trim(), tasks: [] });
   renderDetailPage(pid, areaKey);
+  logActivity('카테고리 추가', `${areaKey} / ${name.trim()}`);
   syncToFirebase(); showSave();
 }
 function editCat(areaKey, pid, ci) {
@@ -1959,6 +1971,7 @@ function editCat(areaKey, pid, ci) {
   if (!name || !name.trim()) return;
   taskData[areaKey].tasks[ci].cat = name.trim();
   renderDetailPage(pid, areaKey);
+  logActivity('카테고리 수정', `${areaKey} / ${cur} → ${name.trim()}`);
   syncToFirebase(); showSave();
 }
 function delCat(areaKey, pid, ci) {
@@ -1966,6 +1979,7 @@ function delCat(areaKey, pid, ci) {
   if (!confirm(`"${cat.cat}" 카테고리와 하위 과제 ${cat.tasks.length}개를 모두 삭제하시겠습니까?`)) return;
   taskData[areaKey].tasks.splice(ci, 1);
   renderDetailPage(pid, areaKey);
+  logActivity('카테고리 삭제', `${areaKey} / ${cat.cat} (과제 ${cat.tasks.length}개 포함)`);
   syncToFirebase(); showSave();
 }
 
@@ -1993,6 +2007,7 @@ function confirmAddTask() {
   const ti = cats[idx].tasks.length - 1;
   closeCatSelModal();
   renderDetailPage(pid, areaKey);
+  logActivity('과제 추가', `${areaKey} / ${cats[idx].cat}`);
   syncToFirebase();
   showSave();
   setTimeout(() => openModal(areaKey, pid, idx, ti), 80);
@@ -2075,6 +2090,7 @@ async function handleTaskAttachUpload(event) {
         fileName: file.name, fileData: dataUrl, fullText, summary, ts: attach.ts
       });
       syncResourceFromMeeting(libraryData.meetings[0]);
+      logActivity('회의록 업로드', `${t.name} / ${file.name}`);
     } else {
       libraryData.resources.unshift({
         id: 'r' + attach.id, title: `[${t.name}] ${file.name}`, area, category: '과제자료',
@@ -2082,6 +2098,7 @@ async function handleTaskAttachUpload(event) {
       });
       syncLibraryToFirebase();
       renderArchiveList();
+      logActivity('첨부파일 업로드', `${t.name} / ${file.name}`);
     }
     syncToFirebase();
     showSave();
@@ -2104,6 +2121,7 @@ function deleteTaskAttachment(i) {
     renderArchiveList();
   }
   renderAttachments(t.attachments);
+  logActivity('첨부파일 삭제', `${t.name} / ${a ? a.fileName : ''}`);
   syncToFirebase();
   showSave();
 }
@@ -2120,6 +2138,7 @@ function saveModal() {
   t.note   = document.getElementById('m-note').value.trim();
   closeModal();
   renderDetailPage(pid, area);
+  logActivity('과제 수정', `${area} / ${t.name}`);
   syncToFirebase();
   showSave();
 }
@@ -2130,6 +2149,7 @@ function deleteFromModal() {
   taskData[area].tasks[ci].tasks.splice(ti, 1);
   closeModal();
   renderDetailPage(pid, area);
+  logActivity('과제 삭제', `${area} / ${tname}`);
   syncToFirebase();
   showSave();
 }
@@ -2232,6 +2252,7 @@ function switchAdminTab(tab) {
   document.querySelector(`.admin-tab[onclick*="${tab}"]`).classList.add('active');
   document.getElementById(`admin-tab-${tab}`).classList.add('active');
   if (tab === 'menu') renderMenuEditList();
+  if (tab === 'log') renderActivityLog();
 }
 
 // =================== ADMIN – 메뉴명 관리 ===================
@@ -2284,6 +2305,7 @@ function saveMenuLabel(key) {
     syncToFirebase();
   }
   applyMenuLabels();
+  logActivity('메뉴명 수정', `${key} → ${val}`);
   showSave();
 }
 
@@ -2355,6 +2377,8 @@ function saveUser() {
   }
   closeUserModal();
   renderUserTable();
+  logActivity(_editingUserId !== null ? '사용자 수정' : '사용자 추가', name);
+  syncUsersToFirebase();
   showSave();
 }
 
@@ -2368,7 +2392,58 @@ function deleteUser() {
   users.splice(_editingUserId, 1);
   closeUserModal();
   renderUserTable();
+  logActivity('사용자 삭제', u.id);
+  syncUsersToFirebase();
   showSave();
+}
+
+function syncUsersToFirebase() {
+  _db.ref('users').set(JSON.parse(JSON.stringify(users)))
+    .catch(e => console.warn('사용자 정보 저장 실패:', e));
+}
+function loadUsersFromFirebase(onDone) {
+  _db.ref('users').once('value').then(snap => {
+    const val = snap.val();
+    if (Array.isArray(val) && val.length > 0) users = val;
+    else syncUsersToFirebase();
+    onDone();
+  }).catch(e => { console.warn('사용자 정보 로드 실패:', e); onDone(); });
+}
+
+// =================== 활동 로그 ===================
+let activityLog = [];
+function logActivity(action, detail) {
+  const entry = {
+    user: currentUser ? currentUser.id : '알수없음',
+    action, detail: detail || '',
+    ts: Date.now()
+  };
+  activityLog.unshift(entry);
+  if (activityLog.length > 300) activityLog = activityLog.slice(0, 300);
+  _db.ref('activityLog').set(JSON.parse(JSON.stringify(activityLog)))
+    .catch(e => console.warn('활동 로그 저장 실패:', e));
+  renderActivityLog();
+}
+function loadActivityLogFromFirebase(onDone) {
+  _db.ref('activityLog').once('value').then(snap => {
+    const val = snap.val();
+    if (Array.isArray(val)) activityLog = val;
+    onDone();
+  }).catch(e => { console.warn('활동 로그 로드 실패:', e); onDone(); });
+}
+function renderActivityLog() {
+  const wrap = document.getElementById('activity-log-list');
+  if (!wrap) return;
+  if (!activityLog.length) { wrap.innerHTML = '<div class="lib-empty">기록된 활동이 없습니다.</div>'; return; }
+  wrap.innerHTML = activityLog.map(e => `
+    <div class="lib-item" style="cursor:default">
+      <div class="lib-icon"><i data-lucide="activity" style="width:16px;height:16px;"></i></div>
+      <div class="lib-info">
+        <div class="lib-title" style="cursor:default">${e.action}</div>
+        <div class="lib-meta"><span class="lib-tag">${e.user}</span>${e.detail} · ${new Date(e.ts).toLocaleString('ko-KR')}</div>
+      </div>
+    </div>`).join('');
+  initIcons();
 }
 
 function confirmDeleteUser(idx) {
@@ -2628,6 +2703,7 @@ async function handleMeetingUpload(event) {
     syncLibraryToFirebase();
     renderMeetingList();
     syncResourceFromMeeting(libraryData.meetings[0]);
+    logActivity('회의록 업로드', `${areaKey} / ${file.name}`);
     showSave();
   } catch (e) {
     console.warn('회의록 업로드 실패:', e);
@@ -2659,6 +2735,7 @@ async function handleArchiveUpload(event) {
     });
     syncLibraryToFirebase();
     renderArchiveList();
+    logActivity('자료 업로드', `${category} / ${file.name}`);
     showSave();
   } catch (e) {
     console.warn('자료 업로드 실패:', e);
@@ -2708,6 +2785,7 @@ function deleteMeeting(i) {
   syncLibraryToFirebase();
   renderMeetingList();
   renderArchiveList();
+  logActivity('회의록 삭제', m ? m.title : '');
   showSave();
 }
 
@@ -2758,9 +2836,10 @@ function renderArchiveList() {
 
 function deleteResource(idx) {
   if (!confirm('이 자료를 삭제하시겠습니까?')) return;
-  libraryData.resources.splice(idx, 1);
+  const [r] = libraryData.resources.splice(idx, 1);
   syncLibraryToFirebase();
   renderArchiveList();
+  logActivity('자료 삭제', r ? r.title : '');
   showSave();
 }
 
@@ -2808,6 +2887,12 @@ loadFromFirebase(function() {
   });
   loadUiLabelsFromFirebase(function() {
     applyMenuLabels();
+  });
+  loadUsersFromFirebase(function() {
+    renderUserTable();
+  });
+  loadActivityLogFromFirebase(function() {
+    renderActivityLog();
   });
   initIcons();
 });
