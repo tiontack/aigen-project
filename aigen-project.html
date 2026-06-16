@@ -1058,6 +1058,29 @@ body{
   </div>
 </div>
 
+<!-- ── Category Select Modal (for adding new task) ── -->
+<div class="modal-overlay" id="catsel-modal-overlay" onclick="if(event.target===this)closeCatSelModal()">
+  <div class="modal" style="width:380px">
+    <div class="modal-head">
+      <h3>카테고리 선택</h3>
+      <button class="modal-close" onclick="closeCatSelModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <div class="field-label">새 과제를 추가할 카테고리</div>
+        <select id="catsel-select" class="field-select"></select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div style="display:flex;gap:10px">
+        <button style="padding:9px 18px;background:#f1f2f5;color:var(--text2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="closeCatSelModal()">취소</button>
+        <button class="btn-modal-save" onclick="confirmAddTask()">추가</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Task Edit Modal ── -->
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
@@ -1808,20 +1831,31 @@ function delCat(areaKey, pid, ci) {
 }
 
 // ── 과제 추가 ──
+let _catSelCtx = null;
 function addTask(areaKey, pid) {
   const cats = taskData[areaKey].tasks;
   if (cats.length === 0) { alert('먼저 카테고리를 추가해주세요.'); return; }
-  const catNames = cats.map((c,i) => `${i+1}. ${c.cat}`).join('\n');
-  const choice = prompt(`카테고리 선택:\n${catNames}\n\n번호 입력:`);
-  if (!choice) return;
-  const idx = parseInt(choice) - 1;
-  if (isNaN(idx) || idx < 0 || idx >= cats.length) return;
+  _catSelCtx = { areaKey, pid };
+  const sel = document.getElementById('catsel-select');
+  sel.innerHTML = cats.map((c,i) => `<option value="${i}">${c.cat}</option>`).join('');
+  document.getElementById('catsel-modal-overlay').classList.add('open');
+}
+function closeCatSelModal() {
+  document.getElementById('catsel-modal-overlay').classList.remove('open');
+  _catSelCtx = null;
+}
+function confirmAddTask() {
+  if (!_catSelCtx) return;
+  const { areaKey, pid } = _catSelCtx;
+  const idx = parseInt(document.getElementById('catsel-select').value);
+  const cats = taskData[areaKey].tasks;
   const newTask = {name:'새 과제',start:'',end:'',done:'',status:'planned',output:'',owner:'',note:''};
   cats[idx].tasks.push(newTask);
   const ti = cats[idx].tasks.length - 1;
+  closeCatSelModal();
   renderDetailPage(pid, areaKey);
+  syncToFirebase();
   showSave();
-  // 바로 모달 열기
   setTimeout(() => openModal(areaKey, pid, idx, ti), 80);
 }
 
