@@ -51,7 +51,7 @@
   --text:   #1a1d2e;
   --text2:  #4a5068;
   --text3:  #9397ad;
-  --sidebar-w: 240px;
+  --sidebar-w: 270px;
   --shadow: 0 2px 16px rgba(67,97,238,0.08);
   --shadow-md: 0 4px 24px rgba(67,97,238,0.12);
 }
@@ -66,8 +66,9 @@ body{
 #sidebar{
   width:var(--sidebar-w);height:100vh;background:#1a1d2e;
   display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;
-  overflow-y:auto;
+  overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;
 }
+#sidebar::-webkit-scrollbar{display:none;}
 .sidebar-logo{
   padding:30px 22px 24px;border-bottom:1px solid rgba(255,255,255,0.07);
 }
@@ -680,12 +681,12 @@ body{
   display:flex;align-items:center;justify-content:center;
   font-size:14px;font-weight:800;color:#fff;
 }
-.user-info .u-name{font-size:14px;font-weight:700;color:#fff;}
-.user-info .u-role{font-size:11px;color:rgba(255,255,255,0.4);font-weight:400;}
+.user-info .u-name{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;}
+.user-info .u-role{font-size:11px;color:rgba(255,255,255,0.4);font-weight:400;white-space:nowrap;}
 .btn-logout{
   margin-left:auto;padding:4px 10px;background:rgba(255,255,255,0.07);
   color:rgba(255,255,255,0.5);border:none;border-radius:7px;font-size:11px;
-  font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;
+  font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;flex-shrink:0;
 }
 .btn-logout:hover{background:rgba(239,68,68,0.2);color:#f87171;}
 
