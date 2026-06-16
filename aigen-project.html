@@ -122,18 +122,17 @@ body{
   display:flex;align-items:center;justify-content:space-between;gap:24px;
   color:#fff;box-shadow:var(--shadow-md);
 }
+.hero-left{flex:1;width:100%;}
 .hero-greeting{font-size:13px;opacity:0.85;margin-bottom:4px;font-weight:500;}
 .hero-welcome{font-size:24px;font-weight:800;margin-bottom:14px;letter-spacing:-0.3px;}
-.hero-issues{display:flex;flex-direction:column;gap:6px;font-size:12.5px;max-width:520px;}
-.hero-issue-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:6px 10px;border-radius:8px;}
+.hero-issues{display:flex;flex-direction:column;gap:6px;font-size:12.5px;width:100%;}
+.hero-issues-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;}
+.hero-issue-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:7px 12px;border-radius:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .hero-issue-empty{opacity:0.85;background:rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;display:inline-block;}
-.hero-orb-wrap{position:relative;width:130px;height:130px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.hero-ring{position:absolute;inset:0;transform:rotate(-90deg);}
-.hero-ring-bg{fill:none;stroke:rgba(255,255,255,0.18);stroke-width:8;}
-.hero-ring-fg{fill:none;stroke:#fff;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 0.8s ease;}
-.hero-orb-glow{position:absolute;width:90px;height:90px;border-radius:50%;filter:blur(12px);transition:opacity 0.6s,background 0.6s;}
-.hero-orb{position:relative;font-size:44px;filter:drop-shadow(0 0 10px rgba(255,255,255,0.7));z-index:2;transition:opacity 0.6s;}
-.hero-orb-pct{position:absolute;bottom:-20px;font-size:13px;font-weight:800;color:#fff;}
+.hero-ticker{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.14);padding:8px 14px;border-radius:8px;width:100%;overflow:hidden;}
+.hero-ticker-badge{background:#fff;color:var(--accent);font-weight:800;font-size:11px;padding:3px 9px;border-radius:12px;flex-shrink:0;white-space:nowrap;}
+.hero-ticker-text{flex:1;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:1;transition:opacity 0.3s ease;}
+.hero-ticker-text.fading{opacity:0;}
 
 /* Page header */
 .page-header{margin-bottom:28px;display:flex;align-items:flex-end;justify-content:space-between;}
@@ -284,15 +283,23 @@ body{
 .cal-nav-btn:hover{border-color:var(--accent);background:#eff3ff;}
 .cal-today-btn{padding:6px 14px;background:#fff;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s;}
 .cal-today-btn:hover{border-color:var(--accent);color:var(--accent);}
-.cal-legend-chip{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--text2);}
-.cal-legend-dot{width:8px;height:8px;border-radius:50%;}
+.cal-legend-chip{
+  display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--text2);
+  padding:5px 12px 5px 9px;border-radius:16px;border:1.5px solid var(--border);background:#fff;
+  cursor:pointer;transition:all 0.15s;user-select:none;
+}
+.cal-legend-chip:hover{border-color:var(--accent2);box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.cal-legend-chip.off{opacity:0.45;background:#f5f6fa;border-style:dashed;}
+.cal-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 .btn-gcal{padding:7px 14px;background:#fff;border:1.5px solid var(--border);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2);display:flex;align-items:center;transition:all 0.15s;}
 .btn-gcal:hover{border-color:#4285f4;color:#4285f4;}
 .btn-gcal.connected{border-color:#34a853;color:#34a853;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(110px,auto);border-left:1px solid var(--border);}
-.cal-day-hdr{padding:8px 0;text-align:center;font-size:11px;font-weight:700;color:var(--text3);border-right:1px solid var(--border);border-bottom:2px solid var(--border2);background:#f8f9fc;}
+.cal-grid{border-left:1px solid var(--border);border-top:1px solid var(--border);}
+.cal-head-row{display:grid;grid-template-columns:repeat(7,1fr);}
+.cal-day-hdr{padding:8px 0;text-align:center;font-size:12px;font-weight:700;color:var(--text3);border-right:1px solid var(--border);border-bottom:2px solid var(--border2);background:#f8f9fc;}
 .cal-day-hdr.weekend{color:#e63946;}
-.cal-cell{min-height:110px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px 5px;background:#fff;position:relative;vertical-align:top;}
+.cal-week-row{display:grid;grid-template-columns:repeat(7,1fr);position:relative;min-height:110px;}
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px 5px;background:#fff;position:relative;}
 .cal-cell.other-month{background:#f9fafc;}
 .cal-cell.today{background:#eff3ff;}
 .cal-cell.today .cal-date{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;}
@@ -303,7 +310,7 @@ body{
 .cal-event{font-size:13px;font-weight:700;color:#fff;border-radius:4px;padding:3px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:filter 0.15s;}
 .cal-event:hover{filter:brightness(1.15);}
 .cal-event.gcal-event{opacity:0.85;border-left:3px solid rgba(255,255,255,0.5);}
-.cal-week-overlay{grid-column:1/8;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:23px;gap:3px;padding:26px 4px 4px 4px;pointer-events:none;align-self:start;}
+.cal-week-overlay{position:absolute;left:0;top:0;width:100%;height:100%;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:23px;gap:3px;padding:28px 4px 4px 4px;pointer-events:none;}
 .cal-week-overlay .cal-event-bar{pointer-events:auto;}
 .cal-more{font-size:11px;color:var(--text3);padding:1px 4px;cursor:pointer;font-weight:600;}
 .cal-more:hover{color:var(--accent);}
@@ -370,7 +377,7 @@ body{
 .gantt-col{flex:1;min-width:76px;height:100%;border-right:1px solid var(--border);}
 .gantt-col.odd-col{background:#f7f8fc;}
 .gantt-bar{
-  position:absolute;height:14px;top:50%;transform:translateY(-50%);border-radius:6px;min-width:3px;
+  position:absolute;height:20px;top:50%;transform:translateY(-50%);border-radius:7px;min-width:3px;
   transition:opacity 0.2s,filter 0.2s;cursor:pointer;
 }
 .gantt-bar:hover{filter:brightness(1.1);box-shadow:0 2px 8px rgba(0,0,0,0.15);}
@@ -1003,17 +1010,6 @@ body{
         <div class="hero-greeting" id="hero-greeting"></div>
         <div class="hero-welcome" id="hero-welcome"></div>
         <div class="hero-issues" id="hero-issues"></div>
-      </div>
-      <div class="hero-right">
-        <div class="hero-orb-wrap">
-          <div class="hero-orb-glow" id="hero-orb-glow"></div>
-          <svg class="hero-ring" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="52" class="hero-ring-bg"/>
-            <circle cx="60" cy="60" r="52" class="hero-ring-fg" id="hero-ring-fg"/>
-          </svg>
-          <div class="hero-orb" id="hero-orb">🧠</div>
-          <div class="hero-orb-pct" id="hero-orb-pct"></div>
-        </div>
       </div>
     </div>
     <div class="page-header">
@@ -1688,38 +1684,58 @@ function renderHero() {
   document.getElementById('hero-greeting').textContent = greet;
   document.getElementById('hero-welcome').textContent = `${currentUser ? currentUser.id : 'TF'}님, 환영합니다!`;
 
-  const totalTasks = summaryAreas.reduce((s,a)=>s+a.total,0);
-  const totalDone = summaryAreas.reduce((s,a)=>s+(a.done+a.progress*0.5),0);
-  const pct = totalTasks ? Math.round(totalDone/totalTasks*100) : 0;
-
-  const circ = 2 * Math.PI * 52;
-  const ring = document.getElementById('hero-ring-fg');
-  ring.style.strokeDasharray = circ;
-  ring.style.strokeDashoffset = circ * (1 - pct/100);
-
-  const glowColor = pct >= 70 ? '#10b981' : pct >= 40 ? '#f4a10a' : '#e63946';
-  document.getElementById('hero-orb-glow').style.background = `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`;
-  document.getElementById('hero-orb-glow').style.opacity = Math.max(0.25, pct/100);
-  document.getElementById('hero-orb').style.opacity = Math.max(0.4, pct/100);
-  document.getElementById('hero-orb-pct').textContent = pct + '%';
-
-  // 지연 과제 알림
+  // 주요 이슈: 지연된 과제 + 시작을 앞둔 과제
+  const _dotDate = s => s ? s.replace(/-/g,'.') : '';
+  const soon = new Date(_today); soon.setDate(soon.getDate() + 7);
   const issues = [];
   Object.keys(taskData).forEach(areaKey => {
     taskData[areaKey].tasks.forEach(cat => {
       cat.tasks.forEach(t => {
-        if (isOverdue(t)) issues.push({ area: areaKey, name: t.name, end: t.end });
+        if (isOverdue(t)) {
+          issues.push({ html: `⚠ <strong>${_areaLabelMap[areaKey]||areaKey}</strong> · ${t.name} ~ ${_dotDate(t.end)}` });
+        } else if (t.status === 'planned' && t.start) {
+          const st = new Date(t.start); st.setHours(0,0,0,0);
+          if (st >= _today && st <= soon) {
+            issues.push({ html: `🔔 <strong>${_areaLabelMap[areaKey]||areaKey}</strong> · ${t.name} ${_dotDate(t.start)}~` });
+          }
+        }
       });
     });
   });
+  renderHeroIssues(issues);
+}
+
+let _heroTickerTimer = null;
+function renderHeroIssues(issues) {
   const issuesWrap = document.getElementById('hero-issues');
+  if (_heroTickerTimer) { clearInterval(_heroTickerTimer); _heroTickerTimer = null; }
   if (!issues.length) {
-    issuesWrap.innerHTML = '<div class="hero-issue-empty">⚠ 지연된 과제가 없습니다. 좋은 흐름이에요!</div>';
-  } else {
-    issuesWrap.innerHTML = issues.slice(0, 3).map(i =>
-      `<div class="hero-issue-item">⚠ <strong>${_areaLabelMap[i.area]||i.area}</strong> · ${i.name} (마감 ${i.end})</div>`
-    ).join('') + (issues.length > 3 ? `<div class="hero-issue-item">그 외 ${issues.length - 3}건 더 있습니다.</div>` : '');
+    issuesWrap.innerHTML = '<div class="hero-issue-empty">⚠ 지연되거나 임박한 과제가 없습니다. 좋은 흐름이에요!</div>';
+    return;
   }
+  if (issues.length <= 3) {
+    issuesWrap.innerHTML = `<div class="hero-issues-grid">${
+      issues.map(i => `<div class="hero-issue-item">${i.html}</div>`).join('')
+    }</div>`;
+    return;
+  }
+  // 4개 이상이면 뉴스 티커 형식으로 순환 표시
+  issuesWrap.innerHTML = `
+    <div class="hero-ticker">
+      <span class="hero-ticker-badge">주요 이슈 ${issues.length}</span>
+      <span class="hero-ticker-text" id="hero-ticker-text">${issues[0].html}</span>
+    </div>`;
+  let idx = 0;
+  _heroTickerTimer = setInterval(() => {
+    idx = (idx + 1) % issues.length;
+    const el = document.getElementById('hero-ticker-text');
+    if (!el) { clearInterval(_heroTickerTimer); return; }
+    el.classList.add('fading');
+    setTimeout(() => {
+      el.innerHTML = issues[idx].html;
+      el.classList.remove('fading');
+    }, 300);
+  }, 3200);
 }
 
 Chart.defaults.color = '#4a5068';
@@ -2895,19 +2911,19 @@ function renderCalendar() {
   document.getElementById('cal-title').textContent =
     new Date(yr, mo, 1).toLocaleDateString('ko-KR', { year:'numeric', month:'long' });
 
-  // 범례 (영역별 체크박스로 토글)
+  // 범례 (영역별로 클릭해서 선택/해제 토글)
   const legend = document.getElementById('cal-legend');
   const areaLabels = {pmo:'PMO',curriculum:'커리큘럼',marketing:'홍보',recruit:'모집선발',infra:'인프라'};
   legend.innerHTML = Object.entries(areaColors).map(([k,c]) => {
     const off = _calHiddenAreas.has(k);
-    return `<label class="cal-legend-chip" style="cursor:pointer;${off?'opacity:0.4;':''}" onclick="toggleCalArea('${k}')">
+    return `<div class="cal-legend-chip${off?' off':''}" title="클릭하여 ${off?'표시':'숨기기'}" onclick="toggleCalArea('${k}')">
       <div class="cal-legend-dot" style="background:${c}"></div>${areaLabels[k]}
-    </label>`;
-  }).join('') + (_gcalEvents.length ? `<div class="cal-legend-chip"><div class="cal-legend-dot" style="background:#4285f4;border:2px solid #4285f4"></div>Google</div>` : '');
+    </div>`;
+  }).join('') + (_gcalEvents.length ? `<div class="cal-legend-chip" style="cursor:default;"><div class="cal-legend-dot" style="background:#4285f4;border:2px solid #4285f4"></div>Google</div>` : '');
 
   const grid = document.getElementById('cal-grid');
   const days = ['일','월','화','수','목','금','토'];
-  let headH = days.map((d,i) => `<div class="cal-day-hdr${i===0||i===6?' weekend':''}">${d}</div>`).join('');
+  let headH = `<div class="cal-head-row">${days.map((d,i) => `<div class="cal-day-hdr${i===0||i===6?' weekend':''}">${d}</div>`).join('')}</div>`;
 
   const firstDay = new Date(yr, mo, 1).getDay();
   const lastDate = new Date(yr, mo+1, 0).getDate();
@@ -2934,33 +2950,18 @@ function renderCalendar() {
   }
 
   const weekCount = cellDates.length / 7;
+  let weeksH = '';
 
-  // 날짜 셀(숫자만) 렌더링
-  let cellsH = '';
-  cellDates.forEach((c, i) => {
-    const isWe = i%7===0 || i%7===6;
-    cellsH += `<div class="cal-cell${c.isToday?' today':''}${!c.inMonth?' other-month':''}${isWe?' weekend-col':''}" data-date="${c.dateStr}">
-      <div class="cal-date">${c.dayNum}</div><div class="cal-event-layer"></div></div>`;
-  });
-
-  grid.innerHTML = headH + cellsH;
-
-  // 단일일 이벤트(구글 캘린더) 셀 내부에 직접 표시
-  _gcalEvents.forEach(ev => {
-    const cell = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-event-layer`);
-    if (cell) cell.insertAdjacentHTML('beforeend', `<div class="cal-event gcal-event" style="background:#4285f4" title="${ev.title}">${ev.title}</div>`);
-  });
-
-  // 주(week) 단위로 연속 막대 오버레이 렌더링
   for (let w = 0; w < weekCount; w++) {
-    const weekStart = cellDates[w*7].dateStr;
-    const weekEnd = cellDates[w*7+6].dateStr;
+    const weekDates = cellDates.slice(w*7, w*7+7);
+    const weekStart = weekDates[0].dateStr;
+    const weekEnd = weekDates[6].dateStr;
+
     // 이 주에 걸치는 과제만 필터
     const weekTasks = allTasks.filter(t => {
       const s = t.start, e = t.end || t.start;
       return s <= weekEnd && e >= weekStart;
     });
-    if (!weekTasks.length) continue;
 
     // 레인 배정 (겹치지 않게 순서대로 쌓기)
     weekTasks.sort((a,b) => a.start.localeCompare(b.start));
@@ -2971,12 +2972,16 @@ function renderCalendar() {
       t._lane = laneIdx;
       lanes[laneIdx] = t.end || t.start;
     });
+    const laneCount = lanes.length;
+    const rowMinH = Math.max(110, 30 + laneCount * 25 + 8);
 
-    const overlay = document.createElement('div');
-    overlay.className = 'cal-week-overlay';
-    overlay.style.gridRow = `${w+2}`;
-    overlay.style.setProperty('--lanes', Math.max(1, lanes.length));
+    let cellsH = weekDates.map((c, i) => {
+      const isWe = i===0 || i===6;
+      return `<div class="cal-cell${c.isToday?' today':''}${!c.inMonth?' other-month':''}${isWe?' weekend-col':''}" data-date="${c.dateStr}">
+        <div class="cal-date">${c.dayNum}</div><div class="cal-event-layer"></div></div>`;
+    }).join('');
 
+    let overlayH = '';
     weekTasks.forEach(t => {
       const s = t.start < weekStart ? weekStart : t.start;
       const e = (t.end || t.start) > weekEnd ? weekEnd : (t.end || t.start);
@@ -2987,13 +2992,19 @@ function renderCalendar() {
       const contStart = s > t.start ? '' : 'border-radius:4px 0 0 4px;';
       const contEnd = e < (t.end||t.start) ? '' : 'border-radius:0 4px 4px 0;';
       const radius = (s===t.start && e===(t.end||t.start)) ? 'border-radius:4px;' : (s > t.start && e < (t.end||t.start)) ? 'border-radius:0;' : (contStart+contEnd);
-      overlay.insertAdjacentHTML('beforeend',
-        `<div class="cal-event cal-event-bar" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:${bg};${radius}" title="${t.name}" onclick="event.stopPropagation();openModal('${t.area}', '${t.area}', ${taskData[t.area].tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat))}, ${taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.find(x=>x.name===t.name))})">${t.name}</div>`
-      );
+      overlayH += `<div class="cal-event cal-event-bar" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:${bg};${radius}" title="${t.name}" onclick="event.stopPropagation();openModal('${t.area}', '${t.area}', ${taskData[t.area].tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat))}, ${taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.find(x=>x.name===t.name))})">${t.name}</div>`;
     });
 
-    grid.appendChild(overlay);
+    weeksH += `<div class="cal-week-row" style="min-height:${rowMinH}px">${cellsH}<div class="cal-week-overlay">${overlayH}</div></div>`;
   }
+
+  grid.innerHTML = headH + weeksH;
+
+  // 단일일 이벤트(구글 캘린더) 셀 내부에 직접 표시
+  _gcalEvents.forEach(ev => {
+    const cell = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-event-layer`);
+    if (cell) cell.insertAdjacentHTML('beforeend', `<div class="cal-event gcal-event" style="background:#4285f4" title="${ev.title}">${ev.title}</div>`);
+  });
 
   setTimeout(initIcons, 50);
 }
