@@ -128,7 +128,6 @@ body{
 .hero-issues{display:flex;flex-direction:column;gap:6px;font-size:12.5px;width:100%;}
 .hero-issues-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;opacity:1;transition:opacity 0.3s ease;}
 .hero-issues-grid.fading{opacity:0;}
-.hero-issues-badge{background:#fff;color:var(--accent);font-weight:800;font-size:11px;padding:3px 9px;border-radius:12px;display:inline-block;margin-bottom:6px;}
 .meeting-page-img{width:100%;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
 .hero-issue-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:7px 12px;border-radius:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .hero-issue-empty{opacity:0.85;background:rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;display:inline-block;}
@@ -1724,6 +1723,8 @@ function renderHero() {
   Object.keys(taskData).forEach(areaKey => {
     taskData[areaKey].tasks.forEach(cat => {
       cat.tasks.forEach(t => {
+        const owners = (t.owner || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (!currentUser || !owners.includes(currentUser.id)) return;
         if (isOverdue(t)) {
           issues.push({ html: `⚠ <strong>${_areaLabelMap[areaKey]||areaKey}</strong> · ${t.name} ~ ${_dotDate(t.end)}` });
         } else if (t.status === 'planned' && t.start) {
@@ -1751,8 +1752,7 @@ function renderHeroIssues(issues) {
   for (let i = 0; i < issues.length; i += 3) pages.push(issues.slice(i, i + 3));
   let pageIdx = 0;
   const renderPage = () => {
-    const badge = pages.length > 1 ? `<span class="hero-issues-badge">주요 이슈 ${issues.length} · ${pageIdx+1}/${pages.length}</span>` : '';
-    issuesWrap.innerHTML = `${badge}<div class="hero-issues-grid" id="hero-issues-grid">${
+    issuesWrap.innerHTML = `<div class="hero-issues-grid" id="hero-issues-grid">${
       pages[pageIdx].map(i => `<div class="hero-issue-item">${i.html}</div>`).join('')
     }</div>`;
   };
