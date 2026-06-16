@@ -115,6 +115,26 @@ body{
 .page{display:none;}
 .page.active{display:block;}
 
+/* Hero banner */
+.hero-banner{
+  background:linear-gradient(135deg,var(--accent2),var(--accent));
+  border-radius:20px;padding:26px 32px;margin-bottom:24px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  color:#fff;box-shadow:var(--shadow-md);
+}
+.hero-greeting{font-size:13px;opacity:0.85;margin-bottom:4px;font-weight:500;}
+.hero-welcome{font-size:24px;font-weight:800;margin-bottom:14px;letter-spacing:-0.3px;}
+.hero-issues{display:flex;flex-direction:column;gap:6px;font-size:12.5px;max-width:520px;}
+.hero-issue-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:6px 10px;border-radius:8px;}
+.hero-issue-empty{opacity:0.85;background:rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;display:inline-block;}
+.hero-orb-wrap{position:relative;width:130px;height:130px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hero-ring{position:absolute;inset:0;transform:rotate(-90deg);}
+.hero-ring-bg{fill:none;stroke:rgba(255,255,255,0.18);stroke-width:8;}
+.hero-ring-fg{fill:none;stroke:#fff;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 0.8s ease;}
+.hero-orb-glow{position:absolute;width:90px;height:90px;border-radius:50%;filter:blur(12px);transition:opacity 0.6s,background 0.6s;}
+.hero-orb{position:relative;font-size:44px;filter:drop-shadow(0 0 10px rgba(255,255,255,0.7));z-index:2;transition:opacity 0.6s;}
+.hero-orb-pct{position:absolute;bottom:-20px;font-size:13px;font-weight:800;color:#fff;}
+
 /* Page header */
 .page-header{margin-bottom:28px;display:flex;align-items:flex-end;justify-content:space-between;}
 .page-header-left h2{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-0.5px;}
@@ -948,6 +968,24 @@ body{
 
 <main id="main">
   <div id="page-summary" class="page active">
+    <div class="hero-banner" id="hero-banner">
+      <div class="hero-left">
+        <div class="hero-greeting" id="hero-greeting"></div>
+        <div class="hero-welcome" id="hero-welcome"></div>
+        <div class="hero-issues" id="hero-issues"></div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-orb-wrap">
+          <div class="hero-orb-glow" id="hero-orb-glow"></div>
+          <svg class="hero-ring" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" class="hero-ring-bg"/>
+            <circle cx="60" cy="60" r="52" class="hero-ring-fg" id="hero-ring-fg"/>
+          </svg>
+          <div class="hero-orb" id="hero-orb">🧠</div>
+          <div class="hero-orb-pct" id="hero-orb-pct"></div>
+        </div>
+      </div>
+    </div>
     <div class="page-header">
       <div class="page-header-left">
         <h2><span class="hl">AI-Gen</span> 프로젝트 전체 진척 현황</h2>
@@ -1538,6 +1576,52 @@ function renderSummaryCards() {
   const totalTasks = summaryAreas.reduce((s,a)=>s+a.total,0);
   const totalDone = summaryAreas.reduce((s,a)=>s+(a.done+a.progress*0.5),0);
   document.getElementById('total-pct').textContent = Math.round(totalDone/totalTasks*100)+'%';
+}
+
+function renderHero() {
+  const wrap = document.getElementById('hero-banner');
+  if (!wrap) return;
+
+  const hour = new Date().getHours();
+  let greet = '늦은 밤이네요';
+  if (hour >= 5 && hour < 12) greet = '좋은 아침입니다';
+  else if (hour >= 12 && hour < 18) greet = '활기찬 오후입니다';
+  else if (hour >= 18 && hour < 23) greet = '편안한 저녁입니다';
+  document.getElementById('hero-greeting').textContent = greet;
+  document.getElementById('hero-welcome').textContent = `${currentUser ? currentUser.id : 'TF'}님, 환영합니다!`;
+
+  const totalTasks = summaryAreas.reduce((s,a)=>s+a.total,0);
+  const totalDone = summaryAreas.reduce((s,a)=>s+(a.done+a.progress*0.5),0);
+  const pct = totalTasks ? Math.round(totalDone/totalTasks*100) : 0;
+
+  const circ = 2 * Math.PI * 52;
+  const ring = document.getElementById('hero-ring-fg');
+  ring.style.strokeDasharray = circ;
+  ring.style.strokeDashoffset = circ * (1 - pct/100);
+
+  const glowColor = pct >= 70 ? '#10b981' : pct >= 40 ? '#f4a10a' : '#e63946';
+  document.getElementById('hero-orb-glow').style.background = `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`;
+  document.getElementById('hero-orb-glow').style.opacity = Math.max(0.25, pct/100);
+  document.getElementById('hero-orb').style.opacity = Math.max(0.4, pct/100);
+  document.getElementById('hero-orb-pct').textContent = pct + '%';
+
+  // 지연 과제 알림
+  const issues = [];
+  Object.keys(taskData).forEach(areaKey => {
+    taskData[areaKey].tasks.forEach(cat => {
+      cat.tasks.forEach(t => {
+        if (isOverdue(t)) issues.push({ area: areaKey, name: t.name, end: t.end });
+      });
+    });
+  });
+  const issuesWrap = document.getElementById('hero-issues');
+  if (!issues.length) {
+    issuesWrap.innerHTML = '<div class="hero-issue-empty">⚠ 지연된 과제가 없습니다. 좋은 흐름이에요!</div>';
+  } else {
+    issuesWrap.innerHTML = issues.slice(0, 3).map(i =>
+      `<div class="hero-issue-item">⚠ <strong>${_areaLabelMap[i.area]||i.area}</strong> · ${i.name} (마감 ${i.end})</div>`
+    ).join('') + (issues.length > 3 ? `<div class="hero-issue-item">그 외 ${issues.length - 3}건 더 있습니다.</div>` : '');
+  }
 }
 
 Chart.defaults.color = '#4a5068';
@@ -2231,6 +2315,7 @@ function renderSidebarUser() {
     </div>
     <button class="btn-logout" onclick="doLogout()">로그아웃</button>
   `;
+  renderHero();
 }
 
 function doLogout() {
@@ -2876,6 +2961,7 @@ function initIcons() { if (window.lucide) lucide.createIcons(); }
 loadFromFirebase(function() {
   renderCharts();
   renderMonthlyTable();
+  renderHero();
   ['pmo','curriculum','marketing','recruit','infra'].forEach(pid => {
     renderDetailPage(pid, pid);
     applyZoom(pid);
