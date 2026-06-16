@@ -265,20 +265,23 @@ body{
 .btn-gcal{padding:7px 14px;background:#fff;border:1.5px solid var(--border);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2);display:flex;align-items:center;transition:all 0.15s;}
 .btn-gcal:hover{border-color:#4285f4;color:#4285f4;}
 .btn-gcal.connected{border-color:#34a853;color:#34a853;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid var(--border);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(110px,auto);border-left:1px solid var(--border);}
 .cal-day-hdr{padding:8px 0;text-align:center;font-size:11px;font-weight:700;color:var(--text3);border-right:1px solid var(--border);border-bottom:2px solid var(--border2);background:#f8f9fc;}
 .cal-day-hdr.weekend{color:#e63946;}
-.cal-cell{min-height:100px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px 5px;background:#fff;position:relative;vertical-align:top;}
+.cal-cell{min-height:110px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px 5px;background:#fff;position:relative;vertical-align:top;}
 .cal-cell.other-month{background:#f9fafc;}
 .cal-cell.today{background:#eff3ff;}
 .cal-cell.today .cal-date{background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:700;}
-.cal-date{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.cal-date{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;}
 .cal-cell.other-month .cal-date{color:var(--text3);}
 .cal-cell.weekend-col{background:#fdfafe;}
-.cal-event{font-size:10px;font-weight:600;color:#fff;border-radius:4px;padding:2px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:filter 0.15s;}
+.cal-event-layer{display:flex;flex-direction:column;gap:2px;}
+.cal-event{font-size:13px;font-weight:700;color:#fff;border-radius:4px;padding:3px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:filter 0.15s;}
 .cal-event:hover{filter:brightness(1.15);}
 .cal-event.gcal-event{opacity:0.85;border-left:3px solid rgba(255,255,255,0.5);}
-.cal-more{font-size:10px;color:var(--text3);padding:1px 4px;cursor:pointer;font-weight:600;}
+.cal-week-overlay{grid-column:1/8;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:23px;gap:3px;padding:26px 4px 4px 4px;pointer-events:none;align-self:start;}
+.cal-week-overlay .cal-event-bar{pointer-events:auto;}
+.cal-more{font-size:11px;color:var(--text3);padding:1px 4px;cursor:pointer;font-weight:600;}
 .cal-more:hover{color:var(--accent);}
 /* Task toolbar */
 .task-toolbar{
@@ -2106,6 +2109,8 @@ function calGoToday() {
   renderCalendar();
 }
 
+let _calHiddenAreas = new Set(); // 체크 해제(숨김)된 영역
+
 function getAllTasks() {
   const tasks = [];
   Object.entries(taskData).forEach(([area, data]) => {
@@ -2118,73 +2123,122 @@ function getAllTasks() {
   return tasks;
 }
 
+function toggleCalArea(area) {
+  if (_calHiddenAreas.has(area)) _calHiddenAreas.delete(area);
+  else _calHiddenAreas.add(area);
+  renderCalendar();
+}
+
 function renderCalendar() {
   const yr = _calYear, mo = _calMonth;
   document.getElementById('cal-title').textContent =
     new Date(yr, mo, 1).toLocaleDateString('ko-KR', { year:'numeric', month:'long' });
 
-  // 범례
+  // 범례 (영역별 체크박스로 토글)
   const legend = document.getElementById('cal-legend');
-  legend.innerHTML = Object.entries(areaColors).map(([k,c]) =>
-    `<div class="cal-legend-chip"><div class="cal-legend-dot" style="background:${c}"></div>${{pmo:'PMO',curriculum:'커리큘럼',marketing:'홍보',recruit:'모집선발',infra:'인프라'}[k]}</div>`
-  ).join('') + (_gcalEvents.length ? `<div class="cal-legend-chip"><div class="cal-legend-dot" style="background:#4285f4;border:2px solid #4285f4"></div>Google</div>` : '');
+  const areaLabels = {pmo:'PMO',curriculum:'커리큘럼',marketing:'홍보',recruit:'모집선발',infra:'인프라'};
+  legend.innerHTML = Object.entries(areaColors).map(([k,c]) => {
+    const off = _calHiddenAreas.has(k);
+    return `<label class="cal-legend-chip" style="cursor:pointer;${off?'opacity:0.4;':''}" onclick="toggleCalArea('${k}')">
+      <div class="cal-legend-dot" style="background:${c}"></div>${areaLabels[k]}
+    </label>`;
+  }).join('') + (_gcalEvents.length ? `<div class="cal-legend-chip"><div class="cal-legend-dot" style="background:#4285f4;border:2px solid #4285f4"></div>Google</div>` : '');
 
   const grid = document.getElementById('cal-grid');
   const days = ['일','월','화','수','목','금','토'];
-  let h = days.map((d,i) => `<div class="cal-day-hdr${i===0||i===6?' weekend':''}">${d}</div>`).join('');
+  let headH = days.map((d,i) => `<div class="cal-day-hdr${i===0||i===6?' weekend':''}">${d}</div>`).join('');
 
   const firstDay = new Date(yr, mo, 1).getDay();
   const lastDate = new Date(yr, mo+1, 0).getDate();
+  const prevLast = new Date(yr, mo, 0).getDate();
   const today = new Date(); today.setHours(0,0,0,0);
 
-  const allTasks = getAllTasks();
+  const allTasks = getAllTasks().filter(t => !_calHiddenAreas.has(t.area));
 
-  // 날짜별 이벤트 인덱싱
-  function getEventsForDate(dateStr) {
-    const evts = [];
-    allTasks.forEach(t => {
-      const s = t.start, e = t.end || t.start;
-      if (s && dateStr >= s && dateStr <= e) evts.push({ label: t.name, color: t.color, area: t.area, overdue: isOverdue(t) });
-    });
-    _gcalEvents.forEach(ev => {
-      if (ev.date === dateStr) evts.push({ label: ev.title, color:'#4285f4', gcal: true });
-    });
-    return evts;
-  }
-
-  let dayCount = 0;
-  // 이전 달 빈 칸
-  const prevLast = new Date(yr, mo, 0).getDate();
+  // 6주(42칸) 그리드의 날짜 모델 구성
+  const cellDates = []; // {dateStr, dayNum, inMonth, isToday}
   for (let i = firstDay - 1; i >= 0; i--) {
     const d = prevLast - i;
-    h += `<div class="cal-cell other-month${dayCount%7===0||dayCount%7===6?' weekend-col':''}"><div class="cal-date">${d}</div></div>`;
-    dayCount++;
+    const dt = new Date(yr, mo-1, d);
+    cellDates.push({ dateStr: fmtDate(dt), dayNum: d, inMonth: false, isToday: false });
   }
-  // 이번 달
   for (let d = 1; d <= lastDate; d++) {
-    const dateStr = `${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday = new Date(yr,mo,d).setHours(0,0,0,0) === today.getTime();
-    const isWe = dayCount%7===0 || dayCount%7===6;
-    const evts = getEventsForDate(dateStr);
-    const maxShow = 3;
-    let evtHtml = evts.slice(0, maxShow).map(ev => {
-      const bg = ev.overdue ? '#e63946' : ev.color;
-      return `<div class="cal-event${ev.gcal?' gcal-event':''}" style="background:${bg}" title="${ev.label}">${ev.label}</div>`;
-    }).join('');
-    if (evts.length > maxShow) evtHtml += `<div class="cal-more">+${evts.length-maxShow}개 더</div>`;
-    h += `<div class="cal-cell${isToday?' today':''}${isWe?' weekend-col':''}">
-      <div class="cal-date">${d}</div>${evtHtml}</div>`;
-    dayCount++;
+    const dt = new Date(yr, mo, d);
+    cellDates.push({ dateStr: fmtDate(dt), dayNum: d, inMonth: true, isToday: dt.setHours(0,0,0,0) === today.getTime() });
   }
-  // 다음 달 빈 칸
-  const remaining = 7 - (dayCount % 7);
-  if (remaining < 7) for (let d = 1; d <= remaining; d++) {
-    h += `<div class="cal-cell other-month${dayCount%7===0||dayCount%7===6?' weekend-col':''}"><div class="cal-date">${d}</div></div>`;
-    dayCount++;
+  while (cellDates.length % 7 !== 0 || cellDates.length < 35) {
+    const idx = cellDates.length - (firstDay + lastDate);
+    const dt = new Date(yr, mo+1, idx + 1);
+    cellDates.push({ dateStr: fmtDate(dt), dayNum: idx + 1, inMonth: false, isToday: false });
   }
 
-  grid.innerHTML = h;
+  const weekCount = cellDates.length / 7;
+
+  // 날짜 셀(숫자만) 렌더링
+  let cellsH = '';
+  cellDates.forEach((c, i) => {
+    const isWe = i%7===0 || i%7===6;
+    cellsH += `<div class="cal-cell${c.isToday?' today':''}${!c.inMonth?' other-month':''}${isWe?' weekend-col':''}" data-date="${c.dateStr}">
+      <div class="cal-date">${c.dayNum}</div><div class="cal-event-layer"></div></div>`;
+  });
+
+  grid.innerHTML = headH + cellsH;
+
+  // 단일일 이벤트(구글 캘린더) 셀 내부에 직접 표시
+  _gcalEvents.forEach(ev => {
+    const cell = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-event-layer`);
+    if (cell) cell.insertAdjacentHTML('beforeend', `<div class="cal-event gcal-event" style="background:#4285f4" title="${ev.title}">${ev.title}</div>`);
+  });
+
+  // 주(week) 단위로 연속 막대 오버레이 렌더링
+  for (let w = 0; w < weekCount; w++) {
+    const weekStart = cellDates[w*7].dateStr;
+    const weekEnd = cellDates[w*7+6].dateStr;
+    // 이 주에 걸치는 과제만 필터
+    const weekTasks = allTasks.filter(t => {
+      const s = t.start, e = t.end || t.start;
+      return s <= weekEnd && e >= weekStart;
+    });
+    if (!weekTasks.length) continue;
+
+    // 레인 배정 (겹치지 않게 순서대로 쌓기)
+    weekTasks.sort((a,b) => a.start.localeCompare(b.start));
+    const lanes = []; // each lane: last end date string
+    weekTasks.forEach(t => {
+      let laneIdx = lanes.findIndex(end => end < t.start);
+      if (laneIdx === -1) { laneIdx = lanes.length; lanes.push(''); }
+      t._lane = laneIdx;
+      lanes[laneIdx] = t.end || t.start;
+    });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'cal-week-overlay';
+    overlay.style.gridRow = `${w+2}`;
+    overlay.style.setProperty('--lanes', Math.max(1, lanes.length));
+
+    weekTasks.forEach(t => {
+      const s = t.start < weekStart ? weekStart : t.start;
+      const e = (t.end || t.start) > weekEnd ? weekEnd : (t.end || t.start);
+      const colStart = (new Date(s) - new Date(weekStart)) / 86400000 + 1;
+      const colEnd = (new Date(e) - new Date(weekStart)) / 86400000 + 2;
+      const overdue = isOverdue(t);
+      const bg = overdue ? '#e63946' : t.color;
+      const contStart = s > t.start ? '' : 'border-radius:4px 0 0 4px;';
+      const contEnd = e < (t.end||t.start) ? '' : 'border-radius:0 4px 4px 0;';
+      const radius = (s===t.start && e===(t.end||t.start)) ? 'border-radius:4px;' : (s > t.start && e < (t.end||t.start)) ? 'border-radius:0;' : (contStart+contEnd);
+      overlay.insertAdjacentHTML('beforeend',
+        `<div class="cal-event cal-event-bar" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:${bg};${radius}" title="${t.name}" onclick="event.stopPropagation();openModal('${t.area}', '${t.area}', ${taskData[t.area].tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat))}, ${taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.find(x=>x.name===t.name))})">${t.name}</div>`
+      );
+    });
+
+    grid.appendChild(overlay);
+  }
+
   setTimeout(initIcons, 50);
+}
+
+function fmtDate(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
 function connectGoogleCal() {
