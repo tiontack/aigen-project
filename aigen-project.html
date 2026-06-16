@@ -293,9 +293,6 @@ body{
 .cal-legend-chip:hover{border-color:var(--accent2);box-shadow:0 1px 4px rgba(0,0,0,0.08);}
 .cal-legend-chip.off{opacity:0.45;background:#f5f6fa;border-style:dashed;}
 .cal-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.btn-gcal{padding:7px 14px;background:#fff;border:1.5px solid var(--border);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2);display:flex;align-items:center;transition:all 0.15s;}
-.btn-gcal:hover{border-color:#4285f4;color:#4285f4;}
-.btn-gcal.connected{border-color:#34a853;color:#34a853;}
 .cal-grid{border-left:1px solid var(--border);border-top:1px solid var(--border);}
 .cal-head-row{display:grid;grid-template-columns:repeat(7,1fr);}
 .cal-day-hdr{padding:8px 0;text-align:center;font-size:12px;font-weight:700;color:var(--text3);border-right:1px solid var(--border);border-bottom:2px solid var(--border2);background:#f8f9fc;}
@@ -1086,11 +1083,6 @@ body{
         <h2><i data-lucide="calendar" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">Calendar</span></h2>
         <p>과제 일정을 월별 달력으로 확인합니다</p>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button id="gcal-btn" class="btn-gcal" onclick="connectGoogleCal()" title="Google 계정 연동 필요">
-          <i data-lucide="chrome" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>Google 캘린더 연동
-        </button>
-      </div>
     </div>
     <div class="section">
       <div class="cal-toolbar">
@@ -1099,6 +1091,10 @@ body{
         <button class="cal-nav-btn" onclick="calMove(1)"><i data-lucide="chevron-right" style="width:16px;height:16px;"></i></button>
         <button class="cal-today-btn" onclick="calGoToday()">오늘</button>
         <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;" id="cal-legend"></div>
+      </div>
+      <div class="cal-toolbar" style="border-top:none;padding-top:0">
+        <span style="font-size:12px;color:var(--text2);margin-right:4px">담당자</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="cal-person-filter"></div>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
@@ -2994,7 +2990,7 @@ function saveGcalUrl() {
   _db.ref('gcalConfig').set({ icsUrl: url }).catch(e => console.warn('구글 캘린더 설정 저장 실패:', e));
   logActivity('Google 캘린더 연동 설정 변경', url ? '주소 등록' : '주소 삭제');
   showSave();
-  if (!url) { _gcalEvents = []; renderCalendar(); updateGcalBtn(false); }
+  if (!url) { _gcalEvents = []; renderCalendar(); }
   else alert('주소가 저장되었습니다. scripts/sync-gcal.js를 실행하면 일정이 캘린더에 반영됩니다.');
 }
 function loadGcalEventsFromFirebase() {
@@ -3002,17 +2998,7 @@ function loadGcalEventsFromFirebase() {
     const val = snap.val();
     _gcalEvents = Array.isArray(val) ? val.filter(Boolean) : [];
     renderCalendar();
-    updateGcalBtn(_gcalEvents.length > 0);
-  }).catch(e => { console.warn('구글 캘린더 일정 로드 실패:', e); updateGcalBtn(false); });
-}
-function updateGcalBtn(connected) {
-  const btn = document.getElementById('gcal-btn');
-  if (!btn) return;
-  btn.classList.toggle('connected', !!connected);
-  btn.innerHTML = connected
-    ? '<i data-lucide="check-circle" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>Google 캘린더 연동됨'
-    : '<i data-lucide="calendar" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>Google 캘린더 연동';
-  initIcons();
+  }).catch(e => console.warn('구글 캘린더 일정 로드 실패:', e));
 }
 
 function calInit() {
@@ -3055,6 +3041,12 @@ function toggleCalArea(area) {
   renderCalendar();
 }
 
+let _calSelectedPerson = null;
+function selectCalPerson(name) {
+  _calSelectedPerson = (_calSelectedPerson === name) ? null : name;
+  renderCalendar();
+}
+
 function renderCalendar() {
   const yr = _calYear, mo = _calMonth;
   document.getElementById('cal-title').textContent =
@@ -3070,6 +3062,16 @@ function renderCalendar() {
     </div>`;
   }).join('') + (_gcalEvents.length ? `<div class="cal-legend-chip" style="cursor:default;"><div class="cal-legend-dot" style="background:#4285f4;border:2px solid #4285f4"></div>Google</div>` : '');
 
+  // 담당자 필터 (클릭하면 해당 사람 과제만 캘린더에 표시, 다시 클릭하면 전체 표시)
+  const personFilter = document.getElementById('cal-person-filter');
+  const allOwners = new Set();
+  getAllTasks().forEach(t => (t.owner || '').split(',').map(s => s.trim()).filter(Boolean).forEach(o => allOwners.add(o)));
+  personFilter.innerHTML = [...allOwners].sort().map(name => {
+    const on = _calSelectedPerson === name;
+    const dim = _calSelectedPerson && !on;
+    return `<div class="cal-legend-chip${dim?' off':''}" title="클릭하여 ${on?'전체 표시':'이 담당자만 표시'}" onclick="selectCalPerson('${name}')">${name}</div>`;
+  }).join('');
+
   const grid = document.getElementById('cal-grid');
   const days = ['일','월','화','수','목','금','토'];
   let headH = `<div class="cal-head-row">${days.map((d,i) => `<div class="cal-day-hdr${i===0||i===6?' weekend':''}">${d}</div>`).join('')}</div>`;
@@ -3079,7 +3081,8 @@ function renderCalendar() {
   const prevLast = new Date(yr, mo, 0).getDate();
   const today = new Date(); today.setHours(0,0,0,0);
 
-  const allTasks = getAllTasks().filter(t => !_calHiddenAreas.has(t.area));
+  const allTasks = getAllTasks().filter(t => !_calHiddenAreas.has(t.area))
+    .filter(t => !_calSelectedPerson || (t.owner || '').split(',').map(s => s.trim()).includes(_calSelectedPerson));
 
   // 6주(42칸) 그리드의 날짜 모델 구성
   const cellDates = []; // {dateStr, dayNum, inMonth, isToday}
@@ -3160,11 +3163,6 @@ function renderCalendar() {
 
 function fmtDate(dt) {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-}
-
-function connectGoogleCal() {
-  if (_gcalIcsUrl) { loadGcalEventsFromFirebase(); return; }
-  alert('관리자 탭 > Google 캘린더 연동에서 캘린더 주소를 먼저 등록해주세요.');
 }
 
 // ── DATA: 회의록 / 자료실 ──
