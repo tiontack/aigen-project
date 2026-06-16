@@ -126,7 +126,10 @@ body{
 .hero-greeting{font-size:13px;opacity:0.85;margin-bottom:4px;font-weight:500;}
 .hero-welcome{font-size:24px;font-weight:800;margin-bottom:14px;letter-spacing:-0.3px;}
 .hero-issues{display:flex;flex-direction:column;gap:6px;font-size:12.5px;width:100%;}
-.hero-issues-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;}
+.hero-issues-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;opacity:1;transition:opacity 0.3s ease;}
+.hero-issues-grid.fading{opacity:0;}
+.hero-issues-badge{background:#fff;color:var(--accent);font-weight:800;font-size:11px;padding:3px 9px;border-radius:12px;display:inline-block;margin-bottom:6px;}
+.meeting-page-img{width:100%;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
 .hero-issue-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:7px 12px;border-radius:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .hero-issue-empty{opacity:0.85;background:rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;display:inline-block;}
 .hero-ticker{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.14);padding:8px 14px;border-radius:8px;width:100%;overflow:hidden;}
@@ -398,12 +401,21 @@ body{
 .gantt-drag-tip{position:fixed;background:#1d2233;color:#fff;font-size:12px;font-weight:600;padding:6px 10px;border-radius:6px;pointer-events:none;z-index:999;box-shadow:0 4px 14px rgba(0,0,0,0.25);white-space:nowrap;}
 .lib-list{display:flex;flex-direction:column;gap:10px;}
 .msg-wrap{display:flex;height:calc(100vh - 200px);min-height:480px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:var(--shadow);}
-.msg-sidebar{width:230px;border-right:1px solid var(--border);background:#1a1d2e;color:rgba(255,255,255,0.85);overflow-y:auto;flex-shrink:0;}
-.msg-channel-group-label{padding:14px 16px 6px;font-size:11px;font-weight:700;letter-spacing:.05em;color:rgba(255,255,255,0.4);text-transform:uppercase;}
-.msg-channel-item{padding:8px 16px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:8px;border-radius:6px;margin:0 6px;}
-.msg-channel-item:hover{background:rgba(255,255,255,0.08);}
+.msg-sidebar{width:230px;border-right:1px solid var(--border);background:#f5f6fa;color:var(--text2);overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;}
+.msg-sidebar-head{padding:14px 16px 8px;display:flex;align-items:center;justify-content:space-between;}
+.msg-sidebar-title{font-size:13px;font-weight:800;color:var(--text);}
+.msg-add-channel-btn{width:22px;height:22px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--accent);font-size:15px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.msg-add-channel-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.msg-channel-group-label{padding:14px 16px 6px;font-size:11px;font-weight:700;letter-spacing:.05em;color:#9298ad;text-transform:uppercase;}
+.msg-channel-item{padding:8px 16px;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:8px;border-radius:6px;margin:0 6px;color:var(--text);}
+.msg-channel-item:hover{background:rgba(67,97,238,0.08);}
 .msg-channel-item.active{background:var(--accent);color:#fff;font-weight:600;}
 .msg-channel-item .msg-dot{width:6px;height:6px;border-radius:50%;background:#3ecf6a;flex-shrink:0;}
+.msg-channel-item .msg-channel-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.msg-channel-edit-btns{display:flex;gap:4px;flex-shrink:0;}
+.msg-channel-edit-btns span{opacity:0.55;font-size:12px;cursor:pointer;}
+.msg-channel-edit-btns span:hover{opacity:1;}
+.msg-channel-item.active .msg-channel-edit-btns span{color:#fff;}
 .msg-main{flex:1;display:flex;flex-direction:column;min-width:0;}
 .msg-header{padding:14px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;}
 .msg-thread{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;}
@@ -1210,7 +1222,7 @@ body{
         </div>
         <div class="field-group">
           <div class="field-label">전문</div>
-          <div id="meeting-modal-fulltext" style="font-size:12px;line-height:1.6;color:var(--text2);white-space:pre-wrap;max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:10px;"></div>
+          <div id="meeting-modal-fulltext" style="font-size:12px;line-height:1.6;color:var(--text2);white-space:pre-wrap;max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:10px;"></div>
         </div>
       </div>
       <div class="modal-foot">
@@ -1734,29 +1746,28 @@ function renderHeroIssues(issues) {
     issuesWrap.innerHTML = '<div class="hero-issue-empty">⚠ 지연되거나 임박한 과제가 없습니다. 좋은 흐름이에요!</div>';
     return;
   }
-  if (issues.length <= 3) {
-    issuesWrap.innerHTML = `<div class="hero-issues-grid">${
-      issues.map(i => `<div class="hero-issue-item">${i.html}</div>`).join('')
+  // 항상 3개씩 동시에 노출, 4개 이상이면 3개 단위 페이지로 순환
+  const pages = [];
+  for (let i = 0; i < issues.length; i += 3) pages.push(issues.slice(i, i + 3));
+  let pageIdx = 0;
+  const renderPage = () => {
+    const badge = pages.length > 1 ? `<span class="hero-issues-badge">주요 이슈 ${issues.length} · ${pageIdx+1}/${pages.length}</span>` : '';
+    issuesWrap.innerHTML = `${badge}<div class="hero-issues-grid" id="hero-issues-grid">${
+      pages[pageIdx].map(i => `<div class="hero-issue-item">${i.html}</div>`).join('')
     }</div>`;
-    return;
+  };
+  renderPage();
+  if (pages.length > 1) {
+    _heroTickerTimer = setInterval(() => {
+      const grid = document.getElementById('hero-issues-grid');
+      if (!grid) { clearInterval(_heroTickerTimer); return; }
+      grid.classList.add('fading');
+      setTimeout(() => {
+        pageIdx = (pageIdx + 1) % pages.length;
+        renderPage();
+      }, 300);
+    }, 4000);
   }
-  // 4개 이상이면 뉴스 티커 형식으로 순환 표시
-  issuesWrap.innerHTML = `
-    <div class="hero-ticker">
-      <span class="hero-ticker-badge">주요 이슈 ${issues.length}</span>
-      <span class="hero-ticker-text" id="hero-ticker-text">${issues[0].html}</span>
-    </div>`;
-  let idx = 0;
-  _heroTickerTimer = setInterval(() => {
-    idx = (idx + 1) % issues.length;
-    const el = document.getElementById('hero-ticker-text');
-    if (!el) { clearInterval(_heroTickerTimer); return; }
-    el.classList.add('fading');
-    setTimeout(() => {
-      el.innerHTML = issues[idx].html;
-      el.classList.remove('fading');
-    }, 300);
-  }, 3200);
 }
 
 Chart.defaults.color = '#4a5068';
@@ -2312,11 +2323,12 @@ async function handleTaskAttachUpload(event) {
 
     if (type === 'meeting' && /\.pdf$/i.test(file.name)) {
       const buf = await readFileAsArrayBuffer(file);
-      const fullText = await extractPdfText(buf);
-      const summary = summarize(fullText, 300);
+      const fullText = await extractPdfText(buf.slice(0));
+      const pageImages = await renderPdfPageImages(buf.slice(0));
+      const summary = summarizeBullets(fullText, 5, 10);
       libraryData.meetings.unshift({
         id: 'm' + attach.id, title: `[${t.name}] ${file.name.replace(/\.pdf$/i, '')}`, area,
-        fileName: file.name, fileData: dataUrl, fullText, summary, ts: attach.ts
+        fileName: file.name, fileData: dataUrl, fullText, pageImages, summary, ts: attach.ts
       });
       syncResourceFromMeeting(libraryData.meetings[0]);
       logActivity('회의록 업로드', `${t.name} / ${file.name}`);
@@ -2603,13 +2615,15 @@ function renderMyPageTasks() {
 // =================== 메시지 (슬랙 스타일) ===================
 let messages = {}; // { channelKey: [ {from, text, time} ] }
 let _curChannel = null;
+let customChannels = []; // [{id, name}]
 function _msgChannels() {
   const areaChannels = Object.keys(taskData).map(k => ({ key: 'area-'+k, label: '# '+(_areaLabelMap[k]||taskData[k].title), group: '채널' }));
   const general = [{ key: 'general', label: '# 전체', group: '채널' }];
+  const custom = customChannels.map(c => ({ key: 'custom-'+c.id, label: '# '+c.name, group: '채널', custom: true, id: c.id }));
   const dms = currentUser ? users.filter(u => u.id !== currentUser.id).map(u => ({
     key: 'dm-' + [currentUser.id, u.id].sort().join('_'), label: u.id, group: 'DM'
   })) : [];
-  return general.concat(areaChannels, dms);
+  return general.concat(areaChannels, custom, dms);
 }
 function syncMessagesToFirebase() {
   _db.ref('messages').set(JSON.parse(JSON.stringify(messages))).catch(e => console.warn('메시지 저장 실패:', e));
@@ -2627,19 +2641,74 @@ function loadMessagesFromFirebase(onDone) {
       renderMsgThread();
     }
   });
+  _db.ref('customChannels').once('value').then(snap => {
+    customChannels = snap.val() || [];
+    renderMsgChannelList();
+  }).catch(e => console.warn('채널 로드 실패:', e));
+  _db.ref('customChannels').on('value', snap => {
+    customChannels = snap.val() || [];
+    if (document.getElementById('page-messages').classList.contains('active')) renderMsgChannelList();
+  });
+}
+function syncCustomChannelsToFirebase() {
+  _db.ref('customChannels').set(JSON.parse(JSON.stringify(customChannels))).catch(e => console.warn('채널 저장 실패:', e));
+}
+function addCustomChannel() {
+  const name = (prompt('새 채널 이름을 입력하세요') || '').trim();
+  if (!name) return;
+  const id = 'c' + Date.now();
+  customChannels.push({ id, name });
+  syncCustomChannelsToFirebase();
+  renderMsgChannelList();
+  logActivity('채널 추가', name);
+  openMsgChannel('custom-' + id);
+}
+function renameCustomChannel(id, ev) {
+  if (ev) ev.stopPropagation();
+  const ch = customChannels.find(c => c.id === id);
+  if (!ch) return;
+  const name = (prompt('채널 이름 수정', ch.name) || '').trim();
+  if (!name) return;
+  ch.name = name;
+  syncCustomChannelsToFirebase();
+  renderMsgChannelList();
+  if (_curChannel === 'custom-' + id) document.getElementById('msg-header').textContent = '# ' + name;
+  logActivity('채널 수정', name);
+}
+function deleteCustomChannel(id, ev) {
+  if (ev) ev.stopPropagation();
+  const ch = customChannels.find(c => c.id === id);
+  if (!ch) return;
+  if (!confirm(`'${ch.name}' 채널을 삭제하시겠습니까?`)) return;
+  customChannels = customChannels.filter(c => c.id !== id);
+  delete messages['custom-' + id];
+  syncCustomChannelsToFirebase();
+  syncMessagesToFirebase();
+  logActivity('채널 삭제', ch.name);
+  if (_curChannel === 'custom-' + id) { _curChannel = null; openMsgChannel('general'); }
+  else renderMsgChannelList();
 }
 function renderMsgChannelList() {
   const wrap = document.getElementById('msg-channel-list');
   if (!wrap) return;
   const chans = _msgChannels();
   const groups = ['채널', 'DM'];
-  wrap.innerHTML = groups.map(g => `
+  wrap.innerHTML = `
+    <div class="msg-sidebar-head">
+      <span class="msg-sidebar-title">채널</span>
+      <button class="msg-add-channel-btn" title="채널 추가" onclick="addCustomChannel()">+</button>
+    </div>
+    ${groups.map(g => `
     <div class="msg-channel-group-label">${g}</div>
     ${chans.filter(c => c.group === g).map(c => `
       <div class="msg-channel-item ${_curChannel===c.key?'active':''}" onclick="openMsgChannel('${c.key}')">
-        ${g==='DM' ? '<span class=\"msg-dot\"></span>' : ''}${c.label}
+        ${g==='DM' ? '<span class="msg-dot"></span>' : ''}<span class="msg-channel-label">${c.label}</span>
+        ${c.custom ? `<span class="msg-channel-edit-btns">
+          <span onclick="renameCustomChannel('${c.id}',event)" title="수정">✎</span>
+          <span onclick="deleteCustomChannel('${c.id}',event)" title="삭제">✕</span>
+        </span>` : ''}
       </div>`).join('')}
-  `).join('');
+  `).join('')}`;
 }
 function openMsgChannel(key) {
   _curChannel = key;
@@ -3095,17 +3164,34 @@ async function extractPdfText(arrayBuffer) {
     return '';
   }
 }
-function summarize(text, maxLen) {
-  if (!text) return '(PDF에서 텍스트를 추출할 수 없습니다 - 전문을 직접 확인해주세요)';
-  const clean = text.replace(/\s+/g, ' ').trim();
-  const sentences = clean.split(/(?<=[.!?])\s/).filter(Boolean);
-  let out = '';
-  for (const s of sentences) {
-    if ((out + s).length > maxLen) break;
-    out += s + ' ';
+async function renderPdfPageImages(arrayBuffer) {
+  if (!window.pdfjsLib) return [];
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const images = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.3 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      images.push(canvas.toDataURL('image/jpeg', 0.7));
+    }
+    return images;
+  } catch (e) {
+    console.warn('PDF 페이지 이미지 생성 실패:', e);
+    return [];
   }
-  out = out.trim() || clean.slice(0, maxLen);
-  return out + (clean.length > out.length ? '...' : '');
+}
+function summarizeBullets(text, minB, maxB) {
+  if (!text) return ['(PDF에서 텍스트를 추출할 수 없습니다 - 전문을 직접 확인해주세요)'];
+  const clean = text.replace(/\s+/g, ' ').trim();
+  let sentences = clean.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 8);
+  if (!sentences.length) sentences = [clean.slice(0, 200)];
+  if (sentences.length > maxB) sentences = sentences.slice(0, maxB);
+  return sentences;
 }
 function fmtTs(ts) {
   const d = new Date(ts);
@@ -3120,11 +3206,12 @@ async function handleMeetingUpload(event) {
   const areaKey = document.getElementById('meeting-area-select').value || Object.keys(taskData)[0];
   try {
     const [dataUrl, buf] = await Promise.all([readFileAsDataURL(file), readFileAsArrayBuffer(file)]);
-    const fullText = await extractPdfText(buf);
-    const summary = summarize(fullText, 300);
+    const fullText = await extractPdfText(buf.slice(0));
+    const pageImages = await renderPdfPageImages(buf.slice(0));
+    const summary = summarizeBullets(fullText, 5, 10);
     libraryData.meetings.unshift({
       id: 'm' + Date.now(), title: file.name.replace(/\.pdf$/i, ''), area: areaKey,
-      fileName: file.name, fileData: dataUrl, fullText, summary, ts: Date.now()
+      fileName: file.name, fileData: dataUrl, fullText, pageImages, summary, ts: Date.now()
     });
     syncLibraryToFirebase();
     renderMeetingList();
@@ -3197,8 +3284,16 @@ function openMeetingModal(i) {
   const m = libraryData.meetings[i];
   if (!m) return;
   document.getElementById('meeting-modal-title').textContent = m.title;
-  document.getElementById('meeting-modal-summary').textContent = m.summary || '';
-  document.getElementById('meeting-modal-fulltext').textContent = m.fullText || '(전문 없음)';
+  const summaryArr = Array.isArray(m.summary) ? m.summary : (m.summary ? [m.summary] : []);
+  document.getElementById('meeting-modal-summary').innerHTML = summaryArr.length
+    ? `<ul style="margin:0;padding-left:18px;">${summaryArr.map(s => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ul>`
+    : '(요약 없음)';
+  const fulltextWrap = document.getElementById('meeting-modal-fulltext');
+  if (m.pageImages && m.pageImages.length) {
+    fulltextWrap.innerHTML = m.pageImages.map(src => `<img class="meeting-page-img" src="${src}">`).join('');
+  } else {
+    fulltextWrap.textContent = m.fullText || '(전문 없음)';
+  }
   document.getElementById('meeting-modal-overlay').classList.add('open');
 }
 function closeMeetingModal() {
