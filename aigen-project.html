@@ -1220,6 +1220,20 @@ body{
           <div class="field-label">비고 / 선행과제</div>
           <textarea id="m-note" class="field-textarea" placeholder="참고사항, 선행 과제, 특이사항 등을 입력하세요"></textarea>
         </div>
+        <div class="field-group full">
+          <div class="field-label">첨부파일 (회의록 / 자료)</div>
+          <div id="m-attach-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="m-attach-type" class="field-select" style="width:130px">
+              <option value="resource">자료</option>
+              <option value="meeting">회의록(PDF)</option>
+            </select>
+            <label class="btn-add" style="cursor:pointer">
+              <i data-lucide="upload" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>파일 업로드
+              <input type="file" id="m-attach-input" style="display:none" onchange="handleTaskAttachUpload(event)">
+            </label>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -1962,7 +1976,7 @@ function confirmAddTask() {
   const { areaKey, pid } = _catSelCtx;
   const idx = parseInt(document.getElementById('catsel-select').value);
   const cats = taskData[areaKey].tasks;
-  const newTask = {name:'새 과제',start:'',end:'',done:'',status:'planned',output:'',owner:'',note:''};
+  const newTask = {name:'새 과제',start:'',end:'',done:'',status:'planned',output:'',owner:'',note:'',attachments:[]};
   cats[idx].tasks.push(newTask);
   const ti = cats[idx].tasks.length - 1;
   closeCatSelModal();
@@ -1999,12 +2013,87 @@ function openModal(areaKey, pid, ci, ti) {
   document.getElementById('m-output').value      = t.output;
   document.getElementById('m-owner').value       = t.owner;
   document.getElementById('m-note').value        = t.note;
+  renderAttachments(t.attachments || []);
 
   document.getElementById('modal-overlay').classList.add('open');
   document.getElementById('m-name').focus();
 }
 function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function renderAttachments(list) {
+  const wrap = document.getElementById('m-attach-list');
+  if (!wrap) return;
+  if (!list.length) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text2)">첨부된 파일이 없습니다.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map((a, i) => `
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+      <i data-lucide="${a.type === 'meeting' ? 'file-text' : 'file'}" style="width:14px;height:14px;color:var(--accent);flex-shrink:0;"></i>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.fileName}</span>
+      <a href="${a.fileData}" download="${a.fileName}" style="color:var(--accent);text-decoration:none;">다운로드</a>
+      <button class="lib-btn del" style="padding:2px 7px" onclick="deleteTaskAttachment(${i})">삭제</button>
+    </div>`).join('');
+  initIcons();
+}
+
+async function handleTaskAttachUpload(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { alert('4MB 이하 파일만 업로드할 수 있습니다.'); return; }
+  const type = document.getElementById('m-attach-type').value;
+  const { area, ci, ti } = _ctx;
+  const t = taskData[area].tasks[ci].tasks[ti];
+  if (!t.attachments) t.attachments = [];
+  try {
+    const dataUrl = await readFileAsDataURL(file);
+    const attach = { id: 'a' + Date.now(), type, fileName: file.name, fileData: dataUrl, ts: Date.now() };
+    t.attachments.push(attach);
+    renderAttachments(t.attachments);
+
+    if (type === 'meeting' && /\.pdf$/i.test(file.name)) {
+      const buf = await readFileAsArrayBuffer(file);
+      const fullText = await extractPdfText(buf);
+      const summary = summarize(fullText, 300);
+      libraryData.meetings.unshift({
+        id: 'm' + attach.id, title: `[${t.name}] ${file.name.replace(/\.pdf$/i, '')}`, area,
+        fileName: file.name, fileData: dataUrl, fullText, summary, ts: attach.ts
+      });
+      syncResourceFromMeeting(libraryData.meetings[0]);
+    } else {
+      libraryData.resources.unshift({
+        id: 'r' + attach.id, title: `[${t.name}] ${file.name}`, area, category: '과제자료',
+        fileName: file.name, fileData: dataUrl, ts: attach.ts
+      });
+      syncLibraryToFirebase();
+      renderArchiveList();
+    }
+    syncToFirebase();
+    showSave();
+  } catch (e) {
+    console.warn('첨부 업로드 실패:', e);
+    alert('업로드 중 오류가 발생했습니다.');
+  }
+}
+
+function deleteTaskAttachment(i) {
+  const { area, ci, ti } = _ctx;
+  const t = taskData[area].tasks[ci].tasks[ti];
+  if (!confirm('이 첨부파일을 삭제하시겠습니까?')) return;
+  const [a] = t.attachments.splice(i, 1);
+  if (a) {
+    libraryData.meetings = libraryData.meetings.filter(m => m.id !== 'm' + a.id);
+    libraryData.resources = libraryData.resources.filter(r => r.id !== 'r' + a.id);
+    syncLibraryToFirebase();
+    renderMeetingList();
+    renderArchiveList();
+  }
+  renderAttachments(t.attachments);
+  syncToFirebase();
+  showSave();
 }
 function saveModal() {
   const { area, pid, ci, ti } = _ctx;
