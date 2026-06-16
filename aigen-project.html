@@ -587,10 +587,15 @@ body{
 .login-outer{display:flex;flex-direction:column;align-items:center;gap:20px;}
 .login-system-title{text-align:center;line-height:1.2;}
 .lst-main{
-  font-size:28px;font-weight:900;letter-spacing:4px;text-transform:uppercase;
+  font-size:56px;font-weight:900;letter-spacing:4px;text-transform:uppercase;
   background:linear-gradient(90deg,#4cc9f0,#a78bfa,#4361ee);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   filter:drop-shadow(0 0 16px rgba(76,201,240,0.5));
+  animation:lstGlow 2.4s ease-in-out infinite;
+}
+@keyframes lstGlow{
+  0%,100%{filter:drop-shadow(0 0 12px rgba(76,201,240,0.45)) drop-shadow(0 0 4px rgba(167,139,250,0.3));}
+  50%{filter:drop-shadow(0 0 32px rgba(76,201,240,0.95)) drop-shadow(0 0 18px rgba(167,139,250,0.7));}
 }
 .lst-sub{
   font-size:12px;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;
@@ -867,7 +872,7 @@ body{
 
   /* 로그인 박스 */
   .login-box{width:92vw;padding:32px 24px;}
-  .lst-main{font-size:20px;}
+  .lst-main{font-size:36px;}
 
   /* 섹션 패딩 줄이기 */
   .section-header{padding:12px 16px;}
