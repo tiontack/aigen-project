@@ -753,6 +753,16 @@ body{
   background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
 }
 .field-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(67,97,238,0.1);}
+.owner-check-list{
+  display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:#fafbfd;
+}
+.owner-check-item{
+  display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--text2);
+  padding:5px 10px;border-radius:16px;border:1.5px solid var(--border);background:#fff;cursor:pointer;user-select:none;transition:all 0.15s;
+}
+.owner-check-item:hover{border-color:var(--accent2);}
+.owner-check-item input{cursor:pointer;accent-color:var(--accent);}
+.owner-check-item.checked{background:rgba(67,97,238,0.08);border-color:var(--accent);color:var(--accent);font-weight:700;}
 .field-textarea{
   padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;
   font-size:14px;font-family:inherit;color:var(--text);outline:none;
@@ -1138,26 +1148,34 @@ body{
       </div>
     </div>
     <div class="section">
-      <h3 style="margin:0 0 14px;font-size:15px;">비밀번호 변경</h3>
-      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;max-width:520px;">
-        <div class="field-group" style="flex:1;min-width:160px;">
-          <div class="field-label">현재 비밀번호</div>
-          <input id="mp-cur-pw" class="field-input" type="password" placeholder="현재 비밀번호">
+      <div class="section-header">
+        <span class="section-title"><div class="dot"></div>비밀번호 변경</span>
+      </div>
+      <div class="section-body" style="padding:20px 22px;">
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;max-width:560px;">
+          <div class="field-group" style="flex:1;min-width:160px;">
+            <div class="field-label">현재 비밀번호</div>
+            <input id="mp-cur-pw" class="field-input" type="password" placeholder="현재 비밀번호">
+          </div>
+          <div class="field-group" style="flex:1;min-width:160px;">
+            <div class="field-label">새 비밀번호</div>
+            <input id="mp-new-pw" class="field-input" type="password" placeholder="새 비밀번호">
+          </div>
+          <div class="field-group" style="flex:1;min-width:160px;">
+            <div class="field-label">새 비밀번호 확인</div>
+            <input id="mp-new-pw2" class="field-input" type="password" placeholder="새 비밀번호 확인">
+          </div>
+          <button class="btn-add" onclick="changeMyPassword()">변경</button>
         </div>
-        <div class="field-group" style="flex:1;min-width:160px;">
-          <div class="field-label">새 비밀번호</div>
-          <input id="mp-new-pw" class="field-input" type="password" placeholder="새 비밀번호">
-        </div>
-        <div class="field-group" style="flex:1;min-width:160px;">
-          <div class="field-label">새 비밀번호 확인</div>
-          <input id="mp-new-pw2" class="field-input" type="password" placeholder="새 비밀번호 확인">
-        </div>
-        <button class="btn-add" onclick="changeMyPassword()">변경</button>
       </div>
     </div>
     <div class="section">
-      <h3 style="margin:0 0 14px;font-size:15px;">내가 담당하는 과제</h3>
-      <div id="mypage-task-list" class="lib-list"></div>
+      <div class="section-header">
+        <span class="section-title"><div class="dot"></div>내가 담당하는 과제</span>
+      </div>
+      <div class="section-body" style="padding:20px 22px;">
+        <div id="mypage-task-list" class="lib-list"></div>
+      </div>
     </div>
   </div>
 
@@ -1365,12 +1383,10 @@ body{
             <option value="needs-input">※ 입력필요</option>
           </select>
         </div>
-        <div class="field-group">
-          <div class="field-label">담당자</div>
-          <select id="m-owner-select" class="field-select" onchange="onOwnerSelect(this.value)">
-            <option value="">-- 사용자 선택 --</option>
-          </select>
-          <input id="m-owner" class="field-input" type="text" placeholder="직접 입력" style="margin-top:6px">
+        <div class="field-group full">
+          <div class="field-label">담당자 (복수 선택 가능)</div>
+          <div id="m-owner-checks" class="owner-check-list"></div>
+          <input id="m-owner" class="field-input" type="text" placeholder="직접 입력(쉼표로 구분)" style="margin-top:6px">
         </div>
         <div class="field-group full">
           <div class="field-label">산출물</div>
@@ -2221,8 +2237,13 @@ function confirmAddTask() {
 }
 
 // ── 모달 열기/닫기 ──
-function onOwnerSelect(val) {
-  if (val) document.getElementById('m-owner').value = val;
+function updateOwnerField() {
+  const checked = [...document.querySelectorAll('#m-owner-checks input:checked')].map(c => c.value);
+  document.getElementById('m-owner').value = checked.join(', ');
+  document.querySelectorAll('#m-owner-checks .owner-check-item').forEach(item => {
+    const cb = item.querySelector('input');
+    item.classList.toggle('checked', cb.checked);
+  });
 }
 
 function openModal(areaKey, pid, ci, ti) {
@@ -2230,13 +2251,14 @@ function openModal(areaKey, pid, ci, ti) {
   const t   = taskData[areaKey].tasks[ci].tasks[ti];
   const cat = taskData[areaKey].tasks[ci].cat;
 
-  // 담당자 select 옵션 채우기
-  const sel = document.getElementById('m-owner-select');
-  sel.innerHTML = '<option value="">-- 사용자 선택 --</option>'
-    + users.map(u => `<option value="${u.id}">${u.id} (${u.en})</option>`).join('');
-  // 현재 담당자와 일치하는 항목 선택
-  const matched = users.find(u => u.id === t.owner);
-  sel.value = matched ? matched.id : '';
+  // 담당자 복수 선택 체크박스 채우기
+  const selectedOwners = (t.owner || '').split(',').map(s => s.trim()).filter(Boolean);
+  const checkWrap = document.getElementById('m-owner-checks');
+  checkWrap.innerHTML = users.map(u => `
+    <label class="owner-check-item${selectedOwners.includes(u.id) ? ' checked' : ''}">
+      <input type="checkbox" value="${u.id}" ${selectedOwners.includes(u.id) ? 'checked' : ''} onchange="updateOwnerField()">
+      ${u.id} (${u.en})
+    </label>`).join('');
 
   document.getElementById('m-cat').textContent  = cat;
   document.getElementById('m-name').value        = t.name;
@@ -2807,7 +2829,11 @@ function loadUsersFromFirebase(onDone) {
     const val = snap.val();
     if (Array.isArray(val) && val.length > 0) {
       let migrated = false;
-      val.forEach(u => { if (!u.position) { u.position = _defaultPositions[u.id] || 'RF'; migrated = true; } });
+      val.forEach(u => {
+        if (!u.position) { u.position = _defaultPositions[u.id] || 'RF'; migrated = true; }
+        if (!u.role) { u.role = 'member'; migrated = true; }
+        if (u.id === '신현택' && u.role !== 'admin') { u.role = 'admin'; migrated = true; }
+      });
       users = val;
       if (migrated) syncUsersToFirebase();
     } else syncUsersToFirebase();
@@ -3300,6 +3326,18 @@ loadFromFirebase(function() {
       const el = document.querySelector(`#page-${k} .area-owner-val`);
       if (el) el.textContent = areaOwners[k] || '미정';
     });
+    // 담당자 미지정 과제에 영역별 메인 담당자 일괄 적용 (1회 마이그레이션)
+    let ownerMigrated = false;
+    Object.keys(taskData).forEach(areaKey => {
+      const mainOwner = areaOwners[areaKey];
+      if (!mainOwner || mainOwner === '미정') return;
+      taskData[areaKey].tasks.forEach(cat => {
+        cat.tasks.forEach(t => {
+          if (!t.owner || !t.owner.trim()) { t.owner = mainOwner; ownerMigrated = true; }
+        });
+      });
+    });
+    if (ownerMigrated) syncToFirebase();
   });
   loadMessagesFromFirebase(function() {});
   initIcons();
