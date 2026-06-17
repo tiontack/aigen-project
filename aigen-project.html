@@ -3757,10 +3757,12 @@ function renderCalendar() {
     const weekEnd = weekDates[6].dateStr;
 
     // 이 주에 걸치는 과제만 필터
+    const gcalWeek = _gcalEvents.filter(ev => ev.date >= weekStart && ev.date <= weekEnd)
+      .map(ev => ({ start: ev.date, end: ev.date, name: ev.title, color: '#4285f4', _isGcal: true, area: '__gcal__', cat: '' }));
     const weekTasks = allTasks.filter(t => {
       const s = t.start, e = t.end || t.start;
       return s <= weekEnd && e >= weekStart;
-    });
+    }).concat(gcalWeek);
 
     // 레인 배정 (겹치지 않게 순서대로 쌓기)
     weekTasks.sort((a,b) => a.start.localeCompare(b.start));
@@ -3791,19 +3793,17 @@ function renderCalendar() {
       const contStart = s > t.start ? '' : 'border-radius:4px 0 0 4px;';
       const contEnd = e < (t.end||t.start) ? '' : 'border-radius:0 4px 4px 0;';
       const radius = (s===t.start && e===(t.end||t.start)) ? 'border-radius:4px;' : (s > t.start && e < (t.end||t.start)) ? 'border-radius:0;' : (contStart+contEnd);
-      overlayH += `<div class="cal-event cal-event-bar" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:${bg};${radius}" title="${t.name}" onclick="event.stopPropagation();openModal('${t.area}', '${t.area}', ${taskData[t.area].tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat))}, ${taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.find(x=>x.name===t.name))})">${t.name}</div>`;
+      if (t._isGcal) {
+        overlayH += `<div class="cal-event cal-event-bar gcal-event" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:#4285f4;border-radius:4px;" title="${t.name}">${t.name}</div>`;
+      } else {
+        overlayH += `<div class="cal-event cal-event-bar" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:${bg};${radius}" title="${t.name}" onclick="event.stopPropagation();openModal('${t.area}', '${t.area}', ${taskData[t.area].tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat))}, ${taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.find(x=>x.name===t.name))})">${t.name}</div>`;
+      }
     });
 
     weeksH += `<div class="cal-week-row" style="min-height:${rowMinH}px">${cellsH}<div class="cal-week-overlay">${overlayH}</div></div>`;
   }
 
   grid.innerHTML = headH + weeksH;
-
-  // 단일일 이벤트(구글 캘린더) 셀 내부에 직접 표시
-  _gcalEvents.forEach(ev => {
-    const cell = grid.querySelector(`.cal-cell[data-date="${ev.date}"] .cal-event-layer`);
-    if (cell) cell.insertAdjacentHTML('beforeend', `<div class="cal-event gcal-event" style="background:#4285f4" title="${ev.title}">${ev.title}</div>`);
-  });
 
   setTimeout(initIcons, 50);
 }
