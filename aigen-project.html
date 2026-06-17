@@ -2222,24 +2222,52 @@ function renderIssuesPage() {
     </div>`;
 
   // 이슈 카드 렌더 함수
-  function issueCardHTML(entry, badgeClass, badgeLabel) {
+  // type: 'overdue' | 'end' | 'start'
+  function issueCardHTML(entry, type) {
     const { t, areaKey, areaLabel, areaColor } = entry;
     const loc = findTaskByName(t.name);
     const clickAttr = loc
       ? `onclick="openModal('${loc.areaKey}','${loc.areaKey}',${loc.ci},${loc.ti})" style="cursor:pointer"`
       : '';
+
+    let daysOverdue = 0, daysLeft = 0, daysUntil = 0;
+    if (type === 'overdue' && t.end) daysOverdue = Math.ceil((_today - new Date(t.end)) / 86400000);
+    if (type === 'end' && t.end) daysLeft = Math.ceil((new Date(t.end) - _today) / 86400000);
+    if (type === 'start' && t.start) daysUntil = Math.ceil((new Date(t.start) - _today) / 86400000);
+
+    // 과제명 옆 D- 뱃지
+    let nameBadge = '';
+    if (type === 'overdue') {
+      nameBadge = `<span style="display:inline-block;font-size:11px;font-weight:800;background:#e63946;color:#fff;border-radius:8px;padding:1px 7px;margin-left:7px;vertical-align:middle;">D+${daysOverdue}</span>`;
+    } else if (type === 'end') {
+      nameBadge = `<span style="display:inline-block;font-size:11px;font-weight:800;background:#d97706;color:#fff;border-radius:8px;padding:1px 7px;margin-left:7px;vertical-align:middle;">D-${daysLeft}</span>`;
+    } else if (type === 'start') {
+      nameBadge = `<span style="display:inline-block;font-size:11px;font-weight:800;background:#4361ee;color:#fff;border-radius:8px;padding:1px 7px;margin-left:7px;vertical-align:middle;">D-${daysUntil}</span>`;
+    }
+
+    // 날짜 강조: 지연/마감 → 종료일 강조(빨강/주황), 착수 → 시작일 강조(파랑)
+    const endHighlight = (type === 'overdue')
+      ? `<span style="font-size:12px;font-weight:700;color:#e63946;background:#fff0f0;border:1px solid #fca5a5;border-radius:7px;padding:2px 9px;">마감 ${_dotDate(t.end)}</span>`
+      : (type === 'end')
+      ? `<span style="font-size:12px;font-weight:700;color:#d97706;background:#fff8e6;border:1px solid #fde68a;border-radius:7px;padding:2px 9px;">마감 ${_dotDate(t.end)}</span>`
+      : (t.end ? `<span class="issue-date">마감 ${_dotDate(t.end)}</span>` : '');
+
+    const startHighlight = (type === 'start')
+      ? `<span style="font-size:12px;font-weight:700;color:#4361ee;background:#eff3ff;border:1px solid #c7d2fe;border-radius:7px;padding:2px 9px;">시작 ${_dotDate(t.start)}</span>`
+      : (t.start ? `<span class="issue-date">시작 ${_dotDate(t.start)}</span>` : '');
+
     return `<div class="issue-card">
       <div class="issue-icon" style="background:${areaColor}22;color:${areaColor}">${areaLabel.charAt(0)}</div>
       <div class="issue-body">
-        <div class="issue-name" ${clickAttr}>${t.name}</div>
+        <div class="issue-name" ${clickAttr}>${t.name}${nameBadge}</div>
         <div class="issue-meta">
           <span class="issue-area" style="background:${areaColor}18;color:${areaColor}">${areaLabel}</span>
-          ${t.start ? `<span class="issue-date">시작 ${_dotDate(t.start)}</span>` : ''}
-          ${t.end ? `<span class="issue-date">마감 ${_dotDate(t.end)}</span>` : ''}
+          ${type === 'start' ? startHighlight : ''}
+          ${endHighlight}
+          ${type !== 'start' && t.start ? `<span class="issue-date">시작 ${_dotDate(t.start)}</span>` : ''}
           ${t.owner ? `<span class="issue-owner">담당: ${t.owner}</span>` : ''}
         </div>
       </div>
-      <span class="issue-badge ${badgeClass}">${badgeLabel}</span>
     </div>`;
   }
 
@@ -2250,9 +2278,8 @@ function renderIssuesPage() {
   if (overdueTasks.length === 0) {
     html += '<div class="issues-empty">지연된 과제가 없습니다 👍</div>';
   } else {
-    // 마감일 오래된 순 정렬
     overdueTasks.sort((a,b) => (a.t.end||'') < (b.t.end||'') ? -1 : 1);
-    overdueTasks.forEach(e => { html += issueCardHTML(e, 'issue-badge-overdue', '⚠ 지연'); });
+    overdueTasks.forEach(e => { html += issueCardHTML(e, 'overdue'); });
   }
 
   html += '<div style="margin:20px 0 10px"></div>';
@@ -2263,10 +2290,7 @@ function renderIssuesPage() {
     html += '<div class="issues-empty">이번 주 마감 임박 과제가 없습니다</div>';
   } else {
     soonEndTasks.sort((a,b) => (a.t.end||'') < (b.t.end||'') ? -1 : 1);
-    soonEndTasks.forEach(e => {
-      const daysLeft = Math.ceil((new Date(e.t.end) - _today) / 86400000);
-      html += issueCardHTML(e, 'issue-badge-soon-end', `⏰ D-${daysLeft}`);
-    });
+    soonEndTasks.forEach(e => { html += issueCardHTML(e, 'end'); });
   }
 
   html += '<div style="margin:20px 0 10px"></div>';
@@ -2277,10 +2301,7 @@ function renderIssuesPage() {
     html += '<div class="issues-empty">이번 주 착수 예정 과제가 없습니다</div>';
   } else {
     soonStartTasks.sort((a,b) => (a.t.start||'') < (b.t.start||'') ? -1 : 1);
-    soonStartTasks.forEach(e => {
-      const daysUntil = Math.ceil((new Date(e.t.start) - _today) / 86400000);
-      html += issueCardHTML(e, 'issue-badge-soon-start', `🔔 D-${daysUntil}`);
-    });
+    soonStartTasks.forEach(e => { html += issueCardHTML(e, 'start'); });
   }
 
   content.innerHTML = html;
