@@ -2,3 +2,7 @@
 !aigen-project.html
 !index.html
 !.gitignore
+!.github/
+!.github/**
+!scripts/
+!scripts/sync-gcal.js

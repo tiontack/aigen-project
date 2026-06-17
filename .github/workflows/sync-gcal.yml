@@ -1,0 +1,20 @@
+name: Sync Google Calendar
+
+on:
+  schedule:
+    - cron: '0 0,6,12,18 * * *'   # 매일 00:00 / 06:00 / 12:00 / 18:00 UTC (KST +9)
+  workflow_dispatch:                # 수동 실행 버튼도 유지
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Google Calendar sync
+        run: node scripts/sync-gcal.js
