@@ -858,6 +858,41 @@ body{
 #mob-toggle.open span:nth-child(2){opacity:0;}
 #mob-toggle.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 
+/* ── Issues Page ── */
+.issues-section-title{font-size:13px;font-weight:800;letter-spacing:.02em;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.issues-section-title .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.issue-card{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:12px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.04);margin-bottom:8px;transition:box-shadow .15s;}
+.issue-card:hover{box-shadow:0 3px 12px rgba(0,0,0,0.09);}
+.issue-card .issue-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;}
+.issue-card .issue-body{flex:1;min-width:0;}
+.issue-card .issue-name{font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
+.issue-card .issue-name:hover{color:var(--accent);}
+.issue-card .issue-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;align-items:center;}
+.issue-card .issue-area{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;}
+.issue-card .issue-date{font-size:11px;color:var(--text3);}
+.issue-card .issue-owner{font-size:11px;color:var(--text3);}
+.issue-card .issue-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;align-self:center;}
+.issue-badge-overdue{background:#fff0f0;color:#e63946;border:1px solid #fca5a5;}
+.issue-badge-soon-end{background:#fff8e6;color:#d97706;border:1px solid #fde68a;}
+.issue-badge-soon-start{background:#eff3ff;color:#4361ee;border:1px solid #c7d2fe;}
+.issues-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:24px;}
+.issues-stat-card{padding:18px 20px;border-radius:14px;background:#fff;border:1px solid var(--border);box-shadow:0 1px 6px rgba(0,0,0,0.05);}
+.issues-stat-card .stat-num{font-size:34px;font-weight:900;line-height:1;letter-spacing:-1px;}
+.issues-stat-card .stat-lbl{font-size:12px;color:var(--text3);margin-top:4px;font-weight:500;}
+.issues-empty{padding:32px;text-align:center;color:var(--text3);font-size:13px;background:#fafbff;border-radius:10px;}
+
+/* ── Mobile Gantt List View ── */
+.gantt-mobile-list{display:none;}
+.gantt-mobile-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.gantt-mobile-row:last-child{border-bottom:none;}
+.gantt-mobile-row.cat-row{background:#eef1ff;padding:8px 14px;}
+.gantt-mobile-row.cat-row .gml-name{font-weight:700;color:var(--accent);font-size:12px;}
+.gml-name{flex:1;font-size:12.5px;color:var(--text);font-weight:500;cursor:pointer;overflow:hidden;}
+.gml-name:hover{color:var(--accent);}
+.gml-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.gml-status{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;}
+.gml-dates{font-size:11px;color:var(--text3);white-space:nowrap;}
+
 /* 모바일 오버레이 */
 #mob-overlay{
   display:none;position:fixed;inset:0;z-index:98;background:rgba(0,0,0,0.5);
@@ -927,6 +962,14 @@ body{
 
   /* 히어로 주요 이슈: 1열 */
   .hero-issues-grid{grid-template-columns:1fr;}
+
+  /* 간트차트 숨기고 리스트 뷰 표시 */
+  .gantt-wrap{display:none;}
+  .gantt-head{display:none;}
+  .gantt-mobile-list{display:block;}
+
+  /* Issues 통계 2열 */
+  .issues-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 
 @media (max-width: 480px) {
@@ -1003,6 +1046,10 @@ body{
   <div class="nav-section-label">Dashboard</div>
   <div class="nav-item active" onclick="showPage('summary')" data-page="summary">
     <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span> Overview
+  </div>
+  <div class="nav-item" onclick="showPage('issues')" data-page="issues">
+    <span class="nav-icon"><i data-lucide="alert-triangle"></i></span> Issues
+    <span class="nav-badge" id="issues-nav-badge" style="display:none">0</span>
   </div>
   <div class="nav-item" onclick="showPage('calendar')" data-page="calendar">
     <span class="nav-icon"><i data-lucide="calendar"></i></span> Calendar
@@ -1126,6 +1173,17 @@ body{
       </div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
+  </div>
+
+  <div id="page-issues" class="page">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2><i data-lucide="alert-triangle" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">Issues</span></h2>
+        <p>이번 주 기준 지연·임박 과제 현황을 한눈에 확인합니다</p>
+      </div>
+    </div>
+    <div class="issues-grid" id="issues-stat-grid"></div>
+    <div id="issues-content"></div>
   </div>
 
   <div id="page-pmo" class="page"></div>
@@ -2012,7 +2070,7 @@ function renderDetailPage(pid, areaKey) {
           <button class="gantt-zoom-btn" onclick="changeZoom('${pid}',1)" title="확대">＋</button>
         </div>
       </div>
-      <div id="${pid}-gantt-view">${buildGantt(data, areaKey, pid)}</div>
+      <div id="${pid}-gantt-view">${buildGantt(data, areaKey, pid)}${buildGanttMobileList(data, areaKey, pid)}</div>
     </div>`;
 }
 
@@ -2083,6 +2141,157 @@ function buildGantt(data, areaKey, pid) {
   });
   h += '</div>';
   return h;
+}
+
+// ── Mobile Gantt List View ──
+function buildGanttMobileList(data, areaKey, pid) {
+  let h = '<div class="gantt-mobile-list">';
+  data.tasks.forEach((cg, ci) => {
+    h += `<div class="gantt-mobile-row cat-row"><div class="gml-name">▸ ${cg.cat}</div></div>`;
+    cg.tasks.forEach((t, ti) => {
+      const overdue = isOverdue(t);
+      const cfg = statusCfg[t.status] || statusCfg[''];
+      const sCls = overdue ? 'issue-badge-overdue' : (
+        t.status === 'done' ? 's-done' :
+        t.status === 'progress' ? 's-progress' :
+        t.status === 'planned' ? 's-planned' :
+        t.status === 'needs-input' ? 's-needs' : 's-empty'
+      );
+      const sLabel = overdue ? '⚠ 지연' : cfg.label;
+      const startStr = t.start ? t.start.replace(/-/g,'.') : '-';
+      const endStr = t.end ? t.end.replace(/-/g,'.') : '-';
+      h += `<div class="gantt-mobile-row">
+        <div class="gml-name" onclick="openModal('${areaKey}','${pid}',${ci},${ti})" title="클릭하여 편집">${t.name}</div>
+        <div class="gml-right">
+          <span class="gml-status ${sCls}">${sLabel}</span>
+          <span class="gml-dates">${startStr} ~ ${endStr}</span>
+        </div>
+      </div>`;
+    });
+  });
+  h += '</div>';
+  return h;
+}
+
+// ── Issues Page ──
+function renderIssuesPage() {
+  const statGrid = document.getElementById('issues-stat-grid');
+  const content = document.getElementById('issues-content');
+  if (!statGrid || !content) return;
+
+  const _dotDate = s => s ? s.replace(/-/g,'.') : '-';
+  const now = new Date(_today);
+  const soon = new Date(_today); soon.setDate(soon.getDate() + 7);
+
+  const overdueTasks = [], soonEndTasks = [], soonStartTasks = [];
+
+  Object.keys(taskData).forEach(areaKey => {
+    const areaLabel = _areaLabelMap[areaKey] || areaKey;
+    const areaColor = (summaryAreas.find(a=>a.key===areaKey)||{}).color || '#4361ee';
+    taskData[areaKey].tasks.forEach(cat => {
+      cat.tasks.forEach((t, ti) => {
+        const owners = (t.owner || '').split(',').map(s=>s.trim()).filter(Boolean);
+        const entry = { t, areaKey, areaLabel, areaColor, cat: cat.cat };
+        if (isOverdue(t)) {
+          overdueTasks.push(entry);
+        } else if (t.status !== 'done' && t.end) {
+          const ed = new Date(t.end); ed.setHours(0,0,0,0);
+          if (ed >= _today && ed <= soon) soonEndTasks.push(entry);
+        }
+        if (t.status === 'planned' && t.start) {
+          const st = new Date(t.start); st.setHours(0,0,0,0);
+          if (st >= _today && st <= soon) soonStartTasks.push(entry);
+        }
+      });
+    });
+  });
+
+  // 통계 카드
+  statGrid.innerHTML = `
+    <div class="issues-stat-card glass-card">
+      <div class="stat-num" style="color:#e63946">${overdueTasks.length}</div>
+      <div class="stat-lbl">⚠ 지연된 과제</div>
+    </div>
+    <div class="issues-stat-card glass-card">
+      <div class="stat-num" style="color:#d97706">${soonEndTasks.length}</div>
+      <div class="stat-lbl">⏰ 이번 주 마감 임박</div>
+    </div>
+    <div class="issues-stat-card glass-card">
+      <div class="stat-num" style="color:#4361ee">${soonStartTasks.length}</div>
+      <div class="stat-lbl">🔔 이번 주 착수 예정</div>
+    </div>`;
+
+  // 이슈 카드 렌더 함수
+  function issueCardHTML(entry, badgeClass, badgeLabel) {
+    const { t, areaKey, areaLabel, areaColor } = entry;
+    const loc = findTaskByName(t.name);
+    const clickAttr = loc
+      ? `onclick="openModal('${loc.areaKey}','${loc.areaKey}',${loc.ci},${loc.ti})" style="cursor:pointer"`
+      : '';
+    return `<div class="issue-card">
+      <div class="issue-icon" style="background:${areaColor}22;color:${areaColor}">${areaLabel.charAt(0)}</div>
+      <div class="issue-body">
+        <div class="issue-name" ${clickAttr}>${t.name}</div>
+        <div class="issue-meta">
+          <span class="issue-area" style="background:${areaColor}18;color:${areaColor}">${areaLabel}</span>
+          ${t.start ? `<span class="issue-date">시작 ${_dotDate(t.start)}</span>` : ''}
+          ${t.end ? `<span class="issue-date">마감 ${_dotDate(t.end)}</span>` : ''}
+          ${t.owner ? `<span class="issue-owner">담당: ${t.owner}</span>` : ''}
+        </div>
+      </div>
+      <span class="issue-badge ${badgeClass}">${badgeLabel}</span>
+    </div>`;
+  }
+
+  let html = '';
+
+  // 지연
+  html += `<div class="issues-section-title"><span class="dot" style="background:#e63946"></span> 지연된 과제 (${overdueTasks.length}건)</div>`;
+  if (overdueTasks.length === 0) {
+    html += '<div class="issues-empty">지연된 과제가 없습니다 👍</div>';
+  } else {
+    // 마감일 오래된 순 정렬
+    overdueTasks.sort((a,b) => (a.t.end||'') < (b.t.end||'') ? -1 : 1);
+    overdueTasks.forEach(e => { html += issueCardHTML(e, 'issue-badge-overdue', '⚠ 지연'); });
+  }
+
+  html += '<div style="margin:20px 0 10px"></div>';
+
+  // 마감 임박
+  html += `<div class="issues-section-title"><span class="dot" style="background:#d97706"></span> 이번 주 마감 임박 (${soonEndTasks.length}건)</div>`;
+  if (soonEndTasks.length === 0) {
+    html += '<div class="issues-empty">이번 주 마감 임박 과제가 없습니다</div>';
+  } else {
+    soonEndTasks.sort((a,b) => (a.t.end||'') < (b.t.end||'') ? -1 : 1);
+    soonEndTasks.forEach(e => {
+      const daysLeft = Math.ceil((new Date(e.t.end) - _today) / 86400000);
+      html += issueCardHTML(e, 'issue-badge-soon-end', `⏰ D-${daysLeft}`);
+    });
+  }
+
+  html += '<div style="margin:20px 0 10px"></div>';
+
+  // 착수 임박
+  html += `<div class="issues-section-title"><span class="dot" style="background:#4361ee"></span> 이번 주 착수 예정 (${soonStartTasks.length}건)</div>`;
+  if (soonStartTasks.length === 0) {
+    html += '<div class="issues-empty">이번 주 착수 예정 과제가 없습니다</div>';
+  } else {
+    soonStartTasks.sort((a,b) => (a.t.start||'') < (b.t.start||'') ? -1 : 1);
+    soonStartTasks.forEach(e => {
+      const daysUntil = Math.ceil((new Date(e.t.start) - _today) / 86400000);
+      html += issueCardHTML(e, 'issue-badge-soon-start', `🔔 D-${daysUntil}`);
+    });
+  }
+
+  content.innerHTML = html;
+
+  // 사이드바 배지 업데이트
+  const badge = document.getElementById('issues-nav-badge');
+  if (badge) {
+    const total = overdueTasks.length + soonEndTasks.length + soonStartTasks.length;
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+  }
 }
 
 // ── Gantt Zoom ──
@@ -2473,6 +2682,7 @@ function showPage(id) {
   if (id === 'admin') renderUserTable();
   if (id === 'mypage') renderMyPageTasks();
   if (id === 'messages') renderMessagesPage();
+  if (id === 'issues') renderIssuesPage();
   if (window.innerWidth <= 900) closeSidebar();
 }
 
@@ -3734,6 +3944,25 @@ loadFromFirebase(function() {
   loadActivityLogFromFirebase(function() {
     renderActivityLog();
   });
+  // Issues 배지 초기 업데이트
+  setTimeout(() => {
+    const badge = document.getElementById('issues-nav-badge');
+    if (!badge) return;
+    const now2 = new Date(_today);
+    const soon2 = new Date(_today); soon2.setDate(soon2.getDate() + 7);
+    let total = 0;
+    Object.keys(taskData).forEach(areaKey => {
+      taskData[areaKey].tasks.forEach(cat => {
+        cat.tasks.forEach(t => {
+          if (isOverdue(t)) { total++; return; }
+          if (t.status !== 'done' && t.end) { const ed = new Date(t.end); ed.setHours(0,0,0,0); if (ed >= _today && ed <= soon2) total++; }
+          if (t.status === 'planned' && t.start) { const st = new Date(t.start); st.setHours(0,0,0,0); if (st >= _today && st <= soon2) total++; }
+        });
+      });
+    });
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+  }, 0);
   loadGcalConfigFromFirebase();
   loadGcalEventsFromFirebase();
   loadPresenceListener();
