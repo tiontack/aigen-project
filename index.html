@@ -1328,10 +1328,20 @@ body{
       </div>
       <div class="section-body" style="padding:20px 22px;">
         <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-          <select id="mypage-task-area" class="field-input" style="max-width:160px;" onchange="renderMyPageTasks()">
+          <select id="mypage-task-area" class="field-input" style="max-width:140px;" onchange="renderMyPageTasks(true)">
             <option value="">전체 영역</option>
           </select>
-          <input id="mypage-task-search" class="field-input" style="flex:1;min-width:160px;" placeholder="과제명 검색" oninput="renderMyPageTasks()">
+          <select id="mypage-task-cat" class="field-input" style="max-width:150px;" onchange="renderMyPageTasks()">
+            <option value="">전체 과제모음</option>
+          </select>
+          <select id="mypage-task-status" class="field-input" style="max-width:130px;" onchange="renderMyPageTasks()">
+            <option value="">전체 상태</option>
+            <option value="planned">예정</option>
+            <option value="progress">진행중</option>
+            <option value="done">완료</option>
+            <option value="needs-input">검토필요</option>
+          </select>
+          <input id="mypage-task-search" class="field-input" style="flex:1;min-width:140px;" placeholder="과제명 검색" oninput="renderMyPageTasks()">
         </div>
         <div id="mypage-task-list" class="lib-list"></div>
       </div>
@@ -3029,7 +3039,7 @@ function changeMyPassword() {
   showSave();
   alert('비밀번호가 변경되었습니다.');
 }
-function renderMyPageTasks() {
+function renderMyPageTasks(resetCat) {
   const wrap = document.getElementById('mypage-task-list');
   if (!wrap || !currentUser) return;
   const mine = [];
@@ -3044,10 +3054,23 @@ function renderMyPageTasks() {
   });
 
   const areaSelect = document.getElementById('mypage-task-area');
+  const catSelect = document.getElementById('mypage-task-cat');
+  const statusSelect = document.getElementById('mypage-task-status');
+
   if (areaSelect && areaSelect.options.length <= 1) {
     const areaKeys = [...new Set(mine.map(m => m.areaKey))];
     areaSelect.innerHTML = '<option value="">전체 영역</option>' +
       areaKeys.map(k => `<option value="${k}">${_areaLabelMap[k] || k}</option>`).join('');
+  }
+
+  const selectedArea = areaSelect ? areaSelect.value : '';
+
+  if (catSelect) {
+    const prevCat = resetCat ? '' : catSelect.value;
+    const subset = selectedArea ? mine.filter(m => m.areaKey === selectedArea) : mine;
+    const cats = [...new Set(subset.map(m => m.cat))].filter(Boolean);
+    catSelect.innerHTML = '<option value="">전체 과제모음</option>' +
+      cats.map(c => `<option value="${c}" ${c===prevCat?'selected':''}>${c}</option>`).join('');
   }
 
   if (mine.length === 0) {
@@ -3055,10 +3078,17 @@ function renderMyPageTasks() {
     return;
   }
 
-  const selectedArea = areaSelect ? areaSelect.value : '';
+  const selectedCat = catSelect ? catSelect.value : '';
+  const selectedStatus = statusSelect ? statusSelect.value : '';
   const q = (document.getElementById('mypage-task-search')?.value || '').trim().toLowerCase();
+
+  const _statusLabel = s => s==='done'?'완료':s==='progress'?'진행중':s==='needs-input'?'검토필요':'예정';
+  const _statusClass = s => s==='done'?'role-admin':s==='progress'?'role-leader':s==='needs-input'?'role-observer':'role-member';
+
   const filtered = mine.filter(m =>
     (!selectedArea || m.areaKey === selectedArea) &&
+    (!selectedCat || m.cat === selectedCat) &&
+    (!selectedStatus || (m.t.status||'planned') === selectedStatus || (!m.t.status && selectedStatus==='planned')) &&
     (!q || m.t.name.toLowerCase().includes(q))
   );
 
@@ -3074,10 +3104,10 @@ function renderMyPageTasks() {
         <div style="font-weight:600;font-size:13.5px;">${m.t.name}</div>
         <div style="font-size:12px;color:var(--text2);">${m.area} · ${m.cat} · ${m.t.start||''} ~ ${m.t.end||''}</div>
       </div>
-      <span class="role-badge ${m.t.status==='done'?'role-admin':'role-member'}">${m.t.status==='done'?'완료':m.t.status==='progress'?'진행중':'예정'}</span>
+      <span class="role-badge ${_statusClass(m.t.status)}">${_statusLabel(m.t.status)}</span>
     </div>`;
 
-  if (selectedArea) {
+  if (selectedArea || selectedCat) {
     wrap.innerHTML = filtered.map(itemHtml).join('');
   } else {
     const groups = {};
