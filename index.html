@@ -3097,24 +3097,33 @@ function renderMyPageTasks(resetCat) {
     return;
   }
 
-  const itemHtml = m => `
-    <div class="lib-item">
+  const itemHtml = m => {
+    const cats = taskData[m.areaKey].tasks;
+    const ci = cats.findIndex(c => c.cat === m.cat);
+    const ti = ci >= 0 ? cats[ci].tasks.findIndex(x => x === m.t) : -1;
+    const clickable = ci >= 0 && ti >= 0;
+    return `<div class="lib-item mypage-task-card" style="cursor:${clickable?'pointer':'default'};"
+      ${clickable ? `onclick="openModal('${m.areaKey}','${m.areaKey}',${ci},${ti})"` : ''}>
       <div class="lib-icon"><i data-lucide="check-square"></i></div>
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;font-size:13.5px;">${m.t.name}</div>
-        <div style="font-size:12px;color:var(--text2);">${m.area} · ${m.cat} · ${m.t.start||''} ~ ${m.t.end||''}</div>
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.t.name}</div>
+        <div style="font-size:11.5px;color:var(--text2);margin-top:2px;">${m.area} · ${m.cat}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:1px;">${m.t.start||''} ~ ${m.t.end||''}</div>
       </div>
-      <span class="role-badge ${_statusClass(m.t.status)}">${_statusLabel(m.t.status)}</span>
+      <span class="role-badge ${_statusClass(m.t.status)}" style="flex-shrink:0;">${_statusLabel(m.t.status)}</span>
     </div>`;
+  };
+
+  const gridWrap = items => `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">${items.map(itemHtml).join('')}</div>`;
 
   if (selectedArea || selectedCat) {
-    wrap.innerHTML = filtered.map(itemHtml).join('');
+    wrap.innerHTML = gridWrap(filtered);
   } else {
     const groups = {};
     filtered.forEach(m => { (groups[m.areaKey] = groups[m.areaKey] || []).push(m); });
     wrap.innerHTML = Object.keys(groups).map(k => `
       <div class="lib-group-label" style="font-size:12px;font-weight:700;color:var(--text2);margin:14px 0 6px;">${_areaLabelMap[k] || k} (${groups[k].length})</div>
-      ${groups[k].map(itemHtml).join('')}
+      ${gridWrap(groups[k])}
     `).join('');
   }
   initIcons();
