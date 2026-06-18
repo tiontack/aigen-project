@@ -6,3 +6,5 @@
 !.github/**
 !scripts/
 !scripts/sync-gcal.js
+!firebase.json
+!.firebaserc

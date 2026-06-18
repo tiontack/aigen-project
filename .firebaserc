@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "aigen-pmo"
+  },
+  "targets": {
+    "aigen-pmo": {
+      "hosting": {
+        "aigen": ["aigen-project"]
+      }
+    }
+  }
+}

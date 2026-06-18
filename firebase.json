@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "target": "aigen",
+    "public": ".",
+    "ignore": ["firebase.json", "**/.*", "scripts/**", "node_modules/**"],
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }
+    ]
+  }
+}
