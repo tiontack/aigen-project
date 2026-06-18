@@ -4808,7 +4808,8 @@ function mgmtSetAreaFilter(areaKey) {
 function _mgmtBuildAreaFilterBar() {
   const bar = document.querySelector('.mgmt-area-filter-bar');
   if (!bar) return;
-  const areaKeys = Object.keys(taskData);
+  const _mgmtAreaOrder = ['pmo','marketing','recruit','curriculum','infra'];
+  const areaKeys = _mgmtAreaOrder.filter(k => taskData[k]);
   // 각 영역에 해당 아젠다가 있는 세션 수 계산
   const counts = {};
   areaKeys.forEach(k => {
@@ -5058,9 +5059,14 @@ function renderMgmtPage() {
     const rcpKey = s.recipient || '총장';
     const _mgmtAreaColors = {pmo:'#00d4ff',curriculum:'#10b981',marketing:'#8b5cf6',recruit:'#f59e0b',infra:'#ef4444'};
     const _mgmtAreaTextColors = {pmo:'#005f5a',curriculum:'#065f46',marketing:'#3b0764',recruit:'#78350f',infra:'#7f1d1d'};
+    const _mgmtItemOrder = ['pmo','marketing','recruit','curriculum','infra'];
+    const sortedItems = [...s.items].sort((a,b) => {
+      const ai = _mgmtItemOrder.indexOf(a.area||''); const bi = _mgmtItemOrder.indexOf(b.area||'');
+      return (ai===-1?99:ai) - (bi===-1?99:bi);
+    });
     const visibleItems = _mgmtAreaFilter
-      ? s.items.filter(it => it.area === _mgmtAreaFilter)
-      : s.items;
+      ? sortedItems.filter(it => it.area === _mgmtAreaFilter)
+      : sortedItems;
     const itemRows = visibleItems.map((item, i) => {
       const areaLabel = item.area ? (_areaLabelMap[item.area] || item.area) : '전체';
       const areaBg = item.area ? (_mgmtAreaColors[item.area] || '#e0e7ff') : '#e0e7ff';
