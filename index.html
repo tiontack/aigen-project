@@ -1313,14 +1313,15 @@ body{
     <div class="page-header">
       <div class="page-header-left">
         <h2><i data-lucide="file-text" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl" id="page-title-meeting">회의록</span></h2>
-        <p>PDF 회의록을 업로드하면 자동으로 요약과 전문이 등록됩니다</p>
+        <p>회의 개요와 PDF를 등록하면 자동으로 요약과 전문이 저장됩니다</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <select id="meeting-area-select" class="field-select" style="width:160px"></select>
-        <label class="btn-add" style="cursor:pointer">
-          <i data-lucide="upload" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>PDF 업로드
-          <input type="file" accept="application/pdf" id="meeting-upload-input" style="display:none" onchange="handleMeetingUpload(event)">
-        </label>
+        <select id="meeting-area-filter" class="field-select" style="width:150px" onchange="renderMeetingList()">
+          <option value="">전체 영역</option>
+        </select>
+        <button class="btn-add" onclick="openMeetingRegModal()">
+          <i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"></i>등록하기
+        </button>
       </div>
     </div>
     <div class="section">
@@ -1430,11 +1431,12 @@ body{
     <div class="modal" style="width:640px;max-height:80vh;">
       <div class="modal-head"><h3 id="meeting-modal-title">회의록</h3><button class="modal-close" onclick="closeMeetingModal()">✕</button></div>
       <div class="modal-body" style="max-height:60vh;overflow:auto;">
-        <div class="field-group">
+        <div id="meeting-modal-meta" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
+        <div class="field-group" id="meeting-modal-summary-wrap">
           <div class="field-label">자동 요약</div>
           <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
         </div>
-        <div class="field-group">
+        <div class="field-group" id="meeting-modal-fulltext-wrap">
           <div class="field-label">전문</div>
           <div id="meeting-modal-fulltext" style="font-size:12px;line-height:1.6;color:var(--text2);white-space:pre-wrap;max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:10px;"></div>
         </div>
@@ -1556,6 +1558,59 @@ body{
       <div style="display:flex;gap:10px">
         <button style="padding:9px 18px;background:#f1f2f5;color:var(--text2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="closeUserModal()">취소</button>
         <button class="btn-modal-save" onclick="saveUser()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Meeting Registration Modal ── -->
+<div class="modal-overlay" id="meeting-reg-overlay" onclick="if(event.target===this)closeMeetingRegModal()">
+  <div class="modal" style="width:520px">
+    <div class="modal-head">
+      <h3>회의록 등록</h3>
+      <button class="modal-close" onclick="closeMeetingRegModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="field-group full">
+          <div class="field-label">제목 <span style="color:#e63946">*</span></div>
+          <input id="mreg-title" class="field-input" type="text" placeholder="회의록 제목을 입력하세요">
+        </div>
+        <div class="field-group full">
+          <div class="field-label">주제</div>
+          <input id="mreg-topic" class="field-input" type="text" placeholder="회의 주제 또는 안건">
+        </div>
+        <div class="field-group">
+          <div class="field-label">날짜</div>
+          <input id="mreg-date" class="field-input" type="date">
+        </div>
+        <div class="field-group">
+          <div class="field-label">영역</div>
+          <select id="mreg-area" class="field-select">
+            <option value="">전체</option>
+          </select>
+        </div>
+        <div class="field-group full">
+          <div class="field-label">참석자</div>
+          <input id="mreg-attendees" class="field-input" type="text" placeholder="예: 홍길동, 김철수, 이영희">
+        </div>
+        <div class="field-group full">
+          <div class="field-label">PDF 파일</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <label class="btn-add" style="cursor:pointer;flex-shrink:0;">
+              <i data-lucide="upload" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;"></i>파일 선택
+              <input type="file" accept="application/pdf" id="mreg-file-input" style="display:none" onchange="mreg_onFileSelect(event)">
+            </label>
+            <span id="mreg-file-name" style="font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">선택된 파일 없음</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div style="font-size:12px;color:var(--text3);">PDF 없이도 개요만 저장할 수 있습니다</div>
+      <div style="display:flex;gap:10px">
+        <button style="padding:9px 18px;background:#f1f2f5;color:var(--text2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="closeMeetingRegModal()">취소</button>
+        <button class="btn-modal-save" id="mreg-submit-btn" onclick="submitMeetingReg()">등록</button>
       </div>
     </div>
   </div>
@@ -4024,29 +4079,70 @@ function fmtTs(ts) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-async function handleMeetingUpload(event) {
+// ── 회의록 등록 모달 ──
+let _mregFile = null;
+function openMeetingRegModal() {
+  _mregFile = null;
+  document.getElementById('mreg-title').value = '';
+  document.getElementById('mreg-topic').value = '';
+  document.getElementById('mreg-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('mreg-attendees').value = '';
+  document.getElementById('mreg-file-name').textContent = '선택된 파일 없음';
+  document.getElementById('mreg-file-input').value = '';
+  const areaSel = document.getElementById('mreg-area');
+  areaSel.innerHTML = '<option value="">전체</option>' +
+    Object.keys(taskData).map(k => `<option value="${k}">${_areaLabelMap[k]||k}</option>`).join('');
+  document.getElementById('meeting-reg-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('mreg-title').focus(), 50);
+}
+function closeMeetingRegModal() {
+  document.getElementById('meeting-reg-overlay').classList.remove('open');
+  _mregFile = null;
+}
+function mreg_onFileSelect(event) {
   const file = event.target.files[0];
-  event.target.value = '';
   if (!file) return;
-  if (file.size > 4 * 1024 * 1024) { alert('4MB 이하 PDF 파일만 업로드할 수 있습니다.'); return; }
-  const areaKey = document.getElementById('meeting-area-select').value || Object.keys(taskData)[0];
+  if (file.size > 4 * 1024 * 1024) { alert('4MB 이하 PDF만 업로드할 수 있습니다.'); event.target.value = ''; return; }
+  _mregFile = file;
+  document.getElementById('mreg-file-name').textContent = file.name;
+  if (!document.getElementById('mreg-title').value.trim()) {
+    document.getElementById('mreg-title').value = file.name.replace(/\.pdf$/i, '');
+  }
+}
+async function submitMeetingReg() {
+  const title = document.getElementById('mreg-title').value.trim();
+  if (!title) { alert('제목을 입력해주세요.'); document.getElementById('mreg-title').focus(); return; }
+  const topic = document.getElementById('mreg-topic').value.trim();
+  const date  = document.getElementById('mreg-date').value;
+  const area  = document.getElementById('mreg-area').value;
+  const attendees = document.getElementById('mreg-attendees').value.trim();
+  const btn = document.getElementById('mreg-submit-btn');
+  btn.disabled = true; btn.textContent = '처리중...';
   try {
-    const [dataUrl, buf] = await Promise.all([readFileAsDataURL(file), readFileAsArrayBuffer(file)]);
-    const fullText = await extractPdfText(buf.slice(0));
-    const pageImages = await renderPdfPageImages(buf.slice(0));
-    const summary = summarizeBullets(fullText, 5, 10);
-    libraryData.meetings.unshift({
-      id: 'm' + Date.now(), title: file.name.replace(/\.pdf$/i, ''), area: areaKey,
-      fileName: file.name, fileData: dataUrl, fullText, pageImages, summary, ts: Date.now()
-    });
+    let fileData = '', fileName = '', fullText = '', pageImages = [], summary = [];
+    if (_mregFile) {
+      const [dataUrl, buf] = await Promise.all([readFileAsDataURL(_mregFile), readFileAsArrayBuffer(_mregFile)]);
+      fileData = dataUrl; fileName = _mregFile.name;
+      fullText = await extractPdfText(buf.slice(0));
+      pageImages = await renderPdfPageImages(buf.slice(0));
+      summary = summarizeBullets(fullText, 5, 10);
+    }
+    const entry = {
+      id: 'm' + Date.now(), title, topic, date, area, attendees,
+      fileName, fileData, fullText, pageImages, summary, ts: Date.now()
+    };
+    libraryData.meetings.unshift(entry);
     syncLibraryToFirebase();
-    renderMeetingList();
-    syncResourceFromMeeting(libraryData.meetings[0]);
-    logActivity('회의록 업로드', `${areaKey} / ${file.name}`);
+    if (fileData) syncResourceFromMeeting(entry);
+    logActivity('회의록 등록', `${area||'전체'} / ${title}`);
     showSave();
-  } catch (e) {
-    console.warn('회의록 업로드 실패:', e);
-    alert('업로드 중 오류가 발생했습니다.');
+    closeMeetingRegModal();
+    renderMeetingList();
+  } catch(e) {
+    console.warn('회의록 등록 실패:', e);
+    alert('등록 중 오류가 발생했습니다.');
+  } finally {
+    btn.disabled = false; btn.textContent = '등록';
   }
 }
 
@@ -4083,26 +4179,49 @@ async function handleArchiveUpload(event) {
 }
 
 function renderMeetingList() {
-  fillAreaSelect(document.getElementById('meeting-area-select'), false);
+  // 영역 필터 드롭다운 채우기 (중복 방지)
+  const filterSel = document.getElementById('meeting-area-filter');
+  if (filterSel && filterSel.options.length <= 1) {
+    Object.keys(taskData).forEach(k => {
+      const o = document.createElement('option'); o.value = k; o.textContent = _areaLabelMap[k]||k;
+      filterSel.appendChild(o);
+    });
+  }
+  const filterVal = filterSel ? filterSel.value : '';
   const wrap = document.getElementById('meeting-list');
   if (!wrap) return;
-  if (!libraryData.meetings.length) {
-    wrap.innerHTML = '<div class="lib-empty">아직 등록된 회의록이 없습니다. PDF를 업로드해보세요.</div>';
+  const list = filterVal
+    ? libraryData.meetings.filter(m => m.area === filterVal)
+    : libraryData.meetings;
+  if (!list.length) {
+    wrap.innerHTML = '<div class="lib-empty">등록된 회의록이 없습니다. 등록하기 버튼을 눌러 추가해보세요.</div>';
     return;
   }
-  wrap.innerHTML = libraryData.meetings.map((m, i) => `
-    <div class="lib-item">
-      <div class="lib-icon"><i data-lucide="file-text" style="width:18px;height:18px;"></i></div>
-      <div class="lib-info">
-        <div class="lib-title" onclick="openMeetingModal(${i})">${m.title}</div>
-        <div class="lib-meta"><span class="lib-tag">${_areaLabelMap[m.area]||m.area}</span>${m.fileName} · ${fmtTs(m.ts)}</div>
+  wrap.innerHTML = list.map((m, i) => {
+    const realIdx = libraryData.meetings.indexOf(m);
+    const areaLabel = m.area ? (_areaLabelMap[m.area]||m.area) : '전체';
+    const metaParts = [
+      m.date ? `📅 ${m.date}` : '',
+      m.attendees ? `👥 ${m.attendees}` : '',
+      m.fileName ? `📄 ${m.fileName}` : ''
+    ].filter(Boolean).join('  ·  ');
+    return `
+    <div class="lib-item" style="align-items:flex-start;">
+      <div class="lib-icon" style="margin-top:2px;"><i data-lucide="file-text" style="width:18px;height:18px;"></i></div>
+      <div class="lib-info" style="flex:1;min-width:0;">
+        <div class="lib-title" onclick="openMeetingModal(${realIdx})" style="cursor:pointer;">${m.title}</div>
+        ${m.topic ? `<div style="font-size:12.5px;color:var(--text);margin:3px 0 1px;font-weight:500;">${m.topic}</div>` : ''}
+        <div class="lib-meta">
+          <span class="lib-tag">${areaLabel}</span>${metaParts}
+        </div>
       </div>
-      <div class="lib-actions">
-        <button class="lib-btn" onclick="openMeetingModal(${i})">보기</button>
-        <a class="lib-btn" href="${m.fileData}" download="${m.fileName}" style="text-decoration:none;display:inline-block;">다운로드</a>
-        <button class="lib-btn del" onclick="deleteMeeting(${i})">삭제</button>
+      <div class="lib-actions" style="flex-shrink:0;">
+        <button class="lib-btn" onclick="openMeetingModal(${realIdx})">${m.fileData ? '보기' : '개요'}</button>
+        ${m.fileData ? `<a class="lib-btn" href="${m.fileData}" download="${m.fileName}" style="text-decoration:none;display:inline-block;">다운로드</a>` : ''}
+        <button class="lib-btn del" onclick="deleteMeeting(${realIdx})">삭제</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   initIcons();
 }
 
@@ -4110,15 +4229,35 @@ function openMeetingModal(i) {
   const m = libraryData.meetings[i];
   if (!m) return;
   document.getElementById('meeting-modal-title').textContent = m.title;
+
+  // 메타 칩
+  const chips = [
+    m.date      && `<span class="lib-tag">📅 ${m.date}</span>`,
+    m.area      && `<span class="lib-tag">${_areaLabelMap[m.area]||m.area}</span>`,
+    m.attendees && `<span class="lib-tag">👥 ${m.attendees}</span>`,
+    m.topic     && `<span style="font-size:12.5px;color:var(--text);font-weight:500;">주제: ${m.topic}</span>`
+  ].filter(Boolean);
+  document.getElementById('meeting-modal-meta').innerHTML = chips.join('');
+
+  // 요약
   const summaryArr = Array.isArray(m.summary) ? m.summary : (m.summary ? [m.summary] : []);
+  const summaryWrap = document.getElementById('meeting-modal-summary-wrap');
+  summaryWrap.style.display = summaryArr.length ? '' : 'none';
   document.getElementById('meeting-modal-summary').innerHTML = summaryArr.length
     ? `<ul style="margin:0;padding-left:18px;">${summaryArr.map(s => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ul>`
-    : '(요약 없음)';
+    : '';
+
+  // 전문
   const fulltextWrap = document.getElementById('meeting-modal-fulltext');
+  const ftSection = document.getElementById('meeting-modal-fulltext-wrap');
   if (m.pageImages && m.pageImages.length) {
+    ftSection.style.display = '';
     fulltextWrap.innerHTML = m.pageImages.map(src => `<img class="meeting-page-img" src="${src}">`).join('');
+  } else if (m.fullText) {
+    ftSection.style.display = '';
+    fulltextWrap.textContent = m.fullText;
   } else {
-    fulltextWrap.textContent = m.fullText || '(전문 없음)';
+    ftSection.style.display = 'none';
   }
   document.getElementById('meeting-modal-overlay').classList.add('open');
 }
