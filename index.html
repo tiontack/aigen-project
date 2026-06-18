@@ -1426,11 +1426,11 @@ body{
   <div class="modal-overlay" id="mgmt-item-overlay" onclick="if(event.target===this)mgmtCloseItemModal()">
     <div class="modal" style="width:540px;max-width:96vw;">
       <div class="modal-head">
-        <h3>안건 등록</h3>
+        <h3 id="mgmt-item-modal-title">안건 등록</h3>
         <button class="modal-close" onclick="mgmtCloseItemModal()">✕</button>
       </div>
       <div class="modal-body">
-        <div class="field-group full">
+        <div class="field-group full" id="mgmt-item-session-wrap">
           <div class="field-label">보고 일정 선택 <span style="color:#e63946">*</span></div>
           <select id="mgmt-item-session-sel" class="field-input" style="width:100%;"></select>
         </div>
@@ -1446,12 +1446,16 @@ body{
             <select id="mgmt-item-area" class="field-input" style="width:100%;"></select>
           </div>
         </div>
+        <div class="field-group full" id="mgmt-item-move-wrap" style="display:none;">
+          <div class="field-label" style="color:var(--text2);">다른 회의로 이동</div>
+          <select id="mgmt-item-move-sel" class="field-input" style="width:100%;"></select>
+        </div>
       </div>
       <div class="modal-foot">
-        <div></div>
+        <button id="mgmt-item-move-btn" style="display:none;padding:9px 18px;background:#f1f2f5;color:var(--text2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="mgmtItemToggleMove()">↗ 이동 모드</button>
         <div style="display:flex;gap:10px;">
           <button style="padding:9px 18px;background:#f1f2f5;color:var(--text2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="mgmtCloseItemModal()">취소</button>
-          <button class="btn-modal-save" onclick="mgmtItemModalSave()">등록</button>
+          <button class="btn-modal-save" id="mgmt-item-save-btn" onclick="mgmtItemModalSave()">등록</button>
         </div>
       </div>
     </div>
@@ -4904,6 +4908,12 @@ function mgmtOpenItemModal() {
   // 영역·발표자 옵션 채우기
   document.getElementById('mgmt-item-area').innerHTML = _mgmtAreaOptions('');
   document.getElementById('mgmt-item-topic').value = '';
+  document.getElementById('mgmt-item-modal-title').textContent = '안건 등록';
+  document.getElementById('mgmt-item-save-btn').textContent = '등록';
+  document.getElementById('mgmt-item-session-wrap').style.display = '';
+  document.getElementById('mgmt-item-move-wrap').style.display = 'none';
+  document.getElementById('mgmt-item-move-btn').style.display = 'none';
+  window._mgmtItemEditCtx = null;
   document.getElementById('mgmt-item-overlay').classList.add('open');
 }
 
@@ -4921,13 +4931,48 @@ function mgmtEditItem(sid, idx) {
   if (!s) return;
   const item = s.items[idx];
   if (!item) return;
-  mgmtOpenItemModalForSession(sid);
-  setTimeout(() => {
-    document.getElementById('mgmt-item-topic').value = item.topic || '';
-    document.getElementById('mgmt-item-area').innerHTML = _mgmtAreaOptions(item.area || '');
-    // 저장 버튼이 기존 항목을 덮어쓰도록 editCtx 설정
-    window._mgmtItemEditCtx = { sid, idx };
-  }, 10);
+  // 세션 목록 채우기
+  const sel = document.getElementById('mgmt-item-session-sel');
+  const sessions = [...(mgmtData.sessions||[])].sort((a,b) => (a.date||'') > (b.date||'') ? 1 : -1);
+  sel.innerHTML = sessions.map(ss => {
+    const rcp = ss.recipient || '총장';
+    const label = `[${rcp}] ${ss.date||'날짜미정'}${ss.title?' — '+ss.title:''}`;
+    return `<option value="${ss.id}"${ss.id===sid?' selected':''}>${label}</option>`;
+  }).join('');
+  document.getElementById('mgmt-item-area').innerHTML = _mgmtAreaOptions(item.area || '');
+  document.getElementById('mgmt-item-topic').value = item.topic || '';
+  // 이동용 select (현재 세션 제외)
+  const moveSel = document.getElementById('mgmt-item-move-sel');
+  moveSel.innerHTML = sessions.filter(ss => ss.id !== sid).map(ss => {
+    const rcp = ss.recipient || '총장';
+    return `<option value="${ss.id}">[${rcp}] ${ss.date||'날짜미정'}${ss.title?' — '+ss.title:''}</option>`;
+  }).join('');
+  // UI: 수정 모드
+  document.getElementById('mgmt-item-modal-title').textContent = '안건 수정';
+  document.getElementById('mgmt-item-save-btn').textContent = '저장';
+  document.getElementById('mgmt-item-session-wrap').style.display = 'none';
+  document.getElementById('mgmt-item-move-wrap').style.display = 'none';
+  document.getElementById('mgmt-item-move-btn').style.display = '';
+  window._mgmtItemEditCtx = { sid, idx, moveMode: false };
+  document.getElementById('mgmt-item-overlay').classList.add('open');
+}
+
+function mgmtItemToggleMove() {
+  const ctx = window._mgmtItemEditCtx;
+  if (!ctx) return;
+  ctx.moveMode = !ctx.moveMode;
+  const wrap = document.getElementById('mgmt-item-move-wrap');
+  const btn = document.getElementById('mgmt-item-move-btn');
+  const saveBtn = document.getElementById('mgmt-item-save-btn');
+  if (ctx.moveMode) {
+    wrap.style.display = '';
+    btn.textContent = '✕ 이동 취소';
+    saveBtn.textContent = '이동 저장';
+  } else {
+    wrap.style.display = 'none';
+    btn.textContent = '↗ 이동 모드';
+    saveBtn.textContent = '저장';
+  }
 }
 
 function mgmtDeleteItem(sid, idx) {
@@ -5001,11 +5046,22 @@ function mgmtItemModalSave() {
   const area = document.getElementById('mgmt-item-area').value;
   const editCtx = window._mgmtItemEditCtx;
   if (editCtx) {
-    // 수정 모드
     const s = mgmtData.sessions.find(s => s.id === editCtx.sid);
-    if (s && s.items[editCtx.idx]) {
-      s.items[editCtx.idx].topic = topic;
-      s.items[editCtx.idx].area = area;
+    if (!s) return;
+    if (editCtx.moveMode) {
+      // 이동 모드: 다른 세션으로 이동
+      const targetId = document.getElementById('mgmt-item-move-sel').value;
+      const target = mgmtData.sessions.find(ss => ss.id === targetId);
+      if (!target) return;
+      const [moved] = s.items.splice(editCtx.idx, 1);
+      moved.topic = topic; moved.area = area;
+      target.items.push(moved);
+    } else {
+      // 수정 모드
+      if (s.items[editCtx.idx]) {
+        s.items[editCtx.idx].topic = topic;
+        s.items[editCtx.idx].area = area;
+      }
     }
     window._mgmtItemEditCtx = null;
   } else {
@@ -5152,10 +5208,9 @@ function renderMgmtPage() {
         <td style="width:30px;color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
         <td style="width:130px;"><span style="display:inline-block;background:${areaBg};color:${areaFg};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">${areaLabel}</span></td>
         <td style="font-size:13px;">${item.topic || '<span style="color:var(--text3);">미입력</span>'}</td>
-        <td style="width:80px;text-align:right;">
-          <button onclick="mgmtEditItem('${s.id}',${realIdx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;" title="수정">✏️</button>
-          <button onclick="mgmtMoveItem('${s.id}',${realIdx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;" title="이동">↗️</button>
-          <button onclick="mgmtDeleteItem('${s.id}',${realIdx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;" title="삭제">🗑</button>
+        <td style="width:110px;white-space:nowrap;">
+          <button onclick="mgmtEditItem('${s.id}',${realIdx})" class="lib-btn" style="padding:3px 8px;font-size:11px;margin-right:3px;">수정</button>
+          <button onclick="mgmtDeleteItem('${s.id}',${realIdx})" class="lib-btn del" style="padding:3px 8px;font-size:11px;">삭제</button>
         </td>
       </tr>`;
     }).join('');
@@ -5176,7 +5231,7 @@ function renderMgmtPage() {
       <div class="mgmt-card-right">
         <div class="mgmt-card-body" style="padding-bottom:14px;">
           ${itemRows ? `<table class="mgmt-agenda-table">
-            <thead><tr><th style="width:30px;">#</th><th style="width:130px;">영역</th><th>안건</th><th style="width:80px;"></th></tr></thead>
+            <thead><tr><th style="width:30px;">#</th><th style="width:130px;">영역</th><th>안건</th><th style="width:110px;"></th></tr></thead>
             <tbody>${itemRows}</tbody>
           </table>` : `<div style="padding:24px 0;color:var(--text3);font-size:13px;text-align:center;">등록된 안건이 없습니다. <button onclick="mgmtOpenItemModal()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 안건 추가</button></div>`}
         </div>
