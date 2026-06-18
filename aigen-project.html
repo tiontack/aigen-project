@@ -1274,6 +1274,9 @@ body{
   .mob-week-empty {
     padding:18px;text-align:center;color:var(--text3);font-size:13px;
   }
+  .mob-week-event.mwe-today {
+    background:#f0f4ff;margin:0 -14px;padding:8px 14px;border-radius:10px;
+  }
 
   /* 하단 고정 탭바 */
   #mob-bottom-nav {
@@ -2601,27 +2604,73 @@ function _renderMobWeek() {
 
   events.sort((a, b) => a.date.localeCompare(b.date));
 
-  if (!events.length) {
-    eventsEl.innerHTML = '<div class="mob-week-empty">이번 주 일정이 없습니다.</div>';
-    return;
-  }
+  // ── 렌더링: 상단 캘린더 / 하단 영역별 과제 ──
+  const calEvents  = events.filter(e => e.type === 'gcal' || e.type === 'mgmt');
+  const taskEvents = events.filter(e => e.type === 'task');
 
-  eventsEl.innerHTML = events.map(ev => {
+  const renderRow = ev => {
     const d = new Date(ev.date + 'T00:00:00');
     const isToday = ev.date === todayStr;
-    const dowLabel = `${d.getMonth()+1}/${d.getDate()} (${_mobDow[d.getDay()]})`;
-    const typeLabel = ev.type === 'gcal' ? '캘린더' : ev.type === 'mgmt' ? '보고' : '마감';
-    const ac = ev.area ? (_mobAreaColors[ev.area] || { bg:'#eef1ff', text:'#4361ee' }) : null;
-    return `<div class="mob-week-event" style="${isToday ? 'background:#f0f4ff;margin:0 -12px;padding:8px 12px;border-radius:10px;' : ''}">
-      <div class="mwe-date">${dowLabel.split(' ')[0]}<br><small>${_mobDow[d.getDay()]}</small></div>
+    const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
+    const dowStr  = _mobDow[d.getDay()];
+    return `<div class="mob-week-event${isToday ? ' mwe-today' : ''}">
+      <div class="mwe-date">${dateStr}<br><small>${dowStr}</small></div>
       <div class="mwe-bar" style="background:${ev.color};"></div>
       <div class="mwe-info">
         <div class="mwe-title">${ev.title}</div>
         <div class="mwe-sub">${ev.sub}</div>
-        ${ac ? `<span class="mwe-chip" style="background:${ac.bg};color:${ac.text};">${typeLabel}</span>` : `<span class="mwe-chip" style="background:#eef1ff;color:#4361ee;">${typeLabel}</span>`}
       </div>
     </div>`;
-  }).join('');
+  };
+
+  let html = '';
+
+  // ── 상단: Google Calendar + Mgmt 보고 ──
+  if (calEvents.length) {
+    html += calEvents.map(renderRow).join('');
+  } else {
+    html += '<div class="mob-week-empty" style="padding:10px 0 4px;">이번 주 캘린더 일정 없음</div>';
+  }
+
+  // ── 구분선 ──
+  html += `<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px;">
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <span style="font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;">영역별 과제 마감</span>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+  </div>`;
+
+  // ── 하단: 영역별 그룹 ──
+  const areaOrder = ['pmo','marketing','recruit','curriculum','infra'];
+  const byArea = {};
+  taskEvents.forEach(ev => {
+    if (!byArea[ev.area]) byArea[ev.area] = [];
+    byArea[ev.area].push(ev);
+  });
+
+  const hasTask = areaOrder.some(a => byArea[a]?.length);
+  if (!hasTask) {
+    html += '<div class="mob-week-empty" style="padding:4px 0 8px;">이번 주 마감 과제 없음</div>';
+  } else {
+    areaOrder.forEach(areaKey => {
+      const list = byArea[areaKey];
+      if (!list?.length) return;
+      const ac = _mobAreaColors[areaKey] || { bg:'#eef1ff', text:'#4361ee' };
+      html += `<div style="margin-bottom:6px;">
+        <div style="font-size:11px;font-weight:800;color:${ac.text};background:${ac.bg};
+          display:inline-block;padding:2px 10px;border-radius:8px;margin-bottom:4px;">
+          ${_areaLabelMap[areaKey]||areaKey}
+        </div>
+        ${list.map(renderRow).join('')}
+      </div>`;
+    });
+  }
+
+  if (!calEvents.length && !hasTask) {
+    eventsEl.innerHTML = '<div class="mob-week-empty">이번 주 일정이 없습니다.</div>';
+    return;
+  }
+
+  eventsEl.innerHTML = html;
 }
 
 function renderCharts() {
