@@ -202,6 +202,7 @@ body{
 .achip-p{background:#eff3ff;color:#4361ee;}
 .achip-i{background:#fff8e6;color:#d97706;}
 .achip-d{background:#e8faf5;color:#06b68a;}
+.achip-delay{background:#fff0f0;color:#e63946;}
 
 /* Chart row */
 .chart-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:22px;}
@@ -529,6 +530,7 @@ body{
 .s-progress{background:#fff8e6;color:#d97706;border:1px solid #fde68a;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;}
 .s-planned{background:#eff3ff;color:#4361ee;border:1px solid #c7d2fe;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;}
 .s-needs{background:#fff0f0;color:#e63946;border:1px solid #fca5a5;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;}
+.s-overdue{background:#fff0f0;color:#e63946;border:1px solid #e63946;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;}
 .s-empty{background:#f1f2f5;color:var(--text3);padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;}
 
 /* Editable */
@@ -1807,6 +1809,7 @@ body{
           <select id="m-status" class="field-select">
             <option value="planned">○ 예정</option>
             <option value="progress">◐ 진행중</option>
+            <option value="overdue">⚠ 지연</option>
             <option value="done">● 완료</option>
             <option value="needs-input">※ 입력필요</option>
           </select>
@@ -2096,8 +2099,9 @@ const taskData = {
 
 // =================== RENDER SUMMARY ===================
 function renderSummaryCards() {
+  const areas = computeSummaryAreas();
   const c = document.getElementById('summary-cards');
-  c.innerHTML = summaryAreas.map(a => `
+  c.innerHTML = areas.map(a => `
     <div class="glass-card area-card" style="--card-color:${a.color}">
       <div class="area-card-header">
         <div class="area-name">${a.name}</div>
@@ -2110,15 +2114,15 @@ function renderSummaryCards() {
       </div>
       <div class="area-chips">
         <span class="achip achip-p">예정 ${a.planned}</span>
-        <span class="achip achip-i">진행 ${a.progress}</span>
+        <span class="achip achip-i">진행 ${a.progress - a.delay}</span>
+        ${a.delay > 0 ? `<span class="achip achip-delay">지연 ${a.delay}</span>` : ''}
         <span class="achip achip-d">완료 ${a.done}</span>
       </div>
     </div>`).join('');
 
-  // Total pct
-  const totalTasks = summaryAreas.reduce((s,a)=>s+a.total,0);
-  const totalDone = summaryAreas.reduce((s,a)=>s+(a.done+a.progress*0.5),0);
-  document.getElementById('total-pct').textContent = Math.round(totalDone/totalTasks*100)+'%';
+  const totalTasks = areas.reduce((s,a)=>s+a.total,0);
+  const totalDone  = areas.reduce((s,a)=>s+(a.done + a.progress*0.5),0);
+  if (totalTasks > 0) document.getElementById('total-pct').textContent = Math.round(totalDone/totalTasks*100)+'%';
 }
 
 function renderHero() {
@@ -2199,16 +2203,17 @@ Chart.defaults.font.family = "'Freesentation','Apple SD Gothic Neo',sans-serif";
 Chart.defaults.font.size = 13;
 
 function renderCharts() {
+  const areas = computeSummaryAreas();
   // Bar chart - progress rate
   new Chart(document.getElementById('chartBar'), {
     type: 'bar',
     data: {
-      labels: summaryAreas.map(a=>a.name),
+      labels: areas.map(a=>a.name),
       datasets: [{
         label: '진척률(%)',
-        data: summaryAreas.map(a=>Math.round(a.rate*100)),
-        backgroundColor: summaryAreas.map(a=>a.color+'55'),
-        borderColor: summaryAreas.map(a=>a.color),
+        data: areas.map(a=>Math.round(a.rate*100)),
+        backgroundColor: areas.map(a=>a.color+'55'),
+        borderColor: areas.map(a=>a.color),
         borderWidth: 2, borderRadius: 6,
       }]
     },
@@ -2217,7 +2222,7 @@ function renderCharts() {
       plugins:{ legend:{display:false} },
       scales:{
         y:{
-          beginAtZero:true, max:30,
+          beginAtZero:true, max:100,
           grid:{color:'rgba(255,255,255,0.05)'},
           ticks:{callback:v=>v+'%'},
         },
@@ -2227,11 +2232,10 @@ function renderCharts() {
   });
 
   // Doughnut - status (지연 포함 실시간 계산)
-  const totalP = summaryAreas.reduce((s,a)=>s+a.planned,0);
-  const totalI = summaryAreas.reduce((s,a)=>s+a.progress,0);
-  const totalD = summaryAreas.reduce((s,a)=>s+a.done,0);
-  let totalOv = 0;
-  Object.values(taskData).forEach(area => area.tasks.forEach(cg => cg.tasks.forEach(t => { if (isOverdue(t)) totalOv++; })));
+  const totalP = areas.reduce((s,a)=>s+a.planned,0);
+  const totalI = areas.reduce((s,a)=>s+(a.progress - a.delay),0);
+  const totalD = areas.reduce((s,a)=>s+a.done,0);
+  let totalOv = areas.reduce((s,a)=>s+a.delay,0);
   new Chart(document.getElementById('chartDoughnut'), {
     type: 'doughnut',
     data: {
@@ -2336,6 +2340,7 @@ const statusCfg = {
   done:        {label:'● 완료',    cls:'s-done',     gbcls:'gb-done'},
   progress:    {label:'◐ 진행중',  cls:'s-progress', gbcls:'gb-progress'},
   planned:     {label:'○ 예정',    cls:'s-planned',  gbcls:'gb-planned'},
+  overdue:     {label:'⚠ 지연',    cls:'s-overdue',  gbcls:'gb-overdue'},
   'needs-input':{label:'※ 입력필요',cls:'s-needs',   gbcls:'gb-needs'},
   '':          {label:'-',         cls:'s-empty',    gbcls:'gb-planned'},
 };
@@ -2347,6 +2352,68 @@ function isOverdue(t) {
   const end = new Date(t.end);
   end.setHours(0,0,0,0);
   return end < _today;
+}
+
+// ── 날짜 기반 자동 상태 계산 ──
+// 규칙: 완료(done) > 지연(overdue-진행 중인데 종료일 초과) > 진행중(progress) > 예정(planned)
+// 완료는 수동 표시 또는 done 날짜 기입 시에만 유지; 나머지는 날짜로 덮어씀
+function autoComputeStatus(t) {
+  // 완료 상태는 유지 (수동 완료 처리)
+  if (t.status === 'done') return 'done';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = t.start ? (() => { const d = new Date(t.start); d.setHours(0,0,0,0); return d; })() : null;
+  const end   = t.end   ? (() => { const d = new Date(t.end);   d.setHours(0,0,0,0); return d; })() : null;
+  // 날짜 정보가 없으면 현재 상태 유지
+  if (!start && !end) return t.status || 'planned';
+  // 종료일이 이미 지남 → 지연 (status를 'overdue'로 저장, 간트 표시는 별도)
+  if (end && end < today) return 'overdue';
+  // 시작일이 오늘 이후 → 예정
+  if (start && start > today) return 'planned';
+  // 시작일이 오늘 이전·이내 → 진행중
+  return 'progress';
+}
+
+function applyAutoStatusAll() {
+  let changed = false;
+  Object.values(taskData).forEach(area => {
+    area.tasks.forEach(cat => {
+      cat.tasks.forEach(t => {
+        const newStatus = autoComputeStatus(t);
+        if (newStatus !== t.status) { t.status = newStatus; changed = true; }
+      });
+    });
+  });
+  return changed; // true이면 Firebase 재저장 권장
+}
+
+// ── summaryAreas를 taskData에서 동적으로 계산 ──
+const _areaConfig = {
+  pmo:        { name:'PMO/사업기획', color:'#00d4ff', page:'pmo' },
+  marketing:  { name:'홍보',        color:'#8b5cf6', page:'marketing' },
+  recruit:    { name:'모집선발',    color:'#f59e0b', page:'recruit' },
+  curriculum: { name:'커리큘럼',   color:'#10b981', page:'curriculum' },
+  infra:      { name:'인프라',     color:'#ef4444', page:'infra' },
+};
+function computeSummaryAreas() {
+  return Object.keys(_areaConfig).map(key => {
+    const cfg = _areaConfig[key];
+    const area = taskData[key];
+    let total = 0, planned = 0, progress = 0, done = 0, delay = 0;
+    if (area) {
+      area.tasks.forEach(cat => {
+        cat.tasks.forEach(t => {
+          total++;
+          const eff = autoComputeStatus(t);
+          if (eff === 'done') done++;
+          else if (eff === 'progress') progress++;
+          else if (eff === 'overdue') { delay++; progress++; } // 지연은 진행중으로도 집계
+          else planned++;
+        });
+      });
+    }
+    const rate = total ? (done + progress * 0.5) / total : 0;
+    return { ...cfg, key, total, planned, progress, done, delay, rate };
+  });
 }
 
 // ── 현재 편집 중인 컨텍스트 ──
@@ -2423,9 +2490,9 @@ function buildGantt(data, areaKey, pid) {
       const left  = datePct(t.start);
       const right = datePct(t.end || t.start);
       const cfg   = statusCfg[t.status] || statusCfg[''];
-      const overdue = isOverdue(t);
+      const overdue = t.status === 'overdue' || isOverdue(t);
       const gbcls  = overdue ? 'gb-overdue' : cfg.gbcls;
-      const sCls  = overdue ? 'gs-overdue' : ({done:'gs-done',progress:'gs-progress',planned:'gs-planned','needs-input':'gs-needs'}[t.status]||'');
+      const sCls  = overdue ? 'gs-overdue' : ({done:'gs-done',progress:'gs-progress',planned:'gs-planned','needs-input':'gs-needs',overdue:'gs-overdue'}[t.status]||'');
       const sIcon = overdue ? 'alarm-clock' : ({done:'check-circle-2',progress:'loader-2',planned:'circle','needs-input':'alert-circle'}[t.status]||'minus');
       const sTitle = overdue ? '⚠ 지연' : (cfg.label||'');
       let bar = '';
@@ -2560,7 +2627,7 @@ function renderIssuesPage() {
   Object.keys(taskData).forEach(areaKey => {
     if (areaFilter && areaKey !== areaFilter) return;
     const areaLabel = _areaLabelMap[areaKey] || areaKey;
-    const areaColor = (summaryAreas.find(a=>a.key===areaKey)||{}).color || '#4361ee';
+    const areaColor = (_areaConfig[areaKey]||{}).color || '#4361ee';
     taskData[areaKey].tasks.forEach(cat => {
       cat.tasks.forEach(t => {
         const entry = { t, areaKey, areaLabel, areaColor };
@@ -3047,8 +3114,11 @@ function saveModal() {
   t.output = document.getElementById('m-output').value.trim();
   t.owner  = document.getElementById('m-owner').value.trim();
   t.note   = document.getElementById('m-note').value.trim();
+  // 날짜가 변경됐을 때 자동 상태 재계산 (수동 완료는 유지)
+  if (t.status !== 'done') t.status = autoComputeStatus(t);
   closeModal();
   renderDetailPage(pid, area);
+  renderSummaryCards();
   if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
   logActivity('과제 수정', `${area} / ${t.name}`);
   syncToFirebase();
@@ -3061,6 +3131,7 @@ function deleteFromModal() {
   taskData[area].tasks[ci].tasks.splice(ti, 1);
   closeModal();
   renderDetailPage(pid, area);
+  renderSummaryCards();
   if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
   logActivity('과제 삭제', `${area} / ${tname}`);
   syncToFirebase();
@@ -4771,6 +4842,10 @@ function initIcons() {
 
 // Firebase에서 데이터 로드 후 앱 초기화
 loadFromFirebase(function() {
+  // 날짜 기반 상태 자동 계산 적용
+  const changed = applyAutoStatusAll();
+  if (changed) syncToFirebase();
+  renderSummaryCards();
   renderCharts();
   renderMonthlyTable();
   renderHero();
