@@ -5120,7 +5120,6 @@ function loadMgmtFromFirebase(onDone) {
     } else {
       mgmtData = { sessions: [] };
     }
-    _seedPresidentBiweekly();
     if (onDone) onDone();
   }).catch(() => { if (onDone) onDone(); });
 }
