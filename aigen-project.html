@@ -2617,6 +2617,9 @@ function _renderMobWeek() {
         if (!t.end || t.status === 'done') return;
         const tStart = t.start || t.end;
         if (t.end < monStr || tStart > sunStr) return;
+        if (!currentUser) return;
+        const owners = (t.owner || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (!owners.includes(currentUser.id)) return;
         const eff = autoComputeStatus(t);
         events.push({ date: t.end, title: t.name, sub: _areaLabelMap[areaKey]||areaKey, color: ac.text, type: 'task', area: areaKey, start: t.start, owner: t.owner, effStatus: eff });
       });
@@ -2691,7 +2694,7 @@ function _renderMobWeek() {
   // ── 구분선 ──
   html += `<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px;">
     <div style="flex:1;height:1px;background:var(--border);"></div>
-    <span style="font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;">영역별 과제</span>
+    <span style="font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;">나의 과제</span>
     <div style="flex:1;height:1px;background:var(--border);"></div>
   </div>`;
 
@@ -2705,7 +2708,7 @@ function _renderMobWeek() {
 
   const hasTask = areaOrder.some(a => byArea[a]?.length);
   if (!hasTask) {
-    html += '<div class="mob-week-empty" style="padding:4px 0 8px;">이번 주 마감 과제 없음</div>';
+    html += '<div class="mob-week-empty" style="padding:4px 0 8px;">이번 주 나의 과제 없음</div>';
   } else {
     areaOrder.forEach(areaKey => {
       const list = byArea[areaKey];
