@@ -489,7 +489,7 @@ body{
 /* 회의록 전용 행 */
 .meeting-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--border);border-radius:12px;background:#fff;transition:box-shadow .15s;min-height:64px;}
 .meeting-row:hover{box-shadow:0 3px 14px rgba(0,0,0,0.08);}
-.meeting-area-btn{flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 0;border-radius:20px;border:none;cursor:default;white-space:nowrap;width:64px;text-align:center;}
+.meeting-area-btn{flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:20px;border:none;cursor:default;white-space:nowrap;min-width:56px;text-align:center;}
 .meeting-row-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
 .meeting-row-title{font-size:15.5px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
 .meeting-row-title:hover{color:var(--accent);}
@@ -1624,7 +1624,7 @@ body{
         </div>
         <div class="field-group" id="meeting-modal-fulltext-wrap">
           <div class="field-label">전체 내용</div>
-          <div id="meeting-modal-fulltext" style="font-size:13px;line-height:1.75;color:var(--text);max-height:480px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:14px;"></div>
+          <div id="meeting-modal-fulltext" style="font-size:13px;line-height:1.75;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:14px;"></div>
         </div>
       </div>
       <div class="modal-foot">
