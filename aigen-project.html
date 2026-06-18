@@ -3215,12 +3215,21 @@ function doLogin() {
     document.getElementById('login-pw').focus();
     return;
   }
+  _applyLogin(user, true);
+}
+
+function _applyLogin(user, animate) {
   currentUser = user;
+  // 세션 저장 (새로고침 후 자동 복원)
+  try { localStorage.setItem('aigen_session', JSON.stringify({ id: user.id, pw: user.pw })); } catch(e) {}
   // 로그인 화면 닫기
   const ls = document.getElementById('login-screen');
-  ls.style.animation = 'loginFadeOut 0.35s ease forwards';
-  setTimeout(() => { ls.style.display = 'none'; }, 340);
-
+  if (animate) {
+    ls.style.animation = 'loginFadeOut 0.35s ease forwards';
+    setTimeout(() => { ls.style.display = 'none'; }, 340);
+  } else {
+    ls.style.display = 'none';
+  }
   // 사이드바 사용자 정보
   renderSidebarUser();
   // 관리자 메뉴
@@ -3248,14 +3257,26 @@ function renderSidebarUser() {
 function doLogout() {
   stopPresence();
   currentUser = null;
+  try { localStorage.removeItem('aigen_session'); } catch(e) {}
   document.getElementById('login-id').value = '';
   document.getElementById('login-pw').value = '';
   document.getElementById('login-error').classList.remove('show');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-screen').style.animation = '';
   document.getElementById('admin-nav-section').style.display = 'none';
-  // summary로 초기화
   showPage('summary');
+}
+
+function tryRestoreSession() {
+  try {
+    const saved = localStorage.getItem('aigen_session');
+    if (!saved) return false;
+    const { id, pw } = JSON.parse(saved);
+    const user = users.find(u => u.id === id && u.pw === pw);
+    if (!user) { localStorage.removeItem('aigen_session'); return false; }
+    _applyLogin(user, false);
+    return true;
+  } catch(e) { return false; }
 }
 
 // =================== 접속 상태(presence) ===================
@@ -4887,6 +4908,7 @@ loadFromFirebase(function() {
   });
   loadUsersFromFirebase(function() {
     renderUserTable();
+    tryRestoreSession(); // 새로고침/배포 후 자동 재로그인
   });
   loadActivityLogFromFirebase(function() {
     renderActivityLog();
