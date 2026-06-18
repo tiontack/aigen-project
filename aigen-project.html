@@ -1455,7 +1455,7 @@ body{
       <div class="modal-body" style="max-height:60vh;overflow:auto;">
         <div id="meeting-modal-meta" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
         <div class="field-group" id="meeting-modal-summary-wrap">
-          <div class="field-label">자동 요약</div>
+          <div class="field-label" id="meeting-modal-summary-label">요약</div>
           <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
         </div>
         <div class="field-group" id="meeting-modal-fulltext-wrap">
@@ -1617,6 +1617,14 @@ body{
           <input id="mreg-attendees" class="field-input" type="text" placeholder="예: 홍길동, 김철수, 이영희">
         </div>
         <div class="field-group full">
+          <div class="field-label">요약</div>
+          <textarea id="mreg-summary" class="field-input" rows="3" placeholder="핵심 내용을 간략히 입력하세요 (한 줄씩 또는 자유 형식)" style="resize:vertical;min-height:72px;"></textarea>
+        </div>
+        <div class="field-group full">
+          <div class="field-label">전체 내용</div>
+          <textarea id="mreg-fullcontent" class="field-input" rows="5" placeholder="회의 전체 내용을 입력하세요 (선택)" style="resize:vertical;min-height:100px;"></textarea>
+        </div>
+        <div class="field-group full">
           <div class="field-label">PDF 파일</div>
           <div style="display:flex;align-items:center;gap:10px;">
             <label class="btn-add" style="cursor:pointer;flex-shrink:0;">
@@ -1625,6 +1633,7 @@ body{
             </label>
             <span id="mreg-file-name" style="font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">선택된 파일 없음</span>
           </div>
+          <div style="font-size:11.5px;color:var(--text3);margin-top:5px;">PDF 업로드 시 자동 추출 내용으로 덮어씌워집니다</div>
         </div>
       </div>
     </div>
@@ -4109,6 +4118,8 @@ function openMeetingRegModal() {
   document.getElementById('mreg-topic').value = '';
   document.getElementById('mreg-date').value = new Date().toISOString().slice(0,10);
   document.getElementById('mreg-attendees').value = '';
+  document.getElementById('mreg-summary').value = '';
+  document.getElementById('mreg-fullcontent').value = '';
   document.getElementById('mreg-file-name').textContent = '선택된 파일 없음';
   document.getElementById('mreg-file-input').value = '';
   const areaSel = document.getElementById('mreg-area');
@@ -4138,10 +4149,14 @@ async function submitMeetingReg() {
   const date  = document.getElementById('mreg-date').value;
   const area  = document.getElementById('mreg-area').value;
   const attendees = document.getElementById('mreg-attendees').value.trim();
+  const manualSummary = document.getElementById('mreg-summary').value.trim();
+  const manualFull = document.getElementById('mreg-fullcontent').value.trim();
   const btn = document.getElementById('mreg-submit-btn');
   btn.disabled = true; btn.textContent = '처리중...';
   try {
-    let fileData = '', fileName = '', fullText = '', pageImages = [], summary = [];
+    let fileData = '', fileName = '', fullText = manualFull, pageImages = [], summary = [];
+    // summary: manual input → split by newline into bullet array
+    if (manualSummary) summary = manualSummary.split('\n').map(s=>s.trim()).filter(Boolean);
     if (_mregFile) {
       const [dataUrl, buf] = await Promise.all([readFileAsDataURL(_mregFile), readFileAsArrayBuffer(_mregFile)]);
       fileData = dataUrl; fileName = _mregFile.name;
@@ -4264,7 +4279,9 @@ function openMeetingModal(i) {
   // 요약
   const summaryArr = Array.isArray(m.summary) ? m.summary : (m.summary ? [m.summary] : []);
   const summaryWrap = document.getElementById('meeting-modal-summary-wrap');
+  const summaryLabel = document.getElementById('meeting-modal-summary-label');
   summaryWrap.style.display = summaryArr.length ? '' : 'none';
+  if (summaryLabel) summaryLabel.textContent = m.fileData ? '자동 요약' : '요약';
   document.getElementById('meeting-modal-summary').innerHTML = summaryArr.length
     ? `<ul style="margin:0;padding-left:18px;">${summaryArr.map(s => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ul>`
     : '';
