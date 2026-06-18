@@ -436,6 +436,10 @@ body{
 .mention-tag{color:var(--accent);font-weight:700;background:rgba(67,97,238,0.08);border-radius:4px;padding:0 3px;}
 .mention-tag.mention-task{cursor:pointer;text-decoration:underline;text-decoration-style:dotted;}
 .mention-tag.mention-task:hover{background:rgba(67,97,238,0.18);}
+.mention-tag.mention-broadcast{color:#d97706;background:rgba(217,119,6,0.1);border-radius:4px;padding:0 3px;}
+.mention-item.mention-broadcast-item .mention-label{color:#d97706;}
+.mention-item.mention-broadcast-item{background:#fffbeb;}
+.mention-item.mention-broadcast-item:hover,.mention-item.mention-broadcast-item.active{background:#fef3c7;}
 .msg-bubble-row.mentioned{background:#fff8e1;border-radius:10px;padding:6px 8px;margin:-6px -8px;}
 .mention-dropdown{
   position:fixed;z-index:1100;background:#fff;border:1px solid var(--border);border-radius:10px;
@@ -1641,11 +1645,6 @@ body{
 </div>
 
 <div class="save-notice" id="save-notice">✓ 저장됨</div>
-<div class="deploy-notice" id="deploy-notice">
-  🚀 새 버전이 배포되었습니다.
-  <button onclick="location.reload()">지금 업데이트</button>
-  <button onclick="document.getElementById('deploy-notice').style.display='none'" style="background:transparent;border-color:rgba(255,255,255,0.2);opacity:0.7;">나중에</button>
-</div>
 
 <script>
 // =================== DATA ===================
@@ -3357,6 +3356,9 @@ function renderMsgThread() {
 let _mentionState = { el: null, dropdown: null, items: [], activeIdx: 0, matchLen: 0 };
 function getMentionCandidates() {
   const list = [];
+  // 브로드캐스트 멘션 (항상 상단)
+  list.push({ label: 'all', sub: '전체 사용자 알림', type: 'broadcast' });
+  list.push({ label: 'channel', sub: '채널 멤버 알림', type: 'broadcast' });
   users.forEach(u => list.push({ label: u.id, sub: '사용자', type: 'user' }));
   Object.keys(taskData).forEach(areaKey => {
     const areaLabel = _areaLabelMap[areaKey] || taskData[areaKey].title;
@@ -3365,6 +3367,13 @@ function getMentionCandidates() {
     });
   });
   return list;
+}
+function getChannelMembers(channelKey) {
+  if (!channelKey) return users.map(u => u.id);
+  if (channelKey.startsWith('dm-')) {
+    return channelKey.replace('dm-', '').split('_');
+  }
+  return users.map(u => u.id); // general / area / custom → 전체
 }
 function findTaskByName(name) {
   for (const areaKey of Object.keys(taskData)) {
@@ -3381,11 +3390,21 @@ function openTaskMentionByName(name) {
   openModal(loc.areaKey, loc.areaKey, loc.ci, loc.ti);
 }
 function extractMentionedUsers(text) {
+  const found = new Set();
+  // @all → 전체 사용자 확장
+  if (/@all(?!\S)/.test(text)) {
+    users.forEach(u => found.add(u.id));
+    return [...found];
+  }
+  // @channel → 현재 채널 멤버 확장
+  if (/@channel(?!\S)/.test(text)) {
+    getChannelMembers(_curChannel).forEach(id => found.add(id));
+    return [...found];
+  }
   const userLabels = getMentionCandidates().filter(c => c.type === 'user').map(c => c.label).sort((a, b) => b.length - a.length);
   if (!userLabels.length) return [];
   const escaped = userLabels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const re = new RegExp('@(' + escaped.join('|') + ')(?!\\S)', 'g');
-  const found = new Set();
   let m;
   while ((m = re.exec(text))) found.add(m[1]);
   return [...found];
@@ -3419,8 +3438,8 @@ function showMentionDropdown(el, items, matchLen) {
   dd.style.top = (rect.bottom + 4) + 'px';
   dd.style.width = Math.max(Math.min(rect.width, 280), 160) + 'px';
   dd.innerHTML = items.map((it, i) => `
-    <div class="mention-item${i === 0 ? ' active' : ''}" data-idx="${i}">
-      <span class="mention-label">${it.label}</span><span class="mention-sub">${it.sub}</span>
+    <div class="mention-item${i === 0 ? ' active' : ''}${it.type === 'broadcast' ? ' mention-broadcast-item' : ''}" data-idx="${i}">
+      <span class="mention-label">${it.type === 'broadcast' ? '⚡ ' : ''}@${it.label}</span><span class="mention-sub">${it.sub}</span>
     </div>`).join('');
   document.body.appendChild(dd);
   dd.querySelectorAll('.mention-item').forEach(node => {
@@ -3461,7 +3480,10 @@ function handleMentionKeydown(el, e, opts) {
   if (e.key === 'Enter' && opts && opts.onEnter) { opts.onEnter(); }
 }
 function highlightMentions(text) {
-  const candidates = getMentionCandidates().sort((a, b) => b.label.length - a.label.length);
+  // @all / @channel 먼저 처리
+  text = text.replace(/@(all|channel)(?!\S)/g, (_, kw) =>
+    `<span class="mention-tag mention-broadcast">@${kw}</span>`);
+  const candidates = getMentionCandidates().filter(c => c.type !== 'broadcast').sort((a, b) => b.label.length - a.label.length);
   if (!candidates.length) return text;
   const byLabel = {};
   candidates.forEach(c => { if (!(c.label in byLabel)) byLabel[c.label] = c; });
@@ -4243,15 +4265,11 @@ loadFromFirebase(function() {
       const etag = res.headers.get('etag') || res.headers.get('last-modified');
       if (!etag) return;
       if (_deployEtag === null) { _deployEtag = etag; return; }
-      if (_deployEtag !== etag) {
-        _deployEtag = etag;
-        const bar = document.getElementById('deploy-notice');
-        if (bar) bar.style.display = 'flex';
-      }
+      if (_deployEtag !== etag) { location.reload(); }
     } catch(e) {}
   }
-  setInterval(checkDeploy, 3 * 60 * 1000); // 3분마다 체크
-  setTimeout(checkDeploy, 5000); // 앱 로드 5초 후 기준 ETag 기록
+  setInterval(checkDeploy, 2 * 60 * 1000); // 2분마다 체크
+  setTimeout(checkDeploy, 5000);
 })();
 
 // showPage 후에도 아이콘 재초기화
