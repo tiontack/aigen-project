@@ -1252,7 +1252,7 @@ body{
   .mob-wdc-num.sat { color:#4361ee; }
   .mob-wdc-num.sun { color:#e63946; }
   /* 일정 목록 */
-  .mob-week-events { padding:8px 12px 12px; }
+  .mob-week-events { padding:8px 4px 12px; }
   .mob-week-event {
     display:flex;align-items:flex-start;gap:10px;
     padding:8px 0;border-bottom:1px solid #f5f6fa;
@@ -2597,7 +2597,7 @@ function _renderMobWeek() {
       cat.tasks.forEach(t => {
         if (!t.end || t.status === 'done') return;
         if (t.end < monStr || t.end > sunStr) return;
-        events.push({ date: t.end, title: t.name, sub: _areaLabelMap[areaKey]||areaKey, color: ac.text, type: 'task', area: areaKey });
+        events.push({ date: t.end, title: t.name, sub: _areaLabelMap[areaKey]||areaKey, color: ac.text, type: 'task', area: areaKey, start: t.start, owner: t.owner });
       });
     });
   });
@@ -2613,13 +2613,23 @@ function _renderMobWeek() {
     const isToday = ev.date === todayStr;
     const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
     const dowStr  = _mobDow[d.getDay()];
+    let infoHtml;
+    if (ev.type === 'task') {
+      const s = ev.start ? ev.start.slice(5).replace('-','/') : '';
+      const e = ev.date.slice(5).replace('-','/');
+      const period = s ? `${s}~${e}` : e;
+      const owner = ev.owner || '-';
+      infoHtml = `<div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.title} / ${period} / ${owner}</div>`;
+    } else {
+      infoHtml = `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+        <div class="mwe-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.title}</div>
+        <div style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;">${ev.sub}</div>
+      </div>`;
+    }
     return `<div class="mob-week-event${isToday ? ' mwe-today' : ''}">
       <div class="mwe-date">${dateStr}<br><small>${dowStr}</small></div>
       <div class="mwe-bar" style="background:${ev.color};"></div>
-      <div class="mwe-info">
-        <div class="mwe-title">${ev.title}</div>
-        <div class="mwe-sub">${ev.sub}</div>
-      </div>
+      <div class="mwe-info">${infoHtml}</div>
     </div>`;
   };
 
@@ -2635,7 +2645,7 @@ function _renderMobWeek() {
   // ── 구분선 ──
   html += `<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px;">
     <div style="flex:1;height:1px;background:var(--border);"></div>
-    <span style="font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;">영역별 과제 마감</span>
+    <span style="font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;">영역별 과제</span>
     <div style="flex:1;height:1px;background:var(--border);"></div>
   </div>`;
 
