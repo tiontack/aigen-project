@@ -1401,7 +1401,7 @@ body{
         <div class="field-group full" id="mgmt-modal-agenda-wrap" style="margin-top:4px;">
           <div class="field-label">아젠다</div>
           <table class="mgmt-agenda-table" style="font-size:13px;">
-            <thead><tr><th style="width:30px;">#</th><th>안건</th><th style="width:160px;">영역</th><th style="width:140px;">발표자</th><th style="width:36px;"></th></tr></thead>
+            <thead><tr><th style="width:30px;">#</th><th>안건</th><th style="width:160px;">영역</th><th style="width:36px;"></th></tr></thead>
             <tbody id="mgmt-modal-items"></tbody>
           </table>
           <button class="mgmt-add-item-btn" style="margin-top:8px;" onclick="mgmtModalAddItem()">＋ 안건 추가</button>
@@ -1436,13 +1436,9 @@ body{
           </div>
         </div>
         <div class="modal-grid">
-          <div class="field-group">
+          <div class="field-group full">
             <div class="field-label">영역</div>
-            <select id="mgmt-item-area" class="field-input"></select>
-          </div>
-          <div class="field-group">
-            <div class="field-label">발표자</div>
-            <select id="mgmt-item-presenter" class="field-input"></select>
+            <select id="mgmt-item-area" class="field-input" style="width:100%;"></select>
           </div>
         </div>
       </div>
@@ -4893,7 +4889,6 @@ function mgmtOpenItemModal() {
   }).join('');
   // 영역·발표자 옵션 채우기
   document.getElementById('mgmt-item-area').innerHTML = _mgmtAreaOptions('');
-  document.getElementById('mgmt-item-presenter').innerHTML = _mgmtPresenterOptions('');
   document.getElementById('mgmt-item-topic').value = '';
   document.getElementById('mgmt-item-overlay').classList.add('open');
 }
@@ -4922,8 +4917,7 @@ function mgmtItemModalSave() {
   s.items = s.items || [];
   s.items.push({
     topic,
-    area: document.getElementById('mgmt-item-area').value,
-    presenter: document.getElementById('mgmt-item-presenter').value
+    area: document.getElementById('mgmt-item-area').value
   });
   syncMgmtToFirebase();
   mgmtCloseItemModal();
@@ -4960,10 +4954,8 @@ function _mgmtModalCollectItems() {
   _mgmtModalItems.forEach((item, i) => {
     const t = document.getElementById(`mgmt-mi-topic-${i}`);
     const a = document.getElementById(`mgmt-mi-area-${i}`);
-    const p = document.getElementById(`mgmt-mi-presenter-${i}`);
     if (t) item.topic = t.value;
     if (a) item.area = a.value;
-    if (p) item.presenter = p.value;
   });
 }
 
@@ -4975,7 +4967,6 @@ function _mgmtModalRenderItems() {
       <td style="color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
       <td><input id="mgmt-mi-topic-${i}" class="field-input" style="margin:0;" value="${(item.topic||'').replace(/"/g,'&quot;')}" placeholder="안건 입력"></td>
       <td><select id="mgmt-mi-area-${i}" class="field-input" style="margin:0;">${_mgmtAreaOptions(item.area||'')}</select></td>
-      <td><select id="mgmt-mi-presenter-${i}" class="field-input" style="margin:0;">${_mgmtPresenterOptions(item.presenter||'')}</select></td>
       <td style="text-align:center;"><button class="mgmt-del-row-btn" onclick="mgmtModalRemoveItem(${i})">✕</button></td>
     </tr>`).join('');
 }
@@ -5046,15 +5037,17 @@ function renderMgmtPage() {
 
   body.innerHTML = filtered.map(s => {
     const rcpKey = s.recipient || '총장';
+    const _mgmtAreaColors = {pmo:'#00d4ff',curriculum:'#10b981',marketing:'#8b5cf6',recruit:'#f59e0b',infra:'#ef4444'};
+    const _mgmtAreaTextColors = {pmo:'#005f5a',curriculum:'#065f46',marketing:'#3b0764',recruit:'#78350f',infra:'#7f1d1d'};
     const itemRows = s.items.map((item, i) => {
       const highlight = _mgmtAreaFilter && item.area === _mgmtAreaFilter;
-      const presenterName = item.presenter ? (users.find(u => u.id === item.presenter)?.name || item.presenter) : '-';
       const areaLabel = item.area ? (_areaLabelMap[item.area] || item.area) : '전체';
+      const areaBg = item.area ? (_mgmtAreaColors[item.area] || '#e0e7ff') : '#e0e7ff';
+      const areaFg = item.area ? (_mgmtAreaTextColors[item.area] || '#3730a3') : '#3730a3';
       return `<tr${highlight ? ' style="background:#fffbeb;"' : ''}>
         <td style="width:30px;color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
         <td style="font-size:13px;">${item.topic || '<span style="color:var(--text3);">미입력</span>'}</td>
-        <td style="width:160px;"><span class="area-chip" style="font-size:11px;padding:2px 8px;">${areaLabel}</span></td>
-        <td style="width:140px;font-size:12.5px;color:var(--text2);">${presenterName}</td>
+        <td style="width:140px;"><span style="display:inline-block;background:${areaBg};color:${areaFg};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">${areaLabel}</span></td>
       </tr>`;
     }).join('');
 
@@ -5073,7 +5066,7 @@ function renderMgmtPage() {
       <div class="mgmt-card-right">
         <div class="mgmt-card-body" style="padding-bottom:14px;">
           ${itemRows ? `<table class="mgmt-agenda-table">
-            <thead><tr><th style="width:30px;">#</th><th>안건</th><th style="width:160px;">영역</th><th style="width:140px;">발표자</th></tr></thead>
+            <thead><tr><th style="width:30px;">#</th><th>안건</th><th style="width:140px;">영역</th></tr></thead>
             <tbody>${itemRows}</tbody>
           </table>` : `<div style="padding:24px 0;color:var(--text3);font-size:13px;text-align:center;">등록된 안건이 없습니다. <button onclick="mgmtOpenItemModal()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 안건 추가</button></div>`}
         </div>
