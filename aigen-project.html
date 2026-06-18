@@ -869,7 +869,7 @@ body{
 .modal-overlay.open{opacity:1;pointer-events:all;}
 .modal{
   background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(67,97,238,0.18);
-  width:540px;max-width:94vw;max-height:90vh;overflow-y:auto;
+  width:540px;max-width:94vw;max-height:90vh;overflow-y:auto;overflow-x:hidden;
   transform:translateY(12px);transition:transform 0.22s;
 }
 .modal-overlay.open .modal{transform:translateY(0);}
@@ -1621,11 +1621,11 @@ body{
         <!-- 본문 섹션 -->
         <div class="field-group" id="meeting-modal-summary-wrap">
           <div class="field-label" id="meeting-modal-summary-label">요약</div>
-          <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:14px;font-size:13px;line-height:1.75;overflow-x:auto;max-width:100%;box-sizing:border-box;"></div>
+          <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:14px;font-size:13px;line-height:1.75;overflow-x:auto;width:100%;max-width:100%;box-sizing:border-box;display:block;"></div>
         </div>
         <div class="field-group" id="meeting-modal-fulltext-wrap">
           <div class="field-label">전체 내용</div>
-          <div id="meeting-modal-fulltext" style="font-size:13px;line-height:1.75;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;max-width:100%;box-sizing:border-box;"></div>
+          <div id="meeting-modal-fulltext" style="font-size:13px;line-height:1.75;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;width:100%;max-width:100%;box-sizing:border-box;display:block;"></div>
         </div>
       </div>
       <div class="modal-foot">
