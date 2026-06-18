@@ -4893,6 +4893,12 @@ function mgmtOpenItemModal() {
   document.getElementById('mgmt-item-overlay').classList.add('open');
 }
 
+function mgmtOpenItemModalForSession(sessionId) {
+  mgmtOpenItemModal();
+  const sel = document.getElementById('mgmt-item-session-sel');
+  if (sel) sel.value = sessionId;
+}
+
 function mgmtCloseItemModal() {
   document.getElementById('mgmt-item-overlay').classList.remove('open');
 }
@@ -5046,8 +5052,8 @@ function renderMgmtPage() {
       const areaFg = item.area ? (_mgmtAreaTextColors[item.area] || '#3730a3') : '#3730a3';
       return `<tr${highlight ? ' style="background:#fffbeb;"' : ''}>
         <td style="width:30px;color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
+        <td style="width:130px;"><span style="display:inline-block;background:${areaBg};color:${areaFg};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">${areaLabel}</span></td>
         <td style="font-size:13px;">${item.topic || '<span style="color:var(--text3);">미입력</span>'}</td>
-        <td style="width:140px;"><span style="display:inline-block;background:${areaBg};color:${areaFg};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">${areaLabel}</span></td>
       </tr>`;
     }).join('');
 
@@ -5055,6 +5061,7 @@ function renderMgmtPage() {
     <div class="mgmt-card mgmt-card-wrap">
       <button class="mgmt-card-menu-btn" onclick="mgmtToggleCardMenu(event,'mgmt-menu-${s.id}')">⋯</button>
       <div class="mgmt-card-dropdown" id="mgmt-menu-${s.id}">
+        <button onclick="mgmtOpenItemModalForSession('${s.id}');document.getElementById('mgmt-menu-${s.id}').classList.remove('open')">＋ 안건 추가</button>
         <button onclick="mgmtEditSession('${s.id}');document.getElementById('mgmt-menu-${s.id}').classList.remove('open')">✏️ 수정</button>
         <button class="danger" onclick="mgmtDeleteSession('${s.id}')">🗑 삭제</button>
       </div>
@@ -5066,7 +5073,7 @@ function renderMgmtPage() {
       <div class="mgmt-card-right">
         <div class="mgmt-card-body" style="padding-bottom:14px;">
           ${itemRows ? `<table class="mgmt-agenda-table">
-            <thead><tr><th style="width:30px;">#</th><th>안건</th><th style="width:140px;">영역</th></tr></thead>
+            <thead><tr><th style="width:30px;">#</th><th style="width:130px;">영역</th><th>안건</th></tr></thead>
             <tbody>${itemRows}</tbody>
           </table>` : `<div style="padding:24px 0;color:var(--text3);font-size:13px;text-align:center;">등록된 안건이 없습니다. <button onclick="mgmtOpenItemModal()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 안건 추가</button></div>`}
         </div>
