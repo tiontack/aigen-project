@@ -5261,16 +5261,26 @@ loadFromFirebase(function() {
   initIcons();
 });
 
-// ── 배포 감지 자동 새로고침 ──
+// ── 배포 감지 업데이트 알림 ──
 (function() {
   let _deployEtag = null;
+  let _updateBannerShown = false;
   async function checkDeploy() {
     try {
       const res = await fetch('/index.html?_=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
       const etag = res.headers.get('etag') || res.headers.get('last-modified');
       if (!etag) return;
       if (_deployEtag === null) { _deployEtag = etag; return; }
-      if (_deployEtag !== etag) { location.reload(); }
+      if (_deployEtag !== etag && !_updateBannerShown) {
+        _updateBannerShown = true;
+        const banner = document.createElement('div');
+        banner.id = 'update-banner';
+        banner.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e2e;color:#fff;border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,0.28);z-index:99999;font-size:14px;font-family:inherit;white-space:nowrap;';
+        banner.innerHTML = '<span>🆕 새 업데이트가 있습니다.</span>'
+          + '<button onclick="location.reload()" style="background:#4361ee;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">지금 업데이트</button>'
+          + '<button onclick="this.parentElement.remove()" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;font-family:inherit;">나중에</button>';
+        document.body.appendChild(banner);
+      }
     } catch(e) {}
   }
   setInterval(checkDeploy, 2 * 60 * 1000); // 2분마다 체크
