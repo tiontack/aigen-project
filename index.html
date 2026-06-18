@@ -2518,12 +2518,15 @@ function applyAutoStatusAll() {
   Object.values(taskData).forEach(area => {
     area.tasks.forEach(cat => {
       cat.tasks.forEach(t => {
+        // 사용자가 직접 설정한 상태(progress, done, overdue, needs-input)는 건드리지 않음
+        // planned 상태인 과제만 날짜 기반으로 자동 전환 (예정→진행중)
+        if (t.status !== 'planned' && t.status) return;
         const newStatus = autoComputeStatus(t);
         if (newStatus !== t.status) { t.status = newStatus; changed = true; }
       });
     });
   });
-  return changed; // true이면 Firebase 재저장 권장
+  return changed;
 }
 
 // ── summaryAreas를 taskData에서 동적으로 계산 ──
@@ -3262,8 +3265,7 @@ function saveModal() {
   t.output = document.getElementById('m-output').value.trim();
   t.owner  = document.getElementById('m-owner').value.trim();
   t.note   = document.getElementById('m-note').value.trim();
-  // 날짜가 변경됐을 때 자동 상태 재계산 (수동 완료는 유지)
-  if (t.status !== 'done') t.status = autoComputeStatus(t);
+  // 사용자가 직접 선택한 상태는 그대로 유지 (자동 재계산 없음)
   closeModal();
   renderDetailPage(pid, area);
   renderSummaryCards();
