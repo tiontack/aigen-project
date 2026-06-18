@@ -5095,8 +5095,12 @@ function loadMgmtFromFirebase(onDone) {
   _db.ref('mgmtProcess').once('value').then(snap => {
     const val = snap.val();
     if (val && typeof val === 'object') {
-      if (Array.isArray(val.sessions)) {
-        mgmtData = val;
+      if (val.sessions) {
+        // Firebase returns arrays as objects with numeric keys — convert back
+        const sessions = Array.isArray(val.sessions)
+          ? val.sessions
+          : Object.values(val.sessions);
+        mgmtData = { ...val, sessions };
       } else {
         mgmtData = { sessions: [] };
       }
