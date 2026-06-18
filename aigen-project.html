@@ -623,6 +623,26 @@ body{
 .mgmt-del-row-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:2px 4px;border-radius:4px;line-height:1;}
 .mgmt-del-row-btn:hover{color:#e63946;background:#fff0f0;}
 .mgmt-empty{text-align:center;padding:60px 20px;color:var(--text2);font-size:14px;}
+/* mgmt 등록 모달 수신자 버튼 */
+.mgmt-modal-rcp-btn{border:2px solid var(--border);border-radius:9px;padding:7px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;background:#f5f7ff;color:var(--text2);}
+.mgmt-modal-rcp-총장{border-color:#00b4a6;}.mgmt-modal-rcp-총장.active{background:#00b4a6;color:#fff;border-color:#00b4a6;}
+.mgmt-modal-rcp-의장{border-color:#f77f00;}.mgmt-modal-rcp-의장.active{background:#f77f00;color:#fff;border-color:#f77f00;}
+.mgmt-modal-rcp-TM{border-color:#e63946;}.mgmt-modal-rcp-TM.active{background:#e63946;color:#fff;border-color:#e63946;}
+/* 읽기 전용 카드 */
+.mgmt-card-ro-left{width:15%;min-width:130px;max-width:190px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 14px;gap:6px;}
+.mgmt-card-ro-rcp{font-size:16px;font-weight:800;color:#fff;letter-spacing:.5px;}
+.mgmt-card-ro-date{font-size:11px;color:rgba(255,255,255,0.75);}
+.mgmt-card-ro-title{font-size:12.5px;font-weight:700;color:#fff;text-align:center;word-break:keep-all;margin-top:2px;}
+/* 카드 케밥 메뉴 */
+.mgmt-card-wrap{position:relative;}
+.mgmt-card-menu-btn{position:absolute;top:10px;right:12px;background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:2px 6px;border-radius:6px;line-height:1;z-index:2;}
+.mgmt-card-menu-btn:hover{background:var(--border);color:var(--text);}
+.mgmt-card-dropdown{display:none;position:absolute;top:36px;right:12px;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:100;min-width:110px;overflow:hidden;}
+.mgmt-card-dropdown.open{display:block;}
+.mgmt-card-dropdown button{display:block;width:100%;text-align:left;padding:10px 16px;font-size:13px;font-weight:600;background:none;border:none;cursor:pointer;font-family:inherit;color:var(--text);}
+.mgmt-card-dropdown button:hover{background:#f5f7ff;}
+.mgmt-card-dropdown button.danger{color:#e63946;}
+.mgmt-card-dropdown button.danger:hover{background:#fff0f0;}
 /* 좌측 배경 컬러 */
 .mgmt-left-총장{background:linear-gradient(160deg,#00c9b8,#00866a);}
 .mgmt-left-의장{background:linear-gradient(160deg,#ff9a3c,#e06200);}
@@ -1348,6 +1368,91 @@ body{
     <div id="issues-content"></div>
   </div>
 
+  <!-- ── Mgmt. Process 보고/통합 등록 모달 ── -->
+  <div class="modal-overlay" id="mgmt-reg-overlay" onclick="if(event.target===this)mgmtCloseModal()">
+    <div class="modal" style="width:740px;max-width:96vw;">
+      <div class="modal-head">
+        <h3 id="mgmt-modal-title-h">보고 등록</h3>
+        <button class="modal-close" onclick="mgmtCloseModal()">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:76vh;overflow-y:auto;">
+        <div class="field-group">
+          <div class="field-label">보고 대상 <span style="color:#e63946">*</span></div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="mgmt-modal-rcp-btn mgmt-modal-rcp-총장 active" id="mgmt-modal-rcp-총장" onclick="mgmtModalToggleRcp('총장')">총장</button>
+            <button type="button" class="mgmt-modal-rcp-btn mgmt-modal-rcp-의장" id="mgmt-modal-rcp-의장" onclick="mgmtModalToggleRcp('의장')">의장</button>
+            <button type="button" class="mgmt-modal-rcp-btn mgmt-modal-rcp-TM" id="mgmt-modal-rcp-TM" onclick="mgmtModalToggleRcp('TM')">TM</button>
+          </div>
+        </div>
+        <div class="modal-grid">
+          <div class="field-group">
+            <div class="field-label">보고 날짜</div>
+            <input type="date" id="mgmt-modal-date" class="field-input">
+          </div>
+          <div class="field-group">
+            <div class="field-label">보고 제목 <span id="mgmt-modal-char" style="font-size:11px;color:var(--text3);font-weight:400;">0/20</span></div>
+            <input type="text" id="mgmt-modal-title" class="field-input" maxlength="20" placeholder="20자 이내 (선택)" oninput="document.getElementById('mgmt-modal-char').textContent=this.value.length+'/20'">
+          </div>
+        </div>
+        <!-- 아젠다 테이블 (통합/수정 모드에서만 노출) -->
+        <div class="field-group full" id="mgmt-modal-agenda-wrap" style="margin-top:4px;">
+          <div class="field-label">아젠다</div>
+          <table class="mgmt-agenda-table" style="font-size:13px;">
+            <thead><tr><th style="width:30px;">#</th><th>안건</th><th style="width:160px;">영역</th><th style="width:140px;">발표자</th><th style="width:36px;"></th></tr></thead>
+            <tbody id="mgmt-modal-items"></tbody>
+          </table>
+          <button class="mgmt-add-item-btn" style="margin-top:8px;" onclick="mgmtModalAddItem()">＋ 안건 추가</button>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div style="display:flex;gap:10px;">
+          <button style="padding:9px 18px;background:#f1f2f5;color:var(--text2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="mgmtCloseModal()">취소</button>
+          <button class="btn-modal-save" onclick="mgmtModalSave()">등록</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Mgmt. Process 안건 등록 모달 ── -->
+  <div class="modal-overlay" id="mgmt-item-overlay" onclick="if(event.target===this)mgmtCloseItemModal()">
+    <div class="modal" style="width:540px;max-width:96vw;">
+      <div class="modal-head">
+        <h3>안건 등록</h3>
+        <button class="modal-close" onclick="mgmtCloseItemModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group full">
+          <div class="field-label">보고 일정 선택 <span style="color:#e63946">*</span></div>
+          <select id="mgmt-item-session-sel" class="field-input" style="width:100%;"></select>
+        </div>
+        <div class="modal-grid">
+          <div class="field-group full">
+            <div class="field-label">안건 제목 <span style="color:#e63946">*</span></div>
+            <input type="text" id="mgmt-item-topic" class="field-input" placeholder="안건 제목 입력">
+          </div>
+        </div>
+        <div class="modal-grid">
+          <div class="field-group">
+            <div class="field-label">영역</div>
+            <select id="mgmt-item-area" class="field-input"></select>
+          </div>
+          <div class="field-group">
+            <div class="field-label">발표자</div>
+            <select id="mgmt-item-presenter" class="field-input"></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div style="display:flex;gap:10px;">
+          <button style="padding:9px 18px;background:#f1f2f5;color:var(--text2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;" onclick="mgmtCloseItemModal()">취소</button>
+          <button class="btn-modal-save" onclick="mgmtItemModalSave()">등록</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Mgmt. Process ── -->
   <div id="page-mgmt" class="page">
     <div class="page-header">
@@ -1355,7 +1460,11 @@ body{
         <h2><i data-lucide="clipboard-list" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">Mgmt. Process</span></h2>
         <p>정기 보고 아젠다 관리 — 보고 대상별 컬러 구분</p>
       </div>
-      <button class="btn-add" onclick="mgmtAddSession()">＋ 보고 등록</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-add" style="background:#6c757d;" onclick="mgmtOpenItemModal()">안건 ＋</button>
+        <button class="btn-add" style="background:var(--text2);" onclick="mgmtOpenReportModal()">보고 ＋</button>
+        <button class="btn-add" onclick="mgmtAddSession()">통합 ＋</button>
+      </div>
     </div>
     <!-- 영역별 Sorting 필터 -->
     <div class="mgmt-area-filter-bar">
@@ -4660,19 +4769,194 @@ function _mgmtBuildAreaFilterBar() {
     ${chips}`;
 }
 
+// ── Mgmt. Process 모달 상태 ──
+let _mgmtModalEditId = null;
+let _mgmtModalItems = [];
+let _mgmtModalRcp = '총장';
+let _mgmtModalMode = 'integrated'; // 'integrated' | 'report-only'
+
+// 통합 등록 (보고 + 안건 함께)
 function mgmtAddSession() {
-  const session = {
-    id: 'ss_' + Date.now(),
-    date: new Date().toISOString().slice(0,10),
-    recipient: '총장',
-    title: '',
-    items: [{ topic:'', area:'', presenter:'' }]
-  };
-  // 날짜순 정렬 유지: unshift 후 sort
-  mgmtData.sessions.unshift(session);
+  _mgmtModalMode = 'integrated';
+  _mgmtModalEditId = null;
+  _mgmtModalRcp = '총장';
+  _mgmtModalItems = [{ topic:'', area: _mgmtAreaFilter||'', presenter:'' }];
+  document.getElementById('mgmt-modal-title-h').textContent = '통합 등록';
+  document.getElementById('mgmt-reg-overlay').querySelector('.btn-modal-save').textContent = '등록';
+  document.getElementById('mgmt-modal-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('mgmt-modal-title').value = '';
+  document.getElementById('mgmt-modal-char').textContent = '0/20';
+  document.getElementById('mgmt-modal-agenda-wrap').style.display = '';
+  _mgmtModalApplyRcp();
+  _mgmtModalRenderItems();
+  document.getElementById('mgmt-reg-overlay').style.display = 'flex';
+}
+
+// 보고만 등록 (날짜·대상·제목만)
+function mgmtOpenReportModal() {
+  _mgmtModalMode = 'report-only';
+  _mgmtModalEditId = null;
+  _mgmtModalRcp = '총장';
+  _mgmtModalItems = [];
+  document.getElementById('mgmt-modal-title-h').textContent = '보고 등록';
+  document.getElementById('mgmt-reg-overlay').querySelector('.btn-modal-save').textContent = '등록';
+  document.getElementById('mgmt-modal-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('mgmt-modal-title').value = '';
+  document.getElementById('mgmt-modal-char').textContent = '0/20';
+  document.getElementById('mgmt-modal-agenda-wrap').style.display = 'none';
+  _mgmtModalApplyRcp();
+  document.getElementById('mgmt-reg-overlay').style.display = 'flex';
+}
+
+// 기존 세션 수정 (통합 모드)
+function mgmtEditSession(id) {
+  const s = mgmtData.sessions.find(s => s.id === id);
+  if (!s) return;
+  _mgmtModalMode = 'integrated';
+  _mgmtModalEditId = id;
+  _mgmtModalRcp = s.recipient || '총장';
+  _mgmtModalItems = JSON.parse(JSON.stringify(s.items && s.items.length ? s.items : [{ topic:'', area:'', presenter:'' }]));
+  document.getElementById('mgmt-modal-title-h').textContent = '보고 수정';
+  document.getElementById('mgmt-reg-overlay').querySelector('.btn-modal-save').textContent = '저장';
+  document.getElementById('mgmt-modal-date').value = s.date || '';
+  document.getElementById('mgmt-modal-title').value = s.title || '';
+  document.getElementById('mgmt-modal-char').textContent = (s.title||'').length + '/20';
+  document.getElementById('mgmt-modal-agenda-wrap').style.display = '';
+  _mgmtModalApplyRcp();
+  _mgmtModalRenderItems();
+  document.getElementById('mgmt-reg-overlay').style.display = 'flex';
+}
+
+function mgmtCloseModal() {
+  document.getElementById('mgmt-reg-overlay').style.display = 'none';
+}
+
+// 안건 등록 모달
+function mgmtOpenItemModal() {
+  // 세션 목록 채우기
+  const sel = document.getElementById('mgmt-item-session-sel');
+  const sessions = [...(mgmtData.sessions||[])].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+  if (sessions.length === 0) {
+    alert('먼저 보고 일정을 등록해 주세요.');
+    return;
+  }
+  sel.innerHTML = sessions.map(s => {
+    const rcp = s.recipient || '총장';
+    const label = `[${rcp}] ${s.date||'날짜미정'}${s.title ? ' — ' + s.title : ''}`;
+    return `<option value="${s.id}">${label}</option>`;
+  }).join('');
+  // 영역·발표자 옵션 채우기
+  document.getElementById('mgmt-item-area').innerHTML = _mgmtAreaOptions('');
+  document.getElementById('mgmt-item-presenter').innerHTML = _mgmtPresenterOptions('');
+  document.getElementById('mgmt-item-topic').value = '';
+  document.getElementById('mgmt-item-overlay').style.display = 'flex';
+}
+
+function mgmtCloseItemModal() {
+  document.getElementById('mgmt-item-overlay').style.display = 'none';
+}
+
+function mgmtToggleCardMenu(e, menuId) {
+  e.stopPropagation();
+  document.querySelectorAll('.mgmt-card-dropdown.open').forEach(el => { if (el.id !== menuId) el.classList.remove('open'); });
+  document.getElementById(menuId)?.classList.toggle('open');
+}
+// 외부 클릭 시 케밥 메뉴 닫기
+document.addEventListener('click', () => {
+  document.querySelectorAll('.mgmt-card-dropdown.open').forEach(el => el.classList.remove('open'));
+});
+
+function mgmtItemModalSave() {
+  const sid = document.getElementById('mgmt-item-session-sel').value;
+  const topic = document.getElementById('mgmt-item-topic').value.trim();
+  if (!sid) { alert('보고 일정을 선택해 주세요.'); return; }
+  if (!topic) { alert('안건 제목을 입력해 주세요.'); return; }
+  const s = mgmtData.sessions.find(s => s.id === sid);
+  if (!s) return;
+  s.items = s.items || [];
+  s.items.push({
+    topic,
+    area: document.getElementById('mgmt-item-area').value,
+    presenter: document.getElementById('mgmt-item-presenter').value
+  });
+  syncMgmtToFirebase();
+  mgmtCloseItemModal();
+  renderMgmtPage();
+  showSave();
+}
+
+function mgmtModalToggleRcp(r) {
+  _mgmtModalRcp = r;
+  _mgmtModalApplyRcp();
+}
+
+function _mgmtModalApplyRcp() {
+  ['총장','의장','TM'].forEach(r => {
+    const btn = document.getElementById(`mgmt-modal-rcp-${r}`);
+    if (btn) btn.classList.toggle('active', r === _mgmtModalRcp);
+  });
+}
+
+function mgmtModalAddItem() {
+  _mgmtModalCollectItems();
+  _mgmtModalItems.push({ topic:'', area: _mgmtAreaFilter||'', presenter:'' });
+  _mgmtModalRenderItems();
+}
+
+function mgmtModalRemoveItem(idx) {
+  _mgmtModalCollectItems();
+  _mgmtModalItems.splice(idx, 1);
+  if (_mgmtModalItems.length === 0) _mgmtModalItems.push({ topic:'', area:'', presenter:'' });
+  _mgmtModalRenderItems();
+}
+
+function _mgmtModalCollectItems() {
+  _mgmtModalItems.forEach((item, i) => {
+    const t = document.getElementById(`mgmt-mi-topic-${i}`);
+    const a = document.getElementById(`mgmt-mi-area-${i}`);
+    const p = document.getElementById(`mgmt-mi-presenter-${i}`);
+    if (t) item.topic = t.value;
+    if (a) item.area = a.value;
+    if (p) item.presenter = p.value;
+  });
+}
+
+function _mgmtModalRenderItems() {
+  const tbody = document.getElementById('mgmt-modal-items');
+  if (!tbody) return;
+  tbody.innerHTML = _mgmtModalItems.map((item, i) => `
+    <tr>
+      <td style="color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
+      <td><input id="mgmt-mi-topic-${i}" class="field-input" style="margin:0;" value="${(item.topic||'').replace(/"/g,'&quot;')}" placeholder="안건 입력"></td>
+      <td><select id="mgmt-mi-area-${i}" class="field-input" style="margin:0;">${_mgmtAreaOptions(item.area||'')}</select></td>
+      <td><select id="mgmt-mi-presenter-${i}" class="field-input" style="margin:0;">${_mgmtPresenterOptions(item.presenter||'')}</select></td>
+      <td style="text-align:center;"><button class="mgmt-del-row-btn" onclick="mgmtModalRemoveItem(${i})">✕</button></td>
+    </tr>`).join('');
+}
+
+function mgmtModalSave() {
+  const date = document.getElementById('mgmt-modal-date').value;
+  const title = document.getElementById('mgmt-modal-title').value.trim();
+  let items;
+  if (_mgmtModalMode === 'report-only') {
+    items = [];
+  } else {
+    _mgmtModalCollectItems();
+    items = _mgmtModalItems.filter(it => it.topic || it.area || it.presenter);
+    if (items.length === 0) items.push({ topic:'', area:'', presenter:'' });
+  }
+
+  if (_mgmtModalEditId) {
+    const s = mgmtData.sessions.find(s => s.id === _mgmtModalEditId);
+    if (s) { s.recipient = _mgmtModalRcp; s.date = date; s.title = title; s.items = items; }
+  } else {
+    mgmtData.sessions.push({ id: 'ss_' + Date.now(), date, recipient: _mgmtModalRcp, title, items });
+  }
   mgmtData.sessions.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
   syncMgmtToFirebase();
+  mgmtCloseModal();
   renderMgmtPage();
+  showSave();
 }
 
 function mgmtDeleteSession(id) {
@@ -4680,61 +4964,6 @@ function mgmtDeleteSession(id) {
   mgmtData.sessions = mgmtData.sessions.filter(s => s.id !== id);
   syncMgmtToFirebase();
   renderMgmtPage();
-}
-
-function mgmtAddItem(id) {
-  const s = mgmtData.sessions.find(s => s.id === id);
-  if (!s) return;
-  s.items.push({ topic:'', area: _mgmtAreaFilter||'', presenter:'' });
-  syncMgmtToFirebase();
-  renderMgmtPage();
-}
-
-function mgmtRemoveItem(sid, idx) {
-  const s = mgmtData.sessions.find(s => s.id === sid);
-  if (!s) return;
-  s.items.splice(idx, 1);
-  if (s.items.length === 0) s.items.push({ topic:'', area:'', presenter:'' });
-  syncMgmtToFirebase();
-  renderMgmtPage();
-}
-
-function mgmtCollectAndSave(id) {
-  const s = mgmtData.sessions.find(s => s.id === id);
-  if (!s) return;
-  const dateEl = document.getElementById(`mgmt-date-${id}`);
-  const titleEl = document.getElementById(`mgmt-title-${id}`);
-  if (dateEl) s.date = dateEl.value;
-  if (titleEl) s.title = titleEl.value;
-  // recipient from active button
-  ['총장','의장','TM'].forEach(r => {
-    const btn = document.getElementById(`mgmt-rcp-${id}-${r}`);
-    if (btn && btn.classList.contains('active')) s.recipient = r;
-  });
-  s.items.forEach((item, i) => {
-    const t = document.getElementById(`mgmt-topic-${id}-${i}`);
-    const a = document.getElementById(`mgmt-area-${id}-${i}`);
-    const p = document.getElementById(`mgmt-presenter-${id}-${i}`);
-    if (t) item.topic = t.value;
-    if (a) item.area = a.value;
-    if (p) item.presenter = p.value;
-  });
-  // re-sort by date
-  mgmtData.sessions.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
-  syncMgmtToFirebase();
-  showSave();
-}
-
-function mgmtToggleRecipient(id, r) {
-  ['총장','의장','TM'].forEach(rr => {
-    const btn = document.getElementById(`mgmt-rcp-${id}-${rr}`);
-    if (btn) btn.classList.toggle('active', rr === r);
-  });
-  // update left panel bg color immediately
-  const left = document.getElementById(`mgmt-left-${id}`);
-  if (left) {
-    left.className = `mgmt-card-left mgmt-left-${r}`;
-  }
 }
 
 function _mgmtAreaOptions(selected) {
@@ -4755,14 +4984,11 @@ function renderMgmtPage() {
   _mgmtBuildAreaFilterBar();
 
   if (!mgmtData.sessions || mgmtData.sessions.length === 0) {
-    body.innerHTML = `<div class="mgmt-empty">보고 자리가 없습니다.<br>상단 "보고 등록" 버튼을 눌러 추가하세요.</div>`;
+    body.innerHTML = `<div class="mgmt-empty">등록된 보고가 없습니다.<br>상단 "보고 등록" 버튼을 눌러 추가하세요.</div>`;
     return;
   }
 
-  // 날짜 내림차순 정렬
   const sorted = [...mgmtData.sessions].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
-
-  // 영역 필터 적용
   const filtered = _mgmtAreaFilter
     ? sorted.filter(s => s.items.some(it => it.area === _mgmtAreaFilter))
     : sorted;
@@ -4774,58 +5000,40 @@ function renderMgmtPage() {
 
   body.innerHTML = filtered.map(s => {
     const rcpKey = s.recipient || '총장';
-    const titleLen = (s.title||'').length;
-
-    // 아젠다 행: 영역 필터 시 해당 영역 행만 하이라이트
     const itemRows = s.items.map((item, i) => {
       const highlight = _mgmtAreaFilter && item.area === _mgmtAreaFilter;
+      const presenterName = item.presenter ? (users.find(u => u.id === item.presenter)?.name || item.presenter) : '-';
+      const areaLabel = item.area ? (_areaLabelMap[item.area] || item.area) : '전체';
       return `<tr${highlight ? ' style="background:#fffbeb;"' : ''}>
         <td style="width:30px;color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
-        <td style="width:38%;"><input id="mgmt-topic-${s.id}-${i}" value="${(item.topic||'').replace(/"/g,'&quot;')}" placeholder="안건 입력"></td>
-        <td style="width:22%;"><select id="mgmt-area-${s.id}-${i}">${_mgmtAreaOptions(item.area||'')}</select></td>
-        <td style="width:22%;"><select id="mgmt-presenter-${s.id}-${i}">${_mgmtPresenterOptions(item.presenter||'')}</select></td>
-        <td style="width:36px;text-align:center;"><button class="mgmt-del-row-btn" onclick="mgmtRemoveItem('${s.id}',${i})" title="삭제">✕</button></td>
+        <td style="font-size:13px;">${item.topic || '<span style="color:var(--text3);">미입력</span>'}</td>
+        <td style="width:160px;"><span class="area-chip" style="font-size:11px;padding:2px 8px;">${areaLabel}</span></td>
+        <td style="width:140px;font-size:12.5px;color:var(--text2);">${presenterName}</td>
       </tr>`;
     }).join('');
 
     return `
-    <div class="mgmt-card">
-      <!-- 좌측 패널 -->
-      <div class="mgmt-card-left mgmt-left-${rcpKey}" id="mgmt-left-${s.id}">
-        <div class="mgmt-recipient-btns">
-          ${['총장','의장','TM'].map(r => `<button class="mgmt-rcp-btn mgmt-rcp-btn-${r}${rcpKey===r?' active':''}" id="mgmt-rcp-${s.id}-${r}" onclick="mgmtToggleRecipient('${s.id}','${r}')">${r}</button>`).join('')}
-        </div>
-        <input type="date" id="mgmt-date-${s.id}" class="mgmt-card-date-input" value="${s.date||''}">
-        <textarea id="mgmt-title-${s.id}" class="mgmt-card-title-input" rows="2" maxlength="10" placeholder="보고 제목&#10;(10자 이내)">${s.title||''}</textarea>
-        <div class="mgmt-char-count">${titleLen}/10</div>
-        <button onclick="mgmtDeleteSession('${s.id}')" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:7px;font-size:11.5px;padding:4px 0;cursor:pointer;font-family:inherit;margin-top:auto;" title="삭제">🗑 삭제</button>
+    <div class="mgmt-card mgmt-card-wrap">
+      <button class="mgmt-card-menu-btn" onclick="mgmtToggleCardMenu(event,'mgmt-menu-${s.id}')">⋯</button>
+      <div class="mgmt-card-dropdown" id="mgmt-menu-${s.id}">
+        <button onclick="mgmtEditSession('${s.id}');document.getElementById('mgmt-menu-${s.id}').classList.remove('open')">✏️ 수정</button>
+        <button class="danger" onclick="mgmtDeleteSession('${s.id}')">🗑 삭제</button>
       </div>
-      <!-- 우측 패널 -->
+      <div class="mgmt-card-left mgmt-left-${rcpKey}">
+        <div class="mgmt-card-ro-rcp">${rcpKey} 보고</div>
+        <div class="mgmt-card-ro-date">${s.date || '날짜 미정'}</div>
+        ${s.title ? `<div class="mgmt-card-ro-title">${s.title}</div>` : ''}
+      </div>
       <div class="mgmt-card-right">
-        <div class="mgmt-card-body">
-          <table class="mgmt-agenda-table">
-            <thead><tr>
-              <th>#</th><th>안건</th><th>영역</th><th>발표자</th><th></th>
-            </tr></thead>
+        <div class="mgmt-card-body" style="padding-bottom:14px;">
+          ${itemRows ? `<table class="mgmt-agenda-table">
+            <thead><tr><th style="width:30px;">#</th><th>안건</th><th style="width:160px;">영역</th><th style="width:140px;">발표자</th></tr></thead>
             <tbody>${itemRows}</tbody>
-          </table>
-        </div>
-        <div class="mgmt-card-foot">
-          <button class="mgmt-add-item-btn" onclick="mgmtAddItem('${s.id}')">＋ 안건 추가</button>
-          <button class="mgmt-save-btn" onclick="mgmtCollectAndSave('${s.id}')">저장</button>
+          </table>` : `<div style="padding:24px 0;color:var(--text3);font-size:13px;text-align:center;">등록된 안건이 없습니다. <button onclick="mgmtOpenItemModal()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 안건 추가</button></div>`}
         </div>
       </div>
     </div>`;
   }).join('');
-
-  // 글자수 카운터 실시간 연동
-  filtered.forEach(s => {
-    const ta = document.getElementById(`mgmt-title-${s.id}`);
-    const counter = ta?.closest('.mgmt-card-left')?.querySelector('.mgmt-char-count');
-    if (ta && counter) {
-      ta.addEventListener('input', () => { counter.textContent = ta.value.length + '/10'; });
-    }
-  });
 }
 
 function syncMgmtToFirebase() {
