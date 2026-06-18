@@ -136,12 +136,12 @@ body{
 .hero-issues-grid.fading{opacity:0;}
 .meeting-page-img{width:100%;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
 /* ── 회의록 Rich Text Editor ── */
-.mreg-rte-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;}
+.mreg-rte-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;width:100%;box-sizing:border-box;}
 .mreg-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding:7px 10px;background:#f7f8fc;border-bottom:1px solid var(--border);}
 .mreg-toolbar button{background:#fff;border:1px solid var(--border);border-radius:5px;padding:3px 9px;font-size:12.5px;cursor:pointer;color:var(--text);line-height:1.4;transition:background .12s;}
 .mreg-toolbar button:hover{background:#eef1ff;color:var(--accent);}
 .mreg-sep{width:1px;height:18px;background:var(--border);margin:0 3px;flex-shrink:0;}
-.mreg-rte{min-height:260px;max-height:480px;overflow-y:auto;padding:16px 18px;font-size:13.5px;line-height:1.8;color:var(--text);outline:none;}
+.mreg-rte{min-height:260px;max-height:480px;overflow-y:auto;padding:16px 18px;font-size:13.5px;line-height:1.8;color:var(--text);outline:none;width:100%;box-sizing:border-box;display:block;}
 .mreg-rte:empty:before{content:attr(data-placeholder);color:var(--text3);pointer-events:none;}
 .mreg-rte h2{font-size:17px;font-weight:700;margin:10px 0 4px;}
 .mreg-rte h3{font-size:15px;font-weight:700;margin:8px 0 3px;}
