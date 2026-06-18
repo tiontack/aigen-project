@@ -4909,12 +4909,78 @@ function mgmtOpenItemModal() {
 
 function mgmtOpenItemModalForSession(sessionId) {
   mgmtOpenItemModal();
-  const sel = document.getElementById('mgmt-item-session-sel');
-  if (sel) sel.value = sessionId;
+  // setTimeout: select options 렌더링 후 값 설정
+  setTimeout(() => {
+    const sel = document.getElementById('mgmt-item-session-sel');
+    if (sel) sel.value = sessionId;
+  }, 0);
+}
+
+function mgmtEditItem(sid, idx) {
+  const s = mgmtData.sessions.find(s => s.id === sid);
+  if (!s) return;
+  const item = s.items[idx];
+  if (!item) return;
+  mgmtOpenItemModalForSession(sid);
+  setTimeout(() => {
+    document.getElementById('mgmt-item-topic').value = item.topic || '';
+    document.getElementById('mgmt-item-area').innerHTML = _mgmtAreaOptions(item.area || '');
+    // 저장 버튼이 기존 항목을 덮어쓰도록 editCtx 설정
+    window._mgmtItemEditCtx = { sid, idx };
+  }, 10);
+}
+
+function mgmtDeleteItem(sid, idx) {
+  if (!confirm('이 안건을 삭제하시겠습니까?')) return;
+  const s = mgmtData.sessions.find(s => s.id === sid);
+  if (!s) return;
+  s.items.splice(idx, 1);
+  syncMgmtToFirebase();
+  renderMgmtPage();
+  showSave();
+}
+
+function mgmtMoveItem(sid, idx) {
+  const s = mgmtData.sessions.find(s => s.id === sid);
+  if (!s) return;
+  const item = s.items[idx];
+  const others = mgmtData.sessions.filter(ss => ss.id !== sid)
+    .sort((a,b) => (a.date||'') > (b.date||'') ? 1 : -1);
+  if (others.length === 0) { alert('이동할 다른 일정이 없습니다.'); return; }
+  const opts = others.map(ss => {
+    const rcp = ss.recipient || '총장';
+    return `<option value="${ss.id}">[${rcp}] ${ss.date||'날짜미정'}${ss.title?' — '+ss.title:''}`;
+  }).join('');
+  // 간단한 inline 선택 다이얼로그
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10000;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:16px;padding:28px 28px 22px;min-width:340px;box-shadow:0 8px 40px rgba(0,0,0,0.18);font-family:inherit;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px;">안건 이동</div>
+    <div style="font-size:13px;color:#555;margin-bottom:10px;">이동할 일정 선택:</div>
+    <select id="mgmt-move-sel" style="width:100%;padding:9px 12px;border:1px solid #d0d7e2;border-radius:8px;font-size:13px;font-family:inherit;">${opts}</select>
+    <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end;">
+      <button onclick="this.closest('.mgmt-move-overlay').remove()" style="padding:8px 18px;border:1px solid #d0d7e2;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;">취소</button>
+      <button id="mgmt-move-confirm" style="padding:8px 18px;background:#4361ee;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">이동</button>
+    </div>
+  </div>`;
+  overlay.classList.add('mgmt-move-overlay');
+  document.body.appendChild(overlay);
+  overlay.querySelector('#mgmt-move-confirm').onclick = () => {
+    const targetId = overlay.querySelector('#mgmt-move-sel').value;
+    const target = mgmtData.sessions.find(ss => ss.id === targetId);
+    if (!target) return;
+    s.items.splice(idx, 1);
+    target.items.push(item);
+    overlay.remove();
+    syncMgmtToFirebase();
+    renderMgmtPage();
+    showSave();
+  };
 }
 
 function mgmtCloseItemModal() {
   document.getElementById('mgmt-item-overlay').classList.remove('open');
+  window._mgmtItemEditCtx = null;
 }
 
 function mgmtToggleCardMenu(e, menuId) {
@@ -4932,13 +4998,23 @@ function mgmtItemModalSave() {
   const topic = document.getElementById('mgmt-item-topic').value.trim();
   if (!sid) { alert('보고 일정을 선택해 주세요.'); return; }
   if (!topic) { alert('안건 제목을 입력해 주세요.'); return; }
-  const s = mgmtData.sessions.find(s => s.id === sid);
-  if (!s) return;
-  s.items = s.items || [];
-  s.items.push({
-    topic,
-    area: document.getElementById('mgmt-item-area').value
-  });
+  const area = document.getElementById('mgmt-item-area').value;
+  const editCtx = window._mgmtItemEditCtx;
+  if (editCtx) {
+    // 수정 모드
+    const s = mgmtData.sessions.find(s => s.id === editCtx.sid);
+    if (s && s.items[editCtx.idx]) {
+      s.items[editCtx.idx].topic = topic;
+      s.items[editCtx.idx].area = area;
+    }
+    window._mgmtItemEditCtx = null;
+  } else {
+    // 신규 등록
+    const s = mgmtData.sessions.find(s => s.id === sid);
+    if (!s) return;
+    s.items = s.items || [];
+    s.items.push({ topic, area });
+  }
   syncMgmtToFirebase();
   mgmtCloseItemModal();
   renderMgmtPage();
@@ -5068,6 +5144,7 @@ function renderMgmtPage() {
       ? sortedItems.filter(it => it.area === _mgmtAreaFilter)
       : sortedItems;
     const itemRows = visibleItems.map((item, i) => {
+      const realIdx = s.items.indexOf(item);
       const areaLabel = item.area ? (_areaLabelMap[item.area] || item.area) : '전체';
       const areaBg = item.area ? (_mgmtAreaColors[item.area] || '#e0e7ff') : '#e0e7ff';
       const areaFg = item.area ? (_mgmtAreaTextColors[item.area] || '#3730a3') : '#3730a3';
@@ -5075,6 +5152,11 @@ function renderMgmtPage() {
         <td style="width:30px;color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
         <td style="width:130px;"><span style="display:inline-block;background:${areaBg};color:${areaFg};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">${areaLabel}</span></td>
         <td style="font-size:13px;">${item.topic || '<span style="color:var(--text3);">미입력</span>'}</td>
+        <td style="width:80px;text-align:right;">
+          <button onclick="mgmtEditItem('${s.id}',${realIdx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;" title="수정">✏️</button>
+          <button onclick="mgmtMoveItem('${s.id}',${realIdx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;" title="이동">↗️</button>
+          <button onclick="mgmtDeleteItem('${s.id}',${realIdx})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px;" title="삭제">🗑</button>
+        </td>
       </tr>`;
     }).join('');
 
@@ -5094,7 +5176,7 @@ function renderMgmtPage() {
       <div class="mgmt-card-right">
         <div class="mgmt-card-body" style="padding-bottom:14px;">
           ${itemRows ? `<table class="mgmt-agenda-table">
-            <thead><tr><th style="width:30px;">#</th><th style="width:130px;">영역</th><th>안건</th></tr></thead>
+            <thead><tr><th style="width:30px;">#</th><th style="width:130px;">영역</th><th>안건</th><th style="width:80px;"></th></tr></thead>
             <tbody>${itemRows}</tbody>
           </table>` : `<div style="padding:24px 0;color:var(--text3);font-size:13px;text-align:center;">등록된 안건이 없습니다. <button onclick="mgmtOpenItemModal()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 안건 추가</button></div>`}
         </div>
