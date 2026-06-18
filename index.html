@@ -5218,7 +5218,11 @@ loadFromFirebase(function() {
     badge.style.display = total > 0 ? 'inline-flex' : 'none';
   }, 0);
   loadGcalConfigFromFirebase();
-  loadMgmtFromFirebase(function() { /* 페이지 열 때 renderMgmtPage 호출됨 */ });
+  loadMgmtFromFirebase(function() {
+    if (document.getElementById('page-mgmt') && document.getElementById('page-mgmt').classList.contains('active')) {
+      renderMgmtPage();
+    }
+  });
   loadGcalEventsFromFirebase();
   loadPresenceListener();
   setInterval(renderMsgChannelList, 30000);
