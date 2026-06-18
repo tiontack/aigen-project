@@ -2546,29 +2546,29 @@ function _renderMobWeek() {
   const rangeEl  = document.getElementById('mob-week-range');
   if (!daysEl || !eventsEl) return;
 
-  // 이번 주 월~일 계산
+  // 이번 주 일~토 계산
   const today = new Date(); today.setHours(0,0,0,0);
   const dow = today.getDay(); // 0=일
-  const mon = new Date(today); mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const sun = new Date(today); sun.setDate(today.getDate() - dow);
+  const sat = new Date(sun); sat.setDate(sun.getDate() + 6);
   const fmt = d => d.toISOString().slice(0,10);
   const todayStr = fmt(today);
-  const monStr   = fmt(mon);
-  const sunStr   = fmt(sun);
+  const monStr   = fmt(sun);
+  const sunStr   = fmt(sat);
 
   // 날짜 범위 표시
-  if (rangeEl) rangeEl.textContent = `${mon.getMonth()+1}/${mon.getDate()} – ${sun.getMonth()+1}/${sun.getDate()}`;
+  if (rangeEl) rangeEl.textContent = `${sun.getMonth()+1}/${sun.getDate()} – ${sat.getMonth()+1}/${sat.getDate()}`;
 
   // 요일 헤더 렌더
   const days = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    const d = new Date(sun); d.setDate(sun.getDate() + i);
     days.push(d);
   }
   daysEl.innerHTML = days.map((d, i) => {
     const ds = fmt(d);
     const isToday = ds === todayStr;
-    const numCls = isToday ? 'today' : (i === 6 ? 'sun' : i === 5 ? 'sat' : '');
+    const numCls = isToday ? 'today' : (i === 0 ? 'sun' : i === 6 ? 'sat' : '');
     return `<div class="mob-week-day-col">
       <div class="mob-wdc-dow">${_mobDow[d.getDay()]}</div>
       <div class="mob-wdc-num ${numCls}">${d.getDate()}</div>
