@@ -1204,53 +1204,75 @@ body{
   /* 모바일에서는 hero-issues 숨김 (이슈 없이 환영 메시지만) */
   #hero-issues { display:none !important; }
 
-  /* 모바일 홈 네비 그리드 */
+  /* 모바일 홈: 이번 주 일정 */
   #mob-home-nav {
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-    margin-top:8px;
-    padding-bottom:90px;
-  }
-
-  .mob-nav-btn {
     display:flex;
     flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
+    gap:0;
+    margin-top:12px;
+    padding-bottom:90px;
+  }
+  .mob-week-section {
     background:#fff;
     border:1.5px solid var(--border);
-    border-radius:18px;
-    padding:18px 8px 14px;
-    cursor:pointer;
-    transition:transform 0.12s, box-shadow 0.12s;
-    box-shadow:0 3px 10px rgba(0,0,0,0.07);
-    -webkit-tap-highlight-color:transparent;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
   }
-  .mob-nav-btn:active {
-    transform:scale(0.94);
-    box-shadow:0 1px 4px rgba(0,0,0,0.10);
+  .mob-week-head {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:13px 16px 11px;
+    border-bottom:1px solid var(--border);
+    background:#fafbff;
   }
-  .mob-nav-btn .mnb-icon {
-    width:58px;height:58px;border-radius:16px;
+  .mob-week-head-title {
+    font-size:13px;font-weight:800;color:var(--text);
+    display:flex;align-items:center;gap:6px;
+  }
+  .mob-week-head-sub { font-size:11px;color:var(--text3); }
+  /* 날짜 헤더 행 */
+  .mob-week-days {
+    display:grid;grid-template-columns:repeat(7,1fr);
+    border-bottom:1px solid var(--border);
+  }
+  .mob-week-day-col {
+    display:flex;flex-direction:column;align-items:center;
+    padding:8px 2px 6px;
+    border-right:1px solid #f0f2f8;
+    gap:4px;
+  }
+  .mob-week-day-col:last-child{border-right:none;}
+  .mob-wdc-dow { font-size:10px;font-weight:600;color:var(--text3); }
+  .mob-wdc-num {
+    width:28px;height:28px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
-    position:relative;overflow:hidden;
-    box-shadow:0 4px 12px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.35);
+    font-size:14px;font-weight:700;color:var(--text);
   }
-  .mob-nav-btn .mnb-icon::before {
-    content:'';position:absolute;inset:0;border-radius:16px;
-    background:linear-gradient(160deg,rgba(255,255,255,0.28) 0%,rgba(255,255,255,0) 55%);
-    z-index:1;pointer-events:none;
+  .mob-wdc-num.today { background:var(--accent);color:#fff; }
+  .mob-wdc-num.sat { color:#4361ee; }
+  .mob-wdc-num.sun { color:#e63946; }
+  /* 일정 목록 */
+  .mob-week-events { padding:8px 12px 12px; }
+  .mob-week-event {
+    display:flex;align-items:flex-start;gap:10px;
+    padding:8px 0;border-bottom:1px solid #f5f6fa;
   }
-  .mob-nav-btn .mnb-icon svg {
-    width:30px;height:30px;stroke:#fff;stroke-width:1.8;fill:none;
-    position:relative;z-index:2;
-    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+  .mob-week-event:last-child{border-bottom:none;}
+  .mwe-date {
+    min-width:32px;text-align:center;flex-shrink:0;
+    font-size:11px;font-weight:700;color:var(--text2);
+    padding-top:2px;
   }
-  .mob-nav-btn .mnb-label {
-    font-size:11.5px;font-weight:700;color:var(--text);
-    text-align:center;line-height:1.3;
+  .mwe-bar { width:3px;border-radius:3px;flex-shrink:0;min-height:36px;margin-top:2px; }
+  .mwe-info { flex:1;min-width:0; }
+  .mwe-title { font-size:13px;font-weight:700;color:var(--text);line-height:1.3; }
+  .mwe-sub { font-size:11px;color:var(--text3);margin-top:2px; }
+  .mwe-chip {
+    display:inline-block;font-size:10px;font-weight:700;
+    padding:1px 7px;border-radius:8px;margin-top:3px;
+  }
+  .mob-week-empty {
+    padding:18px;text-align:center;color:var(--text3);font-size:13px;
   }
 
   /* 하단 고정 탭바 */
@@ -1442,79 +1464,17 @@ body{
       </div>
     </div>
 
-    <!-- 모바일 전용 홈 네비 버튼 그리드 -->
+    <!-- 모바일 전용: 이번 주 일정 -->
     <div id="mob-home-nav">
-      <div class="mob-nav-btn" onclick="showPage('issues');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#ff6b6b,#c0392b)">
-          <svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="mob-week-section">
+        <div class="mob-week-head">
+          <div class="mob-week-head-title">이번 주 일정</div>
+          <div class="mob-week-head-sub" id="mob-week-range"></div>
         </div>
-        <div class="mnb-label">Issues</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('calendar');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#4facfe,#1a73e8)">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <div class="mob-week-days" id="mob-week-days"></div>
+        <div class="mob-week-events" id="mob-week-events">
+          <div class="mob-week-empty">로딩 중...</div>
         </div>
-        <div class="mnb-label">Calendar</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('mgmt');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#43e97b,#38f9d7)">
-          <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="mnb-label">Mgmt.</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('pmo');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#a18cd1,#6c3ecf)">
-          <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-        </div>
-        <div class="mnb-label">PMO</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('marketing');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#f7971e,#ffd200)">
-          <svg viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="mnb-label">홍보</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('recruit');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#f953c6,#b91d73)">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/><circle cx="19" cy="8" r="2.5"/><path d="M22 14c-.9-.7-2-1-3.2-1" stroke-linecap="round"/></svg>
-        </div>
-        <div class="mnb-label">모집선발</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('curriculum');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#11998e,#38ef7d)">
-          <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke-linecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke-linecap="round"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
-        </div>
-        <div class="mnb-label">커리큘럼</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('infra');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#4776e6,#8e54e9)">
-          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><rect x="2" y="10" width="20" height="5" rx="1"/><rect x="2" y="17" width="20" height="5" rx="1"/><circle cx="6" cy="5.5" r="1" fill="#fff" stroke="none"/><circle cx="6" cy="12.5" r="1" fill="#fff" stroke="none"/><circle cx="6" cy="19.5" r="1" fill="#fff" stroke="none"/></svg>
-        </div>
-        <div class="mnb-label">인프라</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('meeting');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#fc5c7d,#6a3093)">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-linecap="round"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
-        </div>
-        <div class="mnb-label">회의록</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('archive');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#f5af19,#f12711)">
-          <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke-linecap="round"/></svg>
-        </div>
-        <div class="mnb-label">자료실</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('messages');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#00c6ff,#0072ff)">
-          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div class="mnb-label">메시지</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('mypage');closeSidebar()">
-        <div class="mnb-icon" style="background:linear-gradient(145deg,#8e9eab,#495568)">
-          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round"/><circle cx="12" cy="7" r="4"/></svg>
-        </div>
-        <div class="mnb-label">마이페이지</div>
       </div>
     </div>
 
@@ -2573,98 +2533,93 @@ const _mobAreaColors = {
 const _mobDow = ['일','월','화','수','목','금','토'];
 
 function renderMobHome() {
-  if (window.innerWidth > 900) return; // 모바일에서만
-  _renderMobCal();
-  _renderMobAgenda();
-  if (window.lucide) lucide.createIcons();
+  if (window.innerWidth > 900) return;
+  _renderMobWeek();
 }
 
-function _renderMobCal() {
-  const el = document.getElementById('mob-cal-body');
-  if (!el) return;
+function _renderMobWeek() {
+  const daysEl   = document.getElementById('mob-week-days');
+  const eventsEl = document.getElementById('mob-week-events');
+  const rangeEl  = document.getElementById('mob-week-range');
+  if (!daysEl || !eventsEl) return;
 
+  // 이번 주 월~일 계산
   const today = new Date(); today.setHours(0,0,0,0);
-  const limit = new Date(today); limit.setDate(limit.getDate() + 14);
+  const dow = today.getDay(); // 0=일
+  const mon = new Date(today); mon.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
   const fmt = d => d.toISOString().slice(0,10);
   const todayStr = fmt(today);
-  const limitStr = fmt(limit);
+  const monStr   = fmt(mon);
+  const sunStr   = fmt(sun);
 
-  // gcal 이벤트
-  const rows = [];
+  // 날짜 범위 표시
+  if (rangeEl) rangeEl.textContent = `${mon.getMonth()+1}/${mon.getDate()} – ${sun.getMonth()+1}/${sun.getDate()}`;
+
+  // 요일 헤더 렌더
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    days.push(d);
+  }
+  daysEl.innerHTML = days.map((d, i) => {
+    const ds = fmt(d);
+    const isToday = ds === todayStr;
+    const numCls = isToday ? 'today' : (i === 6 ? 'sun' : i === 5 ? 'sat' : '');
+    return `<div class="mob-week-day-col">
+      <div class="mob-wdc-dow">${_mobDow[d.getDay()]}</div>
+      <div class="mob-wdc-num ${numCls}">${d.getDate()}</div>
+    </div>`;
+  }).join('');
+
+  // 이번 주 이벤트 수집
+  const events = [];
+
+  // Google Calendar
   (_gcalEvents || []).forEach(ev => {
-    if (!ev.date || ev.date < todayStr || ev.date > limitStr) return;
-    rows.push({ date: ev.date, title: ev.title || ev.summary || '일정', sub: ev.description || '', color: '#4285f4', isCal: true });
+    if (!ev.date || ev.date < monStr || ev.date > sunStr) return;
+    events.push({ date: ev.date, title: ev.title || ev.summary || '일정', sub: 'Google Calendar', color: '#4285f4', type: 'gcal' });
   });
 
-  // 과제 마감일 (이번주 + 다음주)
+  // Mgmt 세션
+  (mgmtData.sessions || []).forEach(s => {
+    if (!s.date || s.date < monStr || s.date > sunStr) return;
+    events.push({ date: s.date, title: s.title || '보고', sub: (s.items||[]).length + '개 안건', color: '#10b981', type: 'mgmt' });
+  });
+
+  // 과제 마감일
   Object.keys(taskData).forEach(areaKey => {
     const ac = _mobAreaColors[areaKey] || { bg:'#eef1ff', text:'#4361ee' };
     taskData[areaKey].tasks.forEach(cat => {
       cat.tasks.forEach(t => {
         if (!t.end || t.status === 'done') return;
-        if (t.end < todayStr || t.end > limitStr) return;
-        rows.push({ date: t.end, title: t.name, sub: (_areaLabelMap[areaKey]||areaKey) + (t.owner ? ' · ' + t.owner : ''), color: ac.text, isCal: false });
+        if (t.end < monStr || t.end > sunStr) return;
+        events.push({ date: t.end, title: t.name, sub: _areaLabelMap[areaKey]||areaKey, color: ac.text, type: 'task', area: areaKey });
       });
     });
   });
 
-  rows.sort((a,b) => a.date.localeCompare(b.date));
+  events.sort((a, b) => a.date.localeCompare(b.date));
 
-  if (!rows.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:10px 0;">2주 내 일정이 없습니다.</div>';
+  if (!events.length) {
+    eventsEl.innerHTML = '<div class="mob-week-empty">이번 주 일정이 없습니다.</div>';
     return;
   }
 
-  el.innerHTML = rows.slice(0, 7).map(r => {
-    const d = new Date(r.date + 'T00:00:00');
-    const isToday = r.date === todayStr;
-    const dateBg = isToday ? '#4361ee' : '#f0f4ff';
-    const dateTxt = isToday ? '#fff' : '#4361ee';
-    return `<div class="mob-cal-row">
-      <div class="mob-cal-date" style="background:${dateBg};">
-        <div class="mcd-day" style="color:${dateTxt};">${d.getDate()}</div>
-        <div class="mcd-dow" style="color:${dateTxt};opacity:${isToday?'1':'0.7'};">${_mobDow[d.getDay()]}</div>
+  eventsEl.innerHTML = events.map(ev => {
+    const d = new Date(ev.date + 'T00:00:00');
+    const isToday = ev.date === todayStr;
+    const dowLabel = `${d.getMonth()+1}/${d.getDate()} (${_mobDow[d.getDay()]})`;
+    const typeLabel = ev.type === 'gcal' ? '캘린더' : ev.type === 'mgmt' ? '보고' : '마감';
+    const ac = ev.area ? (_mobAreaColors[ev.area] || { bg:'#eef1ff', text:'#4361ee' }) : null;
+    return `<div class="mob-week-event" style="${isToday ? 'background:#f0f4ff;margin:0 -12px;padding:8px 12px;border-radius:10px;' : ''}">
+      <div class="mwe-date">${dowLabel.split(' ')[0]}<br><small>${_mobDow[d.getDay()]}</small></div>
+      <div class="mwe-bar" style="background:${ev.color};"></div>
+      <div class="mwe-info">
+        <div class="mwe-title">${ev.title}</div>
+        <div class="mwe-sub">${ev.sub}</div>
+        ${ac ? `<span class="mwe-chip" style="background:${ac.bg};color:${ac.text};">${typeLabel}</span>` : `<span class="mwe-chip" style="background:#eef1ff;color:#4361ee;">${typeLabel}</span>`}
       </div>
-      <div class="mob-cal-info">
-        <div class="mci-title">${r.title}</div>
-        <div class="mci-sub">${r.sub || (r.isCal ? 'Google Calendar' : '과제 마감')}</div>
-      </div>
-      <div class="mob-cal-dot" style="background:${r.color};"></div>
-    </div>`;
-  }).join('');
-}
-
-function _renderMobAgenda() {
-  const el = document.getElementById('mob-agenda-body');
-  if (!el) return;
-
-  const todayStr = new Date().toISOString().slice(0,10);
-  const sessions = [...(mgmtData.sessions || [])]
-    .filter(s => s.date && s.date >= todayStr)
-    .sort((a,b) => a.date.localeCompare(b.date))
-    .slice(0, 3); // 다음 3개 세션
-
-  if (!sessions.length) {
-    el.innerHTML = '<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:10px 0;">예정된 보고 일정이 없습니다.</div>';
-    return;
-  }
-
-  el.innerHTML = sessions.map(s => {
-    const d = new Date(s.date + 'T00:00:00');
-    const label = `${d.getMonth()+1}/${d.getDate()} (${_mobDow[d.getDay()]}) ${s.title||''}`;
-    const items = (s.items || []);
-    const itemsHtml = items.length
-      ? items.map(it => {
-          const ac = _mobAreaColors[it.area] || { bg:'#eef1ff', text:'#4361ee' };
-          return `<div class="mob-agenda-item">
-            ${it.area ? `<span class="mob-agenda-area-chip" style="background:${ac.bg};color:${ac.text};">${_areaLabelMap[it.area]||it.area}</span>` : ''}
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.topic||''}</span>
-          </div>`;
-        }).join('')
-      : '<div style="color:var(--text3);font-size:12px;padding:4px 0;">안건 미등록</div>';
-    return `<div class="mob-agenda-session">
-      <div class="mob-agenda-session-head">${label}</div>
-      ${itemsHtml}
     </div>`;
   }).join('');
 }
