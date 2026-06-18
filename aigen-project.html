@@ -5097,9 +5097,13 @@ function loadMgmtFromFirebase(onDone) {
     if (val && typeof val === 'object') {
       if (val.sessions) {
         // Firebase returns arrays as objects with numeric keys — convert back
-        const sessions = Array.isArray(val.sessions)
+        const rawSessions = Array.isArray(val.sessions)
           ? val.sessions
           : Object.values(val.sessions);
+        const sessions = rawSessions.map(s => ({
+          ...s,
+          items: !s.items ? [] : Array.isArray(s.items) ? s.items : Object.values(s.items)
+        }));
         mgmtData = { ...val, sessions };
       } else {
         mgmtData = { sessions: [] };
