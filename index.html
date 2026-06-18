@@ -598,7 +598,8 @@ body{
 
 /* ── Mgmt. Process ── */
 .mgmt-list{display:flex;flex-direction:column;gap:20px;}
-.mgmt-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.07);display:flex;min-height:0;}
+.mgmt-card{border:1px solid var(--border);border-radius:14px;overflow:visible;box-shadow:0 2px 10px rgba(0,0,0,0.07);display:flex;min-height:0;}
+.mgmt-card-left,.mgmt-card-right{overflow:hidden;}
 /* 좌측 패널 (~15%) */
 .mgmt-card-left{width:15%;min-width:130px;max-width:190px;flex-shrink:0;display:flex;flex-direction:column;align-items:stretch;padding:16px 14px 14px;gap:10px;border-right:1px solid rgba(255,255,255,0.25);transition:background .2s;}
 .mgmt-recipient-btns{display:flex;flex-direction:column;gap:5px;}
@@ -4889,7 +4890,7 @@ function mgmtCloseModal() {
 function mgmtOpenItemModal() {
   // 세션 목록 채우기
   const sel = document.getElementById('mgmt-item-session-sel');
-  const sessions = [...(mgmtData.sessions||[])].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+  const sessions = [...(mgmtData.sessions||[])].sort((a,b) => (a.date||'') > (b.date||'') ? 1 : -1);
   if (sessions.length === 0) {
     alert('먼저 보고 일정을 등록해 주세요.');
     return;
@@ -5007,7 +5008,7 @@ function mgmtModalSave() {
   } else {
     mgmtData.sessions.push({ id: 'ss_' + Date.now(), date, recipient: _mgmtModalRcp, title, items });
   }
-  mgmtData.sessions.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+  mgmtData.sessions.sort((a,b) => (a.date||'') > (b.date||'') ? 1 : -1);
   syncMgmtToFirebase();
   mgmtCloseModal();
   renderMgmtPage();
@@ -5043,7 +5044,7 @@ function renderMgmtPage() {
     return;
   }
 
-  const sorted = [...mgmtData.sessions].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+  const sorted = [...mgmtData.sessions].sort((a,b) => (a.date||'') > (b.date||'') ? 1 : -1);
   const filtered = _mgmtAreaFilter
     ? sorted.filter(s => s.items.some(it => it.area === _mgmtAreaFilter))
     : sorted;
@@ -5143,7 +5144,7 @@ function _seedPresidentBiweekly() {
     }
   });
   if (added) {
-    mgmtData.sessions.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
+    mgmtData.sessions.sort((a,b)=>(a.date||'')>(b.date||'')?1:-1);
     syncMgmtToFirebase();
   }
 }
