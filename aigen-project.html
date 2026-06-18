@@ -534,6 +534,19 @@ body{
   box-shadow:0 4px 20px rgba(6,182,138,0.3);
 }
 .save-notice.show{opacity:1;}
+.deploy-notice{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:99999;
+  background:linear-gradient(90deg,#4361ee,#7b61ff);
+  color:#fff;padding:11px 20px;font-size:13.5px;font-weight:600;
+  align-items:center;justify-content:center;gap:14px;
+  box-shadow:0 2px 12px rgba(67,97,238,0.25);
+}
+.deploy-notice button{
+  padding:5px 16px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);
+  border-radius:8px;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;
+  transition:background .15s;font-family:inherit;
+}
+.deploy-notice button:hover{background:rgba(255,255,255,0.35);}
 
 /* Tooltip */
 [data-tip]{position:relative;cursor:default;}
@@ -1627,6 +1640,11 @@ body{
 </div>
 
 <div class="save-notice" id="save-notice">✓ 저장됨</div>
+<div class="deploy-notice" id="deploy-notice">
+  🚀 새 버전이 배포되었습니다.
+  <button onclick="location.reload()">지금 업데이트</button>
+  <button onclick="document.getElementById('deploy-notice').style.display='none'" style="background:transparent;border-color:rgba(255,255,255,0.2);opacity:0.7;">나중에</button>
+</div>
 
 <script>
 // =================== DATA ===================
@@ -2165,6 +2183,7 @@ function renderDetailPage(pid, areaKey) {
       </div>
       <div id="${pid}-gantt-view">${buildGantt(data, areaKey, pid)}${buildGanttMobileList(data, areaKey, pid)}</div>
     </div>`;
+  setTimeout(initIcons, 0);
 }
 
 function buildGantt(data, areaKey, pid) {
@@ -4205,6 +4224,26 @@ loadFromFirebase(function() {
   loadMessagesFromFirebase(function() {});
   initIcons();
 });
+
+// ── 배포 감지 자동 새로고침 ──
+(function() {
+  let _deployEtag = null;
+  async function checkDeploy() {
+    try {
+      const res = await fetch('/index.html?_=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+      const etag = res.headers.get('etag') || res.headers.get('last-modified');
+      if (!etag) return;
+      if (_deployEtag === null) { _deployEtag = etag; return; }
+      if (_deployEtag !== etag) {
+        _deployEtag = etag;
+        const bar = document.getElementById('deploy-notice');
+        if (bar) bar.style.display = 'flex';
+      }
+    } catch(e) {}
+  }
+  setInterval(checkDeploy, 3 * 60 * 1000); // 3분마다 체크
+  setTimeout(checkDeploy, 5000); // 앱 로드 5초 후 기준 ETag 기록
+})();
 
 // showPage 후에도 아이콘 재초기화
 const _origShowPage = showPage;
