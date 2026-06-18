@@ -483,6 +483,19 @@ body{
 .lib-btn:hover{background:#f5f7ff;}
 .lib-btn.del:hover{background:#fde9ea;color:#e63946;border-color:#f3c4c7;}
 .lib-empty{padding:40px;text-align:center;color:var(--text2);font-size:13px;}
+/* 회의록 전용 행 */
+.meeting-row{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:#fff;transition:box-shadow .15s;min-height:68px;}
+.meeting-row:hover{box-shadow:0 3px 14px rgba(0,0,0,0.08);}
+.meeting-area-btn{flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 13px;border-radius:20px;border:none;cursor:default;white-space:nowrap;}
+.meeting-row-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.meeting-row-title{font-size:15.5px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
+.meeting-row-title:hover{color:var(--accent);}
+.meeting-row-topic{font-size:12.5px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.meeting-row-date{flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--text2);min-width:90px;text-align:right;}
+/* 회의록 상세 모달 개요 섹션 */
+.meeting-detail-overview{background:#f5f7ff;border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;}
+.meeting-detail-title{font-size:18px;font-weight:800;color:var(--text);flex-basis:100%;}
+.meeting-detail-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex-basis:100%;}
 .gantt-today-line::before{
   content:'TODAY';position:absolute;top:-18px;left:50%;transform:translateX(-50%);
   font-size:9px;font-weight:700;color:var(--red);white-space:nowrap;font-family:'Freesentation',sans-serif;
@@ -1477,24 +1490,33 @@ body{
 
   <!-- Meeting Full Text Modal -->
   <div class="modal-overlay" id="meeting-modal-overlay" onclick="if(event.target===this)closeMeetingModal()">
-    <div class="modal" style="width:640px;max-height:80vh;">
-      <div class="modal-head"><h3 id="meeting-modal-title">회의록</h3><button class="modal-close" onclick="closeMeetingModal()">✕</button></div>
-      <div class="modal-body" style="max-height:60vh;overflow:auto;">
-        <div id="meeting-modal-meta" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
+    <div class="modal" style="width:700px;max-width:96vw;">
+      <div class="modal-head">
+        <h3>회의록 상세</h3>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="meeting-modal-del-btn" onclick="" title="삭제" style="background:none;border:none;font-size:20px;cursor:pointer;padding:2px 6px;border-radius:6px;line-height:1;" title="삭제">🗑</button>
+          <button class="modal-close" onclick="closeMeetingModal()">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" style="max-height:76vh;overflow-y:auto;">
+        <!-- 개요 섹션 -->
+        <div class="meeting-detail-overview">
+          <div class="meeting-detail-title" id="meeting-modal-title-big"></div>
+          <div class="meeting-detail-meta" id="meeting-modal-meta"></div>
+        </div>
+        <!-- 본문 섹션 -->
         <div class="field-group" id="meeting-modal-summary-wrap">
           <div class="field-label" id="meeting-modal-summary-label">요약</div>
-          <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
+          <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:14px;font-size:13px;line-height:1.75;"></div>
         </div>
         <div class="field-group" id="meeting-modal-fulltext-wrap">
-          <div class="field-label">전문</div>
-          <div id="meeting-modal-fulltext" style="font-size:12px;line-height:1.6;color:var(--text2);white-space:pre-wrap;max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:10px;"></div>
+          <div class="field-label">전체 내용</div>
+          <div id="meeting-modal-fulltext" style="font-size:13px;line-height:1.75;color:var(--text);max-height:480px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:14px;"></div>
         </div>
       </div>
       <div class="modal-foot">
         <div></div>
-        <div style="display:flex;gap:10px">
-          <button class="btn-modal-save" onclick="closeMeetingModal()">닫기</button>
-        </div>
+        <button class="btn-modal-save" onclick="closeMeetingModal()">닫기</button>
       </div>
     </div>
   </div>
@@ -1647,21 +1669,21 @@ body{
           <div class="field-label">요약</div>
           <div class="mreg-rte-wrap">
             <div class="mreg-toolbar" id="mreg-toolbar-summary">
-              <button type="button" onclick="mregCmd('summary','bold')" title="굵게"><b>B</b></button>
-              <button type="button" onclick="mregCmd('summary','italic')" title="기울임"><i>I</i></button>
-              <button type="button" onclick="mregCmd('summary','underline')" title="밑줄"><u>U</u></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('summary','bold')" title="굵게"><b>B</b></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('summary','italic')" title="기울임"><i>I</i></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('summary','underline')" title="밑줄"><u>U</u></button>
               <span class="mreg-sep"></span>
-              <button type="button" onclick="mregCmd('summary','insertUnorderedList')" title="불릿 목록">• 목록</button>
-              <button type="button" onclick="mregCmd('summary','insertOrderedList')" title="번호 목록">1. 목록</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('summary','insertUnorderedList')" title="불릿 목록">• 목록</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('summary','insertOrderedList')" title="번호 목록">1. 목록</button>
               <span class="mreg-sep"></span>
-              <select onchange="mregFontSize('summary',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
+              <select onmousedown="event.stopPropagation()" onchange="mregFontSize('summary',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
                 <option value="">글씨 크기</option>
                 <option value="1">소 (10px)</option>
                 <option value="3">중 (기본)</option>
                 <option value="5">대 (18px)</option>
                 <option value="7">특대 (24px)</option>
               </select>
-              <select onchange="mregFormatBlock('summary',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
+              <select onmousedown="event.stopPropagation()" onchange="mregFormatBlock('summary',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
                 <option value="">단락 스타일</option>
                 <option value="p">본문</option>
                 <option value="h2">제목 1</option>
@@ -1669,8 +1691,8 @@ body{
                 <option value="h4">제목 3</option>
               </select>
               <span class="mreg-sep"></span>
-              <button type="button" onclick="mregInsertTable('summary')" title="표 삽입">표 삽입</button>
-              <button type="button" onclick="mregCmd('summary','insertHorizontalRule')" title="구분선">─</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregInsertTable('summary')" title="표 삽입">표 삽입</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('summary','insertHorizontalRule')" title="구분선">─</button>
             </div>
             <div id="mreg-summary" class="mreg-rte" contenteditable="true" data-placeholder="핵심 내용을 입력하세요"></div>
           </div>
@@ -1679,21 +1701,21 @@ body{
           <div class="field-label">전체 내용</div>
           <div class="mreg-rte-wrap">
             <div class="mreg-toolbar" id="mreg-toolbar-fullcontent">
-              <button type="button" onclick="mregCmd('fullcontent','bold')" title="굵게"><b>B</b></button>
-              <button type="button" onclick="mregCmd('fullcontent','italic')" title="기울임"><i>I</i></button>
-              <button type="button" onclick="mregCmd('fullcontent','underline')" title="밑줄"><u>U</u></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('fullcontent','bold')" title="굵게"><b>B</b></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('fullcontent','italic')" title="기울임"><i>I</i></button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('fullcontent','underline')" title="밑줄"><u>U</u></button>
               <span class="mreg-sep"></span>
-              <button type="button" onclick="mregCmd('fullcontent','insertUnorderedList')" title="불릿 목록">• 목록</button>
-              <button type="button" onclick="mregCmd('fullcontent','insertOrderedList')" title="번호 목록">1. 목록</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('fullcontent','insertUnorderedList')" title="불릿 목록">• 목록</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('fullcontent','insertOrderedList')" title="번호 목록">1. 목록</button>
               <span class="mreg-sep"></span>
-              <select onchange="mregFontSize('fullcontent',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
+              <select onmousedown="event.stopPropagation()" onchange="mregFontSize('fullcontent',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
                 <option value="">글씨 크기</option>
                 <option value="1">소 (10px)</option>
                 <option value="3">중 (기본)</option>
                 <option value="5">대 (18px)</option>
                 <option value="7">특대 (24px)</option>
               </select>
-              <select onchange="mregFormatBlock('fullcontent',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
+              <select onmousedown="event.stopPropagation()" onchange="mregFormatBlock('fullcontent',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
                 <option value="">단락 스타일</option>
                 <option value="p">본문</option>
                 <option value="h2">제목 1</option>
@@ -1701,8 +1723,8 @@ body{
                 <option value="h4">제목 3</option>
               </select>
               <span class="mreg-sep"></span>
-              <button type="button" onclick="mregInsertTable('fullcontent')" title="표 삽입">표 삽입</button>
-              <button type="button" onclick="mregCmd('fullcontent','insertHorizontalRule')" title="구분선">─</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregInsertTable('fullcontent')" title="표 삽입">표 삽입</button>
+              <button type="button" onmousedown="event.preventDefault()" onclick="mregCmd('fullcontent','insertHorizontalRule')" title="구분선">─</button>
             </div>
             <div id="mreg-fullcontent" class="mreg-rte" contenteditable="true" data-placeholder="회의 전체 내용을 입력하세요"></div>
           </div>
@@ -4431,47 +4453,49 @@ function renderMeetingList() {
     wrap.innerHTML = '<div class="lib-empty">등록된 회의록이 없습니다. 등록하기 버튼을 눌러 추가해보세요.</div>';
     return;
   }
-  wrap.innerHTML = list.map((m, i) => {
+  // 영역별 컬러 매핑
+  const _areaColors = { pmo:'#00d4ff', curriculum:'#10b981', marketing:'#8b5cf6', recruit:'#f59e0b', infra:'#ef4444' };
+  wrap.innerHTML = list.map((m) => {
     const realIdx = libraryData.meetings.indexOf(m);
-    const areaLabel = m.area ? (_areaLabelMap[m.area]||m.area) : '전체';
-    const metaParts = [
-      m.date ? `📅 ${m.date}` : '',
-      m.attendees ? `👥 ${m.attendees}` : '',
-      m.fileName ? `📄 ${m.fileName}` : ''
-    ].filter(Boolean).join('  ·  ');
+    const areaKey = m.area || '';
+    const areaLabel = areaKey ? (_areaLabelMap[areaKey] || areaKey) : '전체';
+    const areaColor = _areaColors[areaKey] || '#4361ee';
+    const areaTextColor = areaKey ? '#fff' : '#4361ee';
+    const areaBg = areaKey ? areaColor : '#eef1ff';
     return `
-    <div class="lib-item" style="align-items:flex-start;">
-      <div class="lib-icon" style="margin-top:2px;"><i data-lucide="file-text" style="width:18px;height:18px;"></i></div>
-      <div class="lib-info" style="flex:1;min-width:0;">
-        <div class="lib-title" onclick="openMeetingModal(${realIdx})" style="cursor:pointer;">${m.title}</div>
-        ${m.topic ? `<div style="font-size:12.5px;color:var(--text);margin:3px 0 1px;font-weight:500;">${m.topic}</div>` : ''}
-        <div class="lib-meta">
-          <span class="lib-tag">${areaLabel}</span>${metaParts}
-        </div>
+    <div class="meeting-row">
+      <span class="meeting-area-btn" style="background:${areaBg};color:${areaTextColor};">${areaLabel}</span>
+      <div class="meeting-row-body">
+        <div class="meeting-row-title" onclick="openMeetingModal(${realIdx})">${m.title}</div>
+        ${m.topic ? `<div class="meeting-row-topic">${m.topic}</div>` : ''}
       </div>
-      <div class="lib-actions" style="flex-shrink:0;">
-        <button class="lib-btn" onclick="openMeetingModal(${realIdx})">${m.fileData ? '보기' : '개요'}</button>
-        ${m.fileData ? `<a class="lib-btn" href="${m.fileData}" download="${m.fileName}" style="text-decoration:none;display:inline-block;">다운로드</a>` : ''}
-        <button class="lib-btn del" onclick="deleteMeeting(${realIdx})">삭제</button>
-      </div>
+      <div class="meeting-row-date">${m.date || ''}</div>
+      <button class="lib-btn" onclick="openMeetingModal(${realIdx})" style="flex-shrink:0;">자세히 보기</button>
     </div>`;
   }).join('');
-  initIcons();
 }
 
 function openMeetingModal(i) {
   const m = libraryData.meetings[i];
   if (!m) return;
-  document.getElementById('meeting-modal-title').textContent = m.title;
 
-  // 메타 칩
+  // 개요 섹션
+  document.getElementById('meeting-modal-title-big').textContent = m.title;
   const chips = [
     m.date      && `<span class="lib-tag">📅 ${m.date}</span>`,
-    m.area      && `<span class="lib-tag">${_areaLabelMap[m.area]||m.area}</span>`,
+    m.area      && `<span class="lib-tag" style="background:${({pmo:'#e0fafb',curriculum:'#d1fae5',marketing:'#ede9fe',recruit:'#fef3c7',infra:'#fee2e2'}[m.area]||'#eef1ff')};color:${({pmo:'#007c75',curriculum:'#065f46',marketing:'#5b21b6',recruit:'#92400e',infra:'#991b1b'}[m.area]||'#4361ee')};">${_areaLabelMap[m.area]||m.area}</span>`,
     m.attendees && `<span class="lib-tag">👥 ${m.attendees}</span>`,
-    m.topic     && `<span style="font-size:12.5px;color:var(--text);font-weight:500;">주제: ${m.topic}</span>`
+    m.topic     && `<span style="font-size:12.5px;color:var(--text2);">주제: ${m.topic}</span>`
   ].filter(Boolean);
   document.getElementById('meeting-modal-meta').innerHTML = chips.join('');
+
+  // 삭제 버튼 연결
+  const delBtn = document.getElementById('meeting-modal-del-btn');
+  if (delBtn) delBtn.onclick = () => {
+    if (!confirm('이 회의록을 삭제하시겠습니까?')) return;
+    closeMeetingModal();
+    deleteMeeting(i);
+  };
 
   // 요약
   const summaryWrap = document.getElementById('meeting-modal-summary-wrap');
@@ -4486,16 +4510,16 @@ function openMeetingModal(i) {
     summaryWrap.style.display = summaryArr.length ? '' : 'none';
     if (summaryLabel) summaryLabel.textContent = m.fileData ? '자동 요약' : '요약';
     summaryEl.innerHTML = summaryArr.length
-      ? `<ul style="margin:0;padding-left:18px;">${summaryArr.map(s => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ul>`
+      ? `<ul style="margin:0;padding-left:18px;">${summaryArr.map(s=>`<li style="margin-bottom:5px;">${s}</li>`).join('')}</ul>`
       : '';
   }
 
-  // 전문
+  // 전체 내용
   const fulltextWrap = document.getElementById('meeting-modal-fulltext');
   const ftSection = document.getElementById('meeting-modal-fulltext-wrap');
   if (m.pageImages && m.pageImages.length) {
     ftSection.style.display = '';
-    fulltextWrap.innerHTML = m.pageImages.map(src => `<img class="meeting-page-img" src="${src}">`).join('');
+    fulltextWrap.innerHTML = m.pageImages.map(src=>`<img class="meeting-page-img" src="${src}">`).join('');
   } else if (m.fullHtml) {
     ftSection.style.display = '';
     fulltextWrap.innerHTML = m.fullHtml;
