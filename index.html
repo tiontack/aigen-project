@@ -3082,6 +3082,7 @@ function confirmCatName() {
     logActivity('카테고리 수정', `${areaKey} / ${old} → ${name}`);
   }
   renderDetailPage(pid, areaKey);
+  renderSummaryCards();
   syncToFirebase(); showSave();
 }
 function delCat(areaKey, pid, ci) {
@@ -3089,6 +3090,7 @@ function delCat(areaKey, pid, ci) {
   if (!confirm(`"${cat.cat}" 카테고리와 하위 과제 ${cat.tasks.length}개를 모두 삭제하시겠습니까?`)) return;
   taskData[areaKey].tasks.splice(ci, 1);
   renderDetailPage(pid, areaKey);
+  renderSummaryCards();
   logActivity('카테고리 삭제', `${areaKey} / ${cat.cat} (과제 ${cat.tasks.length}개 포함)`);
   syncToFirebase(); showSave();
 }
@@ -3117,6 +3119,7 @@ function confirmAddTask() {
   const ti = cats[idx].tasks.length - 1;
   closeCatSelModal();
   renderDetailPage(pid, areaKey);
+  renderSummaryCards();
   logActivity('과제 추가', `${areaKey} / ${cats[idx].cat}`);
   syncToFirebase();
   showSave();
