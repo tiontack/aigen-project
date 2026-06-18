@@ -2615,8 +2615,10 @@ function _renderMobWeek() {
     taskData[areaKey].tasks.forEach(cat => {
       cat.tasks.forEach(t => {
         if (!t.end || t.status === 'done') return;
-        if (t.end < monStr || t.end > sunStr) return;
-        events.push({ date: t.end, title: t.name, sub: _areaLabelMap[areaKey]||areaKey, color: ac.text, type: 'task', area: areaKey, start: t.start, owner: t.owner });
+        const tStart = t.start || t.end;
+        if (t.end < monStr || tStart > sunStr) return;
+        const eff = autoComputeStatus(t);
+        events.push({ date: t.end, title: t.name, sub: _areaLabelMap[areaKey]||areaKey, color: ac.text, type: 'task', area: areaKey, start: t.start, owner: t.owner, effStatus: eff });
       });
     });
   });
@@ -2627,24 +2629,49 @@ function _renderMobWeek() {
   const calEvents  = events.filter(e => e.type === 'gcal' || e.type === 'mgmt');
   const taskEvents = events.filter(e => e.type === 'task');
 
+  const _taskBadge = ev => {
+    const end = ev.date, start = ev.start || ev.date;
+    const todayD = new Date(todayStr + 'T00:00:00');
+    const endD   = new Date(end + 'T00:00:00');
+    const startD = new Date(start + 'T00:00:00');
+    const daysToEnd   = Math.ceil((endD - todayD) / 86400000);
+    const daysToStart = Math.ceil((startD - todayD) / 86400000);
+    if (ev.effStatus === 'overdue' || end < todayStr)
+      return { label:'지연',    bg:'#e63946', color:'#fff' };
+    if (start > todayStr && daysToStart <= 3)
+      return { label:'착수임박', bg:'#10b981', color:'#fff' };
+    if (daysToEnd <= 3)
+      return { label:'종료임박', bg:'#f59e0b', color:'#fff' };
+    if (start <= todayStr && end >= todayStr)
+      return { label:'진행 중', bg:'#4361ee', color:'#fff' };
+    return { label:'예정',    bg:'#e2e8f0', color:'#475569' };
+  };
+
+  const renderTaskRow = ev => {
+    const badge = _taskBadge(ev);
+    const s = ev.start ? ev.start.slice(5).replace('-','/') : '';
+    const e = ev.date.slice(5).replace('-','/');
+    const period = s ? `${s}~${e}` : e;
+    const owner = ev.owner || '-';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;background:var(--bg2,#f8fafc);margin-bottom:4px;">
+      <div style="flex-shrink:0;padding:3px 7px;border-radius:20px;background:${badge.bg};color:${badge.color};font-size:10px;font-weight:700;white-space:nowrap;letter-spacing:-0.2px;">${badge.label}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.title}</div>
+        <div style="font-size:10.5px;color:var(--text3);margin-top:1px;">${period}</div>
+      </div>
+      <div style="flex-shrink:0;font-size:11px;color:var(--text2);white-space:nowrap;max-width:60px;overflow:hidden;text-overflow:ellipsis;">${owner}</div>
+    </div>`;
+  };
+
   const renderRow = ev => {
     const d = new Date(ev.date + 'T00:00:00');
     const isToday = ev.date === todayStr;
     const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
     const dowStr  = _mobDow[d.getDay()];
-    let infoHtml;
-    if (ev.type === 'task') {
-      const s = ev.start ? ev.start.slice(5).replace('-','/') : '';
-      const e = ev.date.slice(5).replace('-','/');
-      const period = s ? `${s}~${e}` : e;
-      const owner = ev.owner || '-';
-      infoHtml = `<div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.title} / ${period} / ${owner}</div>`;
-    } else {
-      infoHtml = `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+    const infoHtml = `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
         <div class="mwe-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.title}</div>
         <div style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;">${ev.sub}</div>
       </div>`;
-    }
     return `<div class="mob-week-event${isToday ? ' mwe-today' : ''}">
       <div class="mwe-date">${dateStr}<br><small>${dowStr}</small></div>
       <div class="mwe-bar" style="background:${ev.color};"></div>
@@ -2689,7 +2716,7 @@ function _renderMobWeek() {
           display:inline-block;padding:2px 10px;border-radius:8px;margin-bottom:4px;">
           ${_areaLabelMap[areaKey]||areaKey}
         </div>
-        ${list.map(renderRow).join('')}
+        ${list.map(renderTaskRow).join('')}
       </div>`;
     });
   }
