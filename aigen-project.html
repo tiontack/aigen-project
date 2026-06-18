@@ -2783,6 +2783,7 @@ function saveModal() {
   t.note   = document.getElementById('m-note').value.trim();
   closeModal();
   renderDetailPage(pid, area);
+  if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
   logActivity('과제 수정', `${area} / ${t.name}`);
   syncToFirebase();
   showSave();
@@ -2794,6 +2795,7 @@ function deleteFromModal() {
   taskData[area].tasks[ci].tasks.splice(ti, 1);
   closeModal();
   renderDetailPage(pid, area);
+  if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
   logActivity('과제 삭제', `${area} / ${tname}`);
   syncToFirebase();
   showSave();
