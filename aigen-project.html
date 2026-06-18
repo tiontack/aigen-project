@@ -632,10 +632,10 @@ body{
 .mgmt-modal-rcp-의장{border-color:#f77f00;}.mgmt-modal-rcp-의장.active{background:#f77f00;color:#fff;border-color:#f77f00;}
 .mgmt-modal-rcp-TM{border-color:#e63946;}.mgmt-modal-rcp-TM.active{background:#e63946;color:#fff;border-color:#e63946;}
 /* 읽기 전용 카드 */
-.mgmt-card-ro-left{width:15%;min-width:130px;max-width:190px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 14px;gap:6px;}
-.mgmt-card-ro-rcp{font-size:16px;font-weight:800;color:#fff;letter-spacing:.5px;}
-.mgmt-card-ro-date{font-size:11px;color:rgba(255,255,255,0.75);}
-.mgmt-card-ro-title{font-size:12.5px;font-weight:700;color:#fff;text-align:center;word-break:keep-all;margin-top:2px;}
+.mgmt-card-ro-left{width:15%;min-width:130px;max-width:190px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 14px;gap:5px;text-align:center;}
+.mgmt-card-ro-rcp{font-size:12px;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:.3px;}
+.mgmt-card-ro-date{font-size:19px;font-weight:800;color:#fff;letter-spacing:-.3px;line-height:1.25;}
+.mgmt-card-ro-title{font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);word-break:keep-all;margin-top:1px;}
 /* 카드 케밥 메뉴 */
 .mgmt-card-wrap{position:relative;}
 .mgmt-card-menu-btn{position:absolute;top:10px;right:12px;background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:2px 6px;border-radius:6px;line-height:1;z-index:2;}
@@ -4835,7 +4835,7 @@ function mgmtAddSession() {
   document.getElementById('mgmt-modal-agenda-wrap').style.display = '';
   _mgmtModalApplyRcp();
   _mgmtModalRenderItems();
-  document.getElementById('mgmt-reg-overlay').style.display = 'flex';
+  document.getElementById('mgmt-reg-overlay').classList.add('open');
 }
 
 // 보고만 등록 (날짜·대상·제목만)
@@ -4851,7 +4851,7 @@ function mgmtOpenReportModal() {
   document.getElementById('mgmt-modal-char').textContent = '0/20';
   document.getElementById('mgmt-modal-agenda-wrap').style.display = 'none';
   _mgmtModalApplyRcp();
-  document.getElementById('mgmt-reg-overlay').style.display = 'flex';
+  document.getElementById('mgmt-reg-overlay').classList.add('open');
 }
 
 // 기존 세션 수정 (통합 모드)
@@ -4870,11 +4870,11 @@ function mgmtEditSession(id) {
   document.getElementById('mgmt-modal-agenda-wrap').style.display = '';
   _mgmtModalApplyRcp();
   _mgmtModalRenderItems();
-  document.getElementById('mgmt-reg-overlay').style.display = 'flex';
+  document.getElementById('mgmt-reg-overlay').classList.add('open');
 }
 
 function mgmtCloseModal() {
-  document.getElementById('mgmt-reg-overlay').style.display = 'none';
+  document.getElementById('mgmt-reg-overlay').classList.remove('open');
 }
 
 // 안건 등록 모달
@@ -4895,11 +4895,11 @@ function mgmtOpenItemModal() {
   document.getElementById('mgmt-item-area').innerHTML = _mgmtAreaOptions('');
   document.getElementById('mgmt-item-presenter').innerHTML = _mgmtPresenterOptions('');
   document.getElementById('mgmt-item-topic').value = '';
-  document.getElementById('mgmt-item-overlay').style.display = 'flex';
+  document.getElementById('mgmt-item-overlay').classList.add('open');
 }
 
 function mgmtCloseItemModal() {
-  document.getElementById('mgmt-item-overlay').style.display = 'none';
+  document.getElementById('mgmt-item-overlay').classList.remove('open');
 }
 
 function mgmtToggleCardMenu(e, menuId) {
