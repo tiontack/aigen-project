@@ -19,3 +19,4 @@ jobs:
           channelId: live
           projectId: aigen-pmo
           target: aigen
+          entryPoint: .firebase-deploy
