@@ -138,7 +138,7 @@ body{
 .mreg-toolbar button{background:#fff;border:1px solid var(--border);border-radius:5px;padding:3px 9px;font-size:12.5px;cursor:pointer;color:var(--text);line-height:1.4;transition:background .12s;}
 .mreg-toolbar button:hover{background:#eef1ff;color:var(--accent);}
 .mreg-sep{width:1px;height:18px;background:var(--border);margin:0 3px;flex-shrink:0;}
-.mreg-rte{min-height:180px;max-height:320px;overflow-y:auto;padding:14px 16px;font-size:13.5px;line-height:1.75;color:var(--text);outline:none;}
+.mreg-rte{min-height:260px;max-height:480px;overflow-y:auto;padding:16px 18px;font-size:13.5px;line-height:1.8;color:var(--text);outline:none;}
 .mreg-rte:empty:before{content:attr(data-placeholder);color:var(--text3);pointer-events:none;}
 .mreg-rte h2{font-size:17px;font-weight:700;margin:10px 0 4px;}
 .mreg-rte h3{font-size:15px;font-weight:700;margin:8px 0 3px;}
@@ -484,9 +484,9 @@ body{
 .lib-btn.del:hover{background:#fde9ea;color:#e63946;border-color:#f3c4c7;}
 .lib-empty{padding:40px;text-align:center;color:var(--text2);font-size:13px;}
 /* 회의록 전용 행 */
-.meeting-row{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:#fff;transition:box-shadow .15s;min-height:68px;}
+.meeting-row{display:flex;align-items:center;gap:14px;padding:14px 18px;border:1px solid var(--border);border-radius:12px;background:#fff;transition:box-shadow .15s;min-height:64px;}
 .meeting-row:hover{box-shadow:0 3px 14px rgba(0,0,0,0.08);}
-.meeting-area-btn{flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 13px;border-radius:20px;border:none;cursor:default;white-space:nowrap;}
+.meeting-area-btn{flex-shrink:0;font-size:11.5px;font-weight:700;padding:5px 0;border-radius:20px;border:none;cursor:default;white-space:nowrap;width:64px;text-align:center;}
 .meeting-row-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
 .meeting-row-title{font-size:15.5px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
 .meeting-row-title:hover{color:var(--accent);}
