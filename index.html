@@ -1172,6 +1172,102 @@ body{
   .area-card{padding:16px 14px;}
   .area-card .area-pct{font-size:26px;}
 }
+
+/* ── 모바일 홈 네비 버튼 그리드 ── */
+#mob-home-nav{display:none;}
+
+@media (max-width: 900px) {
+  /* 랜딩 페이지: hero-banner만 표시, 나머지 숨김 */
+  #page-summary .page-header,
+  #page-summary .summary-top,
+  #page-summary .chart-row,
+  #page-summary .section {
+    display:none !important;
+  }
+
+  /* 모바일 홈 네비 그리드 표시 */
+  #mob-home-nav {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:8px;
+    padding-bottom:80px; /* 하단 탭바 여백 */
+  }
+
+  .mob-nav-btn {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    background:#fff;
+    border:1.5px solid var(--border);
+    border-radius:16px;
+    padding:22px 12px;
+    cursor:pointer;
+    transition:all 0.15s;
+    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mob-nav-btn:active {
+    background:#eff3ff;
+    border-color:var(--accent);
+    transform:scale(0.97);
+  }
+  .mob-nav-btn .mnb-icon {
+    width:44px;height:44px;border-radius:14px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;
+  }
+  .mob-nav-btn .mnb-label {
+    font-size:13px;font-weight:700;color:var(--text);text-align:center;line-height:1.3;
+  }
+  .mob-nav-btn .mnb-sub {
+    font-size:11px;color:var(--text3);margin-top:-4px;
+  }
+  .mob-nav-btn .mnb-badge {
+    background:var(--accent);color:#fff;
+    font-size:11px;font-weight:700;
+    padding:2px 8px;border-radius:10px;
+    margin-top:-4px;
+  }
+
+  /* 하단 고정 탭바 */
+  #mob-bottom-nav {
+    display:flex;
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    background:#fff;border-top:1.5px solid var(--border);
+    box-shadow:0 -2px 12px rgba(0,0,0,0.08);
+    padding:0;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .mbn-item {
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:8px 4px;cursor:pointer;gap:3px;
+    -webkit-tap-highlight-color:transparent;
+    transition:color 0.12s;
+    color:var(--text3);font-size:10px;font-weight:600;
+    position:relative;
+  }
+  .mbn-item svg{width:22px;height:22px;stroke-width:1.8;}
+  .mbn-item.active{color:var(--accent);}
+  .mbn-item .mbn-badge {
+    position:absolute;top:5px;right:calc(50% - 18px);
+    background:#e63946;color:#fff;
+    font-size:9px;font-weight:700;min-width:16px;height:16px;
+    border-radius:8px;display:flex;align-items:center;justify-content:center;
+    padding:0 4px;
+  }
+
+  /* 하단 탭바 공간 확보 */
+  #main { padding-bottom:80px; }
+}
+
+/* 태블릿 이상에서는 하단 탭바 / 홈 네비 숨김 */
+@media (min-width: 901px) {
+  #mob-bottom-nav { display:none !important; }
+  #mob-home-nav { display:none !important; }
+}
 </style>
 </head>
 <body>
@@ -1216,6 +1312,32 @@ body{
   <span></span><span></span><span></span>
 </button>
 <div id="mob-overlay" onclick="closeSidebar()"></div>
+
+<!-- 모바일 하단 고정 탭바 -->
+<nav id="mob-bottom-nav">
+  <div class="mbn-item active" data-page="summary" onclick="showPage('summary');closeSidebar()">
+    <i data-lucide="layout-dashboard"></i>
+    <span>홈</span>
+  </div>
+  <div class="mbn-item" data-page="issues" onclick="showPage('issues');closeSidebar()">
+    <i data-lucide="alert-triangle"></i>
+    <span>Issues</span>
+    <span class="mbn-badge" id="mbn-issues-badge" style="display:none">0</span>
+  </div>
+  <div class="mbn-item" data-page="calendar" onclick="showPage('calendar');closeSidebar()">
+    <i data-lucide="calendar"></i>
+    <span>캘린더</span>
+  </div>
+  <div class="mbn-item" data-page="mgmt" onclick="showPage('mgmt');closeSidebar()">
+    <i data-lucide="clipboard-list"></i>
+    <span>Mgmt</span>
+  </div>
+  <div class="mbn-item" data-page="messages" onclick="showPage('messages');closeSidebar()">
+    <i data-lucide="message-square"></i>
+    <span>메시지</span>
+    <span class="mbn-badge" id="mbn-msg-badge" style="display:none">0</span>
+  </div>
+</nav>
 <nav id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-badge">AI-GEN TF</div>
@@ -1298,6 +1420,71 @@ body{
         <div class="hero-issues" id="hero-issues"></div>
       </div>
     </div>
+
+    <!-- 모바일 전용 홈 네비 버튼 그리드 -->
+    <div id="mob-home-nav">
+      <div class="mob-nav-btn" onclick="showPage('issues');closeSidebar()">
+        <div class="mnb-icon" style="background:#fff0f1;color:#e63946;"><i data-lucide="alert-triangle"></i></div>
+        <div class="mnb-label">Issues</div>
+        <div class="mnb-sub">이슈 현황</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('calendar');closeSidebar()">
+        <div class="mnb-icon" style="background:#f0f4ff;color:#4361ee;"><i data-lucide="calendar"></i></div>
+        <div class="mnb-label">Calendar</div>
+        <div class="mnb-sub">일정 캘린더</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('mgmt');closeSidebar()">
+        <div class="mnb-icon" style="background:#f0fff8;color:#0a9979;"><i data-lucide="clipboard-list"></i></div>
+        <div class="mnb-label">Mgmt. Process</div>
+        <div class="mnb-sub">회의 일정/안건</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('pmo');closeSidebar()">
+        <div class="mnb-icon" style="background:#f5f0ff;color:#7b2ff7;"><i data-lucide="briefcase"></i></div>
+        <div class="mnb-label">PMO</div>
+        <div class="mnb-sub">사업기획</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('marketing');closeSidebar()">
+        <div class="mnb-icon" style="background:#fff5f0;color:#f4680a;"><i data-lucide="megaphone"></i></div>
+        <div class="mnb-label">홍보</div>
+        <div class="mnb-sub">마케팅</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('recruit');closeSidebar()">
+        <div class="mnb-icon" style="background:#f0faff;color:#0096c7;"><i data-lucide="target"></i></div>
+        <div class="mnb-label">모집선발</div>
+        <div class="mnb-sub">리쿠르팅</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('curriculum');closeSidebar()">
+        <div class="mnb-icon" style="background:#fffbf0;color:#d4a017;"><i data-lucide="book-open"></i></div>
+        <div class="mnb-label">커리큘럼</div>
+        <div class="mnb-sub">교육 과정</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('infra');closeSidebar()">
+        <div class="mnb-icon" style="background:#f0fff0;color:#2d8653;"><i data-lucide="server"></i></div>
+        <div class="mnb-label">인프라</div>
+        <div class="mnb-sub">시스템 환경</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('meeting');closeSidebar()">
+        <div class="mnb-icon" style="background:#f7f0ff;color:#9b4dca;"><i data-lucide="file-text"></i></div>
+        <div class="mnb-label">회의록</div>
+        <div class="mnb-sub">DATA</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('archive');closeSidebar()">
+        <div class="mnb-icon" style="background:#f0f8ff;color:#1a73e8;"><i data-lucide="folder-open"></i></div>
+        <div class="mnb-label">자료실</div>
+        <div class="mnb-sub">DATA</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('messages');closeSidebar()">
+        <div class="mnb-icon" style="background:#fff0fb;color:#c2185b;"><i data-lucide="message-square"></i></div>
+        <div class="mnb-label">메시지</div>
+        <div class="mnb-sub">채널 대화</div>
+      </div>
+      <div class="mob-nav-btn" onclick="showPage('mypage');closeSidebar()">
+        <div class="mnb-icon" style="background:#f5f5f5;color:#555;"><i data-lucide="user-circle"></i></div>
+        <div class="mnb-label">마이페이지</div>
+        <div class="mnb-sub">내 정보</div>
+      </div>
+    </div>
+
     <div class="page-header">
       <div class="page-header-left">
         <h2><span class="hl">AI-Gen</span> 프로젝트 Overview</h2>
@@ -2887,13 +3074,14 @@ function renderIssuesPage() {
     section('🔔 이번주 착수 예정', '#4361ee', thisWeekStartTasks, 'start', '이번주 착수 예정 과제가 없습니다') +
     section('📅 다음주 착수 예정', '#7c3aed', nextWeekStartTasks, 'start', '다음주 착수 예정 과제가 없습니다');
 
-  // 사이드바 배지 (전체 기준)
-  const badge = document.getElementById('issues-nav-badge');
-  if (badge) {
-    const total = allOver.length + allEnd.length + allStart.length;
+  // 사이드바 + 하단 탭바 배지
+  const total = allOver.length + allEnd.length + allStart.length;
+  ['issues-nav-badge','mbn-issues-badge'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
     badge.textContent = total;
     badge.style.display = total > 0 ? 'inline-flex' : 'none';
-  }
+  });
 
   // 자동 갱신: 5분마다 재렌더 (Issues 탭이 열려있을 때만)
   if (_issuesRefreshTimer) clearInterval(_issuesRefreshTimer);
@@ -3312,7 +3500,12 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  document.querySelector(`[data-page="${id}"]`).classList.add('active');
+  const sidebarItem = document.querySelector(`#sidebar [data-page="${id}"]`);
+  if (sidebarItem) sidebarItem.classList.add('active');
+  // 하단 탭바 활성 동기화
+  document.querySelectorAll('#mob-bottom-nav .mbn-item').forEach(n=>n.classList.remove('active'));
+  const mbnItem = document.querySelector(`#mob-bottom-nav [data-page="${id}"]`);
+  if (mbnItem) mbnItem.classList.add('active');
   if (id === 'admin') renderUserTable();
   if (id === 'mypage') renderMyPageTasks();
   if (id === 'messages') renderMessagesPage();
@@ -3772,11 +3965,14 @@ function countUnreadMentionsInChannel(key) {
   return list.filter(m => m.mentions && m.mentions.includes(currentUser.id) && m.from !== currentUser.id && (m.ts || 0) > lastRead).length;
 }
 function updateMsgUnreadBadge() {
-  const badge = document.getElementById('msg-unread-badge');
-  if (!badge || !currentUser) return;
+  if (!currentUser) return;
   const total = _msgChannels().reduce((sum, c) => sum + countUnreadMentionsInChannel(c.key), 0);
-  badge.textContent = total;
-  badge.style.display = total > 0 ? 'inline-flex' : 'none';
+  ['msg-unread-badge','mbn-msg-badge'].forEach(id => {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+  });
 }
 function renderMsgThread() {
   const wrap = document.getElementById('msg-thread');
@@ -5382,11 +5578,8 @@ loadFromFirebase(function() {
   loadActivityLogFromFirebase(function() {
     renderActivityLog();
   });
-  // Issues 배지 초기 업데이트
+  // Issues 배지 초기 업데이트 (사이드바 + 하단 탭바)
   setTimeout(() => {
-    const badge = document.getElementById('issues-nav-badge');
-    if (!badge) return;
-    const now2 = new Date(_today);
     const soon2 = new Date(_today); soon2.setDate(soon2.getDate() + 7);
     let total = 0;
     Object.keys(taskData).forEach(areaKey => {
@@ -5398,8 +5591,12 @@ loadFromFirebase(function() {
         });
       });
     });
-    badge.textContent = total;
-    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+    ['issues-nav-badge','mbn-issues-badge'].forEach(id => {
+      const badge = document.getElementById(id);
+      if (!badge) return;
+      badge.textContent = total;
+      badge.style.display = total > 0 ? 'inline-flex' : 'none';
+    });
   }, 0);
   loadGcalConfigFromFirebase();
   loadMgmtFromFirebase(function() {
