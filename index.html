@@ -2191,37 +2191,42 @@ const summaryAreas = [
   { name:'인프라',     total:23, rate:0.1087,  planned:18, progress:5, done:0, delay:0, color:'#ef4444', page:'infra' },
 ];
 
-const monthlyData = [
-  { area:'PMO/사업기획', sub:'T/F구성',      total:4,  months:[[0,1,3,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'PMO',           total:3,  months:[[1,1,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'경영층 보고',   total:4,  months:[[1,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0],[0,0,0,0],[1,0,0,0],[1,0,0,0]] },
-  { area:null,           sub:'초기 운영예산', total:3,  months:[[0,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'하이닉스 재원', total:4,  months:[[0,0,0,0],[4,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'계약/대외협력', total:13, months:[[0,0,0,0],[7,0,0,0],[3,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[6,0,0,0]] },
-  { area:null,           sub:'법무검토',      total:2,  months:[[0,0,0,0],[1,0,0,0],[1,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:'홍보',        sub:'브랜딩',         total:5,  months:[[4,1,0,0],[3,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'컨텐츠',        total:5,  months:[[0,0,0,0],[3,0,0,0],[2,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'모집마케팅',    total:5,  months:[[0,1,0,0],[1,0,0,0],[0,0,0,0],[3,0,0,0],[2,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'대외PR',        total:3,  months:[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'지원자 경험',   total:2,  months:[[0,0,0,0],[0,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:'모집선발',    sub:'전형설계',        total:3,  months:[[0,3,0,0],[0,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'선발도구설계',  total:3,  months:[[0,3,0,0],[0,3,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'서류전형',      total:5,  months:[[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0],[2,0,0,0],[4,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'필기전형',      total:5,  months:[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[3,0,0,0],[3,0,0,0]] },
-  { area:null,           sub:'면접전형',      total:8,  months:[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0],[1,0,0,0],[3,0,0,0]] },
-  { area:null,           sub:'선발관리',      total:1,  months:[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:'커리큘럼',   sub:'교육방향',        total:5,  months:[[0,5,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'파트너십',      total:7,  months:[[1,3,0,0],[2,0,0,0],[1,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'커리큘럼',      total:6,  months:[[0,0,0,0],[5,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0],[1,0,0,0]] },
-  { area:null,           sub:'컨텐츠',        total:9,  months:[[1,0,0,0],[2,0,0,0],[2,0,0,0],[4,0,0,0],[3,0,0,0],[1,0,0,0],[1,0,0,0]] },
-  { area:null,           sub:'지원체계',      total:2,  months:[[0,0,0,0],[0,0,0,0],[1,0,0,0],[1,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]] },
-  { area:null,           sub:'협의사항',      total:4,  months:[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0],[0,0,0,0]] },
-  { area:'인프라',     sub:'공간인프라',       total:8,  months:[[0,5,0,0],[0,1,0,0],[0,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0]] },
-  { area:null,           sub:'IT인프라',      total:4,  months:[[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0],[1,0,0,0],[1,0,0,0],[2,0,0,0]] },
-  { area:null,           sub:'IT시스템',      total:8,  months:[[0,0,0,0],[2,0,0,0],[2,0,0,0],[1,0,0,0],[1,0,0,0],[2,0,0,0],[2,0,0,0]] },
-  { area:null,           sub:'IT장비',        total:3,  months:[[0,0,0,0],[2,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0]] },
-];
 const months = ['6월','7월','8월','9월','10월','11월','12월'];
+
+function computeMonthlyData() {
+  const areaOrder = ['pmo','marketing','recruit','curriculum','infra'];
+  const areaNames = { pmo:'PMO/사업기획', marketing:'홍보', recruit:'모집선발', curriculum:'커리큘럼', infra:'인프라' };
+  const baseYear = 2026, baseMonth = 6; // 6월~12월
+  const rows = [];
+  areaOrder.forEach(areaKey => {
+    const area = taskData[areaKey];
+    if (!area) return;
+    let firstCat = true;
+    area.tasks.forEach(cat => {
+      const tasks = cat.tasks;
+      const total = tasks.length;
+      const monthCounts = months.map((_, mi) => {
+        const targetMonth = baseMonth + mi; // 6~12
+        let planned = 0, progress = 0, done = 0, delay = 0;
+        tasks.forEach(t => {
+          const dateStr = t.end || t.start;
+          if (!dateStr) return;
+          const d = new Date(dateStr);
+          if (d.getFullYear() !== baseYear || d.getMonth() + 1 !== targetMonth) return;
+          const eff = autoComputeStatus(t);
+          if (eff === 'done') done++;
+          else if (eff === 'overdue') delay++;
+          else if (eff === 'progress') progress++;
+          else planned++;
+        });
+        return [planned, progress, done, delay];
+      });
+      rows.push({ area: firstCat ? areaNames[areaKey] : null, sub: cat.cat, total, months: monthCounts });
+      firstCat = false;
+    });
+  });
+  return rows;
+}
 
 const taskData = {
   pmo: { title:'PMO/사업기획', icon:'briefcase', tasks:[
@@ -2741,11 +2746,12 @@ function renderCharts() {
   });
 
   // Line - monthly task plan
+  const _dynMonthly = computeMonthlyData();
   const monthPlan = months.map((_, mi) =>
-    monthlyData.reduce((s,r)=>s+r.months[mi][0]+r.months[mi][1],0)
+    _dynMonthly.reduce((s,r)=>s+r.months[mi][0]+r.months[mi][1],0)
   );
   const monthProgress = months.map((_,mi) =>
-    monthlyData.reduce((s,r)=>s+r.months[mi][1],0)
+    _dynMonthly.reduce((s,r)=>s+r.months[mi][1],0)
   );
   new Chart(document.getElementById('chartLine'), {
     type: 'line',
@@ -2792,6 +2798,7 @@ function renderMonthlyTable() {
     h += `<th${s}>예정</th><th${s}>진행</th><th${s}>완료</th><th${s}>지연</th>`;
   });
   h += '</tr></thead><tbody>';
+  const monthlyData = computeMonthlyData();
   monthlyData.forEach(row => {
     if (row.area !== null) {
       h += `<tr class="area-group-row"><td class="agr-sticky">${row.area}</td><td colspan="${totalCols - 1}"></td></tr>`;
