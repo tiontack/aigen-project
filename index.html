@@ -497,6 +497,10 @@ body{
 .meeting-row-date{flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--text2);min-width:90px;text-align:right;}
 /* 회의록 상세 모달 개요 섹션 */
 .meeting-detail-overview{background:#f5f7ff;border-radius:12px;padding:16px 20px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;}
+#meeting-modal-summary table,#meeting-modal-fulltext table{border-collapse:collapse;min-width:100%;font-size:12.5px;}
+#meeting-modal-summary table td,#meeting-modal-summary table th,#meeting-modal-fulltext table td,#meeting-modal-fulltext table th{border:1px solid #d0d7e2;padding:6px 10px;vertical-align:top;word-break:keep-all;}
+#meeting-modal-summary table th,#meeting-modal-fulltext table th{background:#eef1f7;font-weight:700;}
+#meeting-modal-summary img,#meeting-modal-fulltext img{max-width:100%;height:auto;}
 .meeting-detail-title{font-size:18px;font-weight:800;color:var(--text);flex-basis:100%;}
 .meeting-detail-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex-basis:100%;}
 .gantt-today-line::before{
@@ -1607,7 +1611,7 @@ body{
           <button class="modal-close" onclick="closeMeetingModal()">✕</button>
         </div>
       </div>
-      <div class="modal-body" style="max-height:76vh;overflow-y:auto;">
+      <div class="modal-body" style="max-height:76vh;overflow-y:auto;overflow-x:hidden;">
         <!-- 개요 섹션 -->
         <div class="meeting-detail-overview">
           <div class="meeting-detail-title" id="meeting-modal-title-big"></div>
@@ -1616,11 +1620,11 @@ body{
         <!-- 본문 섹션 -->
         <div class="field-group" id="meeting-modal-summary-wrap">
           <div class="field-label" id="meeting-modal-summary-label">요약</div>
-          <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:14px;font-size:13px;line-height:1.75;"></div>
+          <div id="meeting-modal-summary" style="background:#f5f7ff;border-radius:8px;padding:14px;font-size:13px;line-height:1.75;overflow-x:auto;max-width:100%;box-sizing:border-box;"></div>
         </div>
         <div class="field-group" id="meeting-modal-fulltext-wrap">
           <div class="field-label">전체 내용</div>
-          <div id="meeting-modal-fulltext" style="font-size:13px;line-height:1.75;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:14px;"></div>
+          <div id="meeting-modal-fulltext" style="font-size:13px;line-height:1.75;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;max-width:100%;box-sizing:border-box;"></div>
         </div>
       </div>
       <div class="modal-foot">
@@ -5091,18 +5095,41 @@ function loadMgmtFromFirebase(onDone) {
   _db.ref('mgmtProcess').once('value').then(snap => {
     const val = snap.val();
     if (val && typeof val === 'object') {
-      // v2 structure: { sessions: [...] }
       if (Array.isArray(val.sessions)) {
         mgmtData = val;
       } else {
-        // legacy month-based structure — discard, start fresh
         mgmtData = { sessions: [] };
       }
     } else {
       mgmtData = { sessions: [] };
     }
+    _seedPresidentBiweekly();
     if (onDone) onDone();
   }).catch(() => { if (onDone) onDone(); });
+}
+
+function _seedPresidentBiweekly() {
+  // 2026년 7~12월 2·4주차 목요일 총장 Bi-weekly — 한 번만 등록
+  const DATES = [
+    '2026-07-09','2026-07-23',
+    '2026-08-13','2026-08-27',
+    '2026-09-10','2026-09-24',
+    '2026-10-08','2026-10-22',
+    '2026-11-12','2026-11-26',
+    '2026-12-10','2026-12-24'
+  ];
+  const existing = new Set((mgmtData.sessions||[]).filter(s=>s.title==='총장 Bi-weekly'&&s.recipient==='총장').map(s=>s.date));
+  let added = false;
+  DATES.forEach(date => {
+    if (!existing.has(date)) {
+      mgmtData.sessions.push({ id:'biw_'+date.replace(/-/g,''), date, recipient:'총장', title:'총장 Bi-weekly', items:[] });
+      added = true;
+    }
+  });
+  if (added) {
+    mgmtData.sessions.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
+    syncMgmtToFirebase();
+  }
 }
 
 function syncToFirebase() {
