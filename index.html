@@ -1603,7 +1603,8 @@ body{
       <div class="modal-head">
         <h3>회의록 상세</h3>
         <div style="display:flex;align-items:center;gap:8px;">
-          <button id="meeting-modal-del-btn" onclick="" title="삭제" style="background:none;border:none;font-size:20px;cursor:pointer;padding:2px 6px;border-radius:6px;line-height:1;" title="삭제">🗑</button>
+          <button id="meeting-modal-edit-btn" onclick="" title="수정" style="padding:6px 14px;background:#eef1ff;color:var(--accent);border:1px solid #c7d0ff;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;">✏️ 수정</button>
+          <button id="meeting-modal-del-btn" onclick="" title="삭제" style="background:none;border:none;font-size:20px;cursor:pointer;padding:2px 6px;border-radius:6px;line-height:1;">🗑</button>
           <button class="modal-close" onclick="closeMeetingModal()">✕</button>
         </div>
       </div>
@@ -4444,25 +4445,40 @@ function mregInsertTable(id) {
   document.execCommand('insertHTML', false, html);
 }
 
-function openMeetingRegModal() {
+let _mregEditIdx = null; // null = 신규, number = 수정 인덱스
+
+function openMeetingRegModal(editIdx) {
   _mregFile = null;
-  document.getElementById('mreg-title').value = '';
-  document.getElementById('mreg-topic').value = '';
-  document.getElementById('mreg-date').value = new Date().toISOString().slice(0,10);
-  _mregRteEl('summary').innerHTML = '';
-  _mregRteEl('fullcontent').innerHTML = '';
-  document.getElementById('mreg-file-name').textContent = '선택된 파일 없음';
+  _mregEditIdx = (editIdx !== undefined && editIdx !== null) ? editIdx : null;
+
+  const m = (_mregEditIdx !== null) ? libraryData.meetings[_mregEditIdx] : null;
+
+  // 모달 헤더 / 버튼 텍스트
+  document.querySelector('#meeting-reg-overlay .modal-head h3').textContent = m ? '회의록 수정' : '회의록 등록';
+  document.getElementById('mreg-submit-btn').textContent = m ? '저장' : '등록';
+
+  document.getElementById('mreg-title').value = m ? (m.title || '') : '';
+  document.getElementById('mreg-topic').value = m ? (m.topic || '') : '';
+  document.getElementById('mreg-date').value  = m ? (m.date  || new Date().toISOString().slice(0,10)) : new Date().toISOString().slice(0,10);
+  _mregRteEl('summary').innerHTML     = m ? (m.summaryHtml || '') : '';
+  _mregRteEl('fullcontent').innerHTML = m ? (m.fullHtml    || '') : '';
+  document.getElementById('mreg-file-name').textContent = m && m.fileName ? m.fileName : '선택된 파일 없음';
   document.getElementById('mreg-file-input').value = '';
+
   const areaSel = document.getElementById('mreg-area');
   areaSel.innerHTML = '<option value="">전체</option>' +
     Object.keys(taskData).map(k => `<option value="${k}">${_areaLabelMap[k]||k}</option>`).join('');
+  if (m && m.area) areaSel.value = m.area;
+
   // 참석자 칩
+  const selectedAttendees = m && m.attendees ? m.attendees.split(',').map(s => s.trim()) : [];
   const list = document.getElementById('mreg-attendee-list');
   list.innerHTML = users.map(u => `
-    <div class="mreg-attendee-chip" id="mreg-chip-${u.id}" onclick="mregToggleAttendee('${u.id}')">
+    <div class="mreg-attendee-chip${selectedAttendees.includes(u.id) ? ' selected' : ''}" id="mreg-chip-${u.id}" onclick="mregToggleAttendee('${u.id}')">
       <div class="chip-avatar">${(u.id||'?')[0].toUpperCase()}</div>
       ${u.id}${u.role ? ' <span style="font-size:10.5px;opacity:.7">('+u.role+')</span>' : ''}
     </div>`).join('');
+
   document.getElementById('meeting-reg-overlay').classList.add('open');
   setTimeout(() => document.getElementById('mreg-title').focus(), 50);
 }
@@ -4510,20 +4526,41 @@ async function submitMeetingReg() {
       pageImages = await renderPdfPageImages(buf.slice(0));
       summary = summarizeBullets(fullText, 5, 10);
     }
-    const entry = {
-      id: 'm' + Date.now(), title, topic, date, area, attendees,
-      fileName, fileData, fullText, pageImages, summary,
-      summaryHtml: _mregFile ? '' : manualSummaryHtml,
-      fullHtml: _mregFile ? '' : manualFullHtml,
-      ts: Date.now()
-    };
-    libraryData.meetings.unshift(entry);
-    syncLibraryToFirebase();
-    if (fileData) syncResourceFromMeeting(entry);
-    logActivity('회의록 등록', `${area||'전체'} / ${title}`);
-    showSave();
-    closeMeetingRegModal();
-    renderMeetingList();
+    if (_mregEditIdx !== null && libraryData.meetings[_mregEditIdx]) {
+      // 수정 모드: 기존 항목 업데이트
+      const existing = libraryData.meetings[_mregEditIdx];
+      existing.title = title; existing.topic = topic; existing.date = date;
+      existing.area = area; existing.attendees = attendees;
+      if (_mregFile) {
+        existing.fileName = fileName; existing.fileData = fileData;
+        existing.fullText = fullText; existing.pageImages = pageImages;
+        existing.summary = summary; existing.summaryHtml = ''; existing.fullHtml = '';
+      } else {
+        existing.summaryHtml = manualSummaryHtml; existing.fullHtml = manualFullHtml;
+      }
+      existing.ts = Date.now();
+      syncLibraryToFirebase();
+      logActivity('회의록 수정', `${area||'전체'} / ${title}`);
+      showSave();
+      closeMeetingRegModal();
+      renderMeetingList();
+    } else {
+      // 신규 등록
+      const entry = {
+        id: 'm' + Date.now(), title, topic, date, area, attendees,
+        fileName, fileData, fullText, pageImages, summary,
+        summaryHtml: _mregFile ? '' : manualSummaryHtml,
+        fullHtml: _mregFile ? '' : manualFullHtml,
+        ts: Date.now()
+      };
+      libraryData.meetings.unshift(entry);
+      syncLibraryToFirebase();
+      if (fileData) syncResourceFromMeeting(entry);
+      logActivity('회의록 등록', `${area||'전체'} / ${title}`);
+      showSave();
+      closeMeetingRegModal();
+      renderMeetingList();
+    }
   } catch(e) {
     console.warn('회의록 등록 실패:', e);
     alert('등록 중 오류가 발생했습니다.');
@@ -4619,6 +4656,12 @@ function openMeetingModal(i) {
   ].filter(Boolean);
   document.getElementById('meeting-modal-meta').innerHTML = chips.join('');
 
+  // 수정 버튼 연결
+  const editBtn = document.getElementById('meeting-modal-edit-btn');
+  if (editBtn) editBtn.onclick = () => {
+    closeMeetingModal();
+    openMeetingRegModal(i);
+  };
   // 삭제 버튼 연결
   const delBtn = document.getElementById('meeting-modal-del-btn');
   if (delBtn) delBtn.onclick = () => {
