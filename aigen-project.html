@@ -2740,6 +2740,8 @@ function renderIssuesPage() {
 
   const _d = s => s ? s.replace(/-/g,'.') : '-';
   const { weekStart, weekEnd } = _issuesWeekRange();
+  const nextWeekStart = new Date(weekEnd); nextWeekStart.setDate(weekEnd.getDate() + 1);
+  const nextWeekEnd = new Date(nextWeekStart); nextWeekEnd.setDate(nextWeekStart.getDate() + 6);
   const todayNow = new Date(); todayNow.setHours(0,0,0,0);
 
   // 주간 레이블
@@ -2757,7 +2759,7 @@ function renderIssuesPage() {
   // 영역 필터
   const areaFilter = (document.getElementById('issues-area-filter') || {}).value || '';
 
-  const overdueTasks = [], soonEndTasks = [], soonStartTasks = [];
+  const overdueTasks = [], soonEndTasks = [], thisWeekStartTasks = [], nextWeekStartTasks = [];
 
   Object.keys(taskData).forEach(areaKey => {
     if (areaFilter && areaKey !== areaFilter) return;
@@ -2774,7 +2776,8 @@ function renderIssuesPage() {
         }
         if (t.status === 'planned' && t.start) {
           const st = new Date(t.start); st.setHours(0,0,0,0);
-          if (st >= todayNow && st <= weekEnd) soonStartTasks.push(entry);
+          if (st >= todayNow && st <= weekEnd) thisWeekStartTasks.push(entry);
+          else if (st >= nextWeekStart && st <= nextWeekEnd) nextWeekStartTasks.push(entry);
         }
       });
     });
@@ -2792,7 +2795,7 @@ function renderIssuesPage() {
         }
         if (t.status === 'planned' && t.start) {
           const st = new Date(t.start); st.setHours(0,0,0,0);
-          if (st >= todayNow && st <= weekEnd) allStart.push(t);
+          if (st >= todayNow && st <= nextWeekEnd) allStart.push(t);
         }
       });
     });
@@ -2809,7 +2812,7 @@ function renderIssuesPage() {
     </div>
     <div class="issues-stat-card glass-card">
       <div class="stat-num" style="color:#4361ee">${allStart.length}</div>
-      <div class="stat-lbl">🔔 이번 주 착수 예정</div>
+      <div class="stat-lbl">🔔 이번주·다음주 착수 예정</div>
     </div>`;
 
   // 카드 HTML 생성
@@ -2867,12 +2870,14 @@ function renderIssuesPage() {
 
   overdueTasks.sort((a,b) => (a.t.end||'') < (b.t.end||'') ? -1 : 1);
   soonEndTasks.sort((a,b) => (a.t.end||'') < (b.t.end||'') ? -1 : 1);
-  soonStartTasks.sort((a,b) => (a.t.start||'') < (b.t.start||'') ? -1 : 1);
+  thisWeekStartTasks.sort((a,b) => (a.t.start||'') < (b.t.start||'') ? -1 : 1);
+  nextWeekStartTasks.sort((a,b) => (a.t.start||'') < (b.t.start||'') ? -1 : 1);
 
   content.innerHTML =
     section('⚠ 지연된 과제', '#e63946', overdueTasks, 'overdue', '지연된 과제가 없습니다 👍') +
     section('⏰ 이번 주 마감 임박', '#d97706', soonEndTasks, 'end', '이번 주 마감 임박 과제가 없습니다') +
-    section('🔔 이번 주 착수 예정', '#4361ee', soonStartTasks, 'start', '이번 주 착수 예정 과제가 없습니다');
+    section('🔔 이번주 착수 예정', '#4361ee', thisWeekStartTasks, 'start', '이번주 착수 예정 과제가 없습니다') +
+    section('📅 다음주 착수 예정', '#7c3aed', nextWeekStartTasks, 'start', '다음주 착수 예정 과제가 없습니다');
 
   // 사이드바 배지 (전체 기준)
   const badge = document.getElementById('issues-nav-badge');
