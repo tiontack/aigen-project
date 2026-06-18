@@ -132,6 +132,27 @@ body{
 .hero-issues-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;opacity:1;transition:opacity 0.3s ease;}
 .hero-issues-grid.fading{opacity:0;}
 .meeting-page-img{width:100%;display:block;border:1px solid var(--border);border-radius:6px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+/* ── 회의록 Rich Text Editor ── */
+.mreg-rte-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;}
+.mreg-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding:7px 10px;background:#f7f8fc;border-bottom:1px solid var(--border);}
+.mreg-toolbar button{background:#fff;border:1px solid var(--border);border-radius:5px;padding:3px 9px;font-size:12.5px;cursor:pointer;color:var(--text);line-height:1.4;transition:background .12s;}
+.mreg-toolbar button:hover{background:#eef1ff;color:var(--accent);}
+.mreg-sep{width:1px;height:18px;background:var(--border);margin:0 3px;flex-shrink:0;}
+.mreg-rte{min-height:180px;max-height:320px;overflow-y:auto;padding:14px 16px;font-size:13.5px;line-height:1.75;color:var(--text);outline:none;}
+.mreg-rte:empty:before{content:attr(data-placeholder);color:var(--text3);pointer-events:none;}
+.mreg-rte h2{font-size:17px;font-weight:700;margin:10px 0 4px;}
+.mreg-rte h3{font-size:15px;font-weight:700;margin:8px 0 3px;}
+.mreg-rte h4{font-size:13.5px;font-weight:700;margin:6px 0 2px;}
+.mreg-rte ul{padding-left:20px;margin:4px 0;}
+.mreg-rte ol{padding-left:20px;margin:4px 0;}
+.mreg-rte table{border-collapse:collapse;width:100%;margin:8px 0;}
+.mreg-rte table td,.mreg-rte table th{border:1px solid var(--border);padding:6px 10px;font-size:13px;}
+.mreg-rte table th{background:#f5f7ff;font-weight:700;}
+/* 참석자 태그 */
+.mreg-attendee-chip{display:inline-flex;align-items:center;gap:5px;background:#eef1ff;color:var(--accent);border:1px solid #c7d0ff;border-radius:20px;padding:3px 10px 3px 8px;font-size:12.5px;font-weight:600;cursor:pointer;user-select:none;transition:background .12s;}
+.mreg-attendee-chip.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
+.mreg-attendee-chip .chip-avatar{width:20px;height:20px;border-radius:50%;background:#c7d0ff;color:var(--accent);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.mreg-attendee-chip.selected .chip-avatar{background:rgba(255,255,255,.25);color:#fff;}
 .hero-issue-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);padding:7px 12px;border-radius:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .hero-issue-item.overdue{background:rgba(230,57,70,0.35);border:1px solid rgba(255,255,255,0.4);font-weight:700;}
 .hero-issue-empty{opacity:0.85;background:rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;display:inline-block;}
@@ -554,19 +575,27 @@ body{
 .deploy-notice button:hover{background:rgba(255,255,255,0.35);}
 
 /* ── Mgmt. Process ── */
-.mgmt-list{display:flex;flex-direction:column;gap:18px;}
-.mgmt-card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.06);display:flex;}
-.mgmt-card-accent{width:6px;flex-shrink:0;}
-.mgmt-card-inner{flex:1;min-width:0;}
-.mgmt-card-head{display:flex;align-items:center;gap:10px;padding:14px 18px 12px;border-bottom:1px solid var(--border);}
-.mgmt-recipient-badge{font-size:12px;font-weight:800;padding:3px 10px;border-radius:6px;flex-shrink:0;color:#fff;}
-.mgmt-card-date-input{border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;width:140px;}
-.mgmt-card-title-input{flex:1;border:1px solid transparent;border-radius:8px;padding:5px 10px;font-size:13.5px;font-weight:600;font-family:inherit;color:var(--text);background:transparent;min-width:0;}
-.mgmt-card-title-input:focus{outline:none;border-color:var(--border);background:#fff;}
-.mgmt-card-title-input::placeholder{font-weight:400;color:var(--text3);}
-.mgmt-card-body{padding:14px 18px;}
+.mgmt-list{display:flex;flex-direction:column;gap:20px;}
+.mgmt-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.07);display:flex;min-height:0;}
+/* 좌측 패널 (~15%) */
+.mgmt-card-left{width:15%;min-width:130px;max-width:190px;flex-shrink:0;display:flex;flex-direction:column;align-items:stretch;padding:16px 14px 14px;gap:10px;border-right:1px solid rgba(255,255,255,0.25);transition:background .2s;}
+.mgmt-recipient-btns{display:flex;flex-direction:column;gap:5px;}
+.mgmt-rcp-btn{border:none;border-radius:7px;padding:6px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.7);}
+.mgmt-rcp-btn.active{background:#fff;font-size:13px;}
+.mgmt-rcp-btn-총장.active{color:#00b4a6;}
+.mgmt-rcp-btn-의장.active{color:#f77f00;}
+.mgmt-rcp-btn-TM.active{color:#e63946;}
+.mgmt-card-date-input{border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit;color:#fff;background:rgba(255,255,255,0.15);width:100%;box-sizing:border-box;}
+.mgmt-card-date-input::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.7;}
+.mgmt-card-title-input{border:1px solid rgba(255,255,255,0.3);border-radius:8px;padding:6px 8px;font-size:12.5px;font-weight:600;font-family:inherit;color:#fff;background:rgba(255,255,255,0.15);width:100%;box-sizing:border-box;resize:none;}
+.mgmt-card-title-input::placeholder{color:rgba(255,255,255,0.5);font-weight:400;}
+.mgmt-card-title-input:focus,.mgmt-card-date-input:focus{outline:none;border-color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.22);}
+.mgmt-char-count{font-size:10.5px;color:rgba(255,255,255,0.55);text-align:right;}
+/* 우측 패널 (~85%) */
+.mgmt-card-right{flex:1;min-width:0;background:#fff;display:flex;flex-direction:column;}
+.mgmt-card-body{padding:14px 18px 0;flex:1;}
 .mgmt-agenda-table{width:100%;border-collapse:collapse;font-size:13px;}
-.mgmt-agenda-table th{background:#f5f7ff;font-size:11.5px;font-weight:700;color:var(--text2);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);}
+.mgmt-agenda-table th{background:#f5f7ff;font-size:11.5px;font-weight:700;color:var(--text2);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);}
 .mgmt-agenda-table td{padding:7px 8px;border-bottom:1px solid #f0f1f5;vertical-align:middle;}
 .mgmt-agenda-table tr:last-child td{border-bottom:none;}
 .mgmt-agenda-table input,.mgmt-agenda-table select{border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:12.5px;font-family:inherit;color:var(--text);background:#fff;width:100%;box-sizing:border-box;}
@@ -579,12 +608,16 @@ body{
 .mgmt-del-row-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:2px 4px;border-radius:4px;line-height:1;}
 .mgmt-del-row-btn:hover{color:#e63946;background:#fff0f0;}
 .mgmt-empty{text-align:center;padding:60px 20px;color:var(--text2);font-size:14px;}
-.mgmt-recipient-총장{background:#00b4a6;}
-.mgmt-recipient-의장{background:#f77f00;}
-.mgmt-recipient-TM{background:#e63946;}
-.mgmt-accent-총장{background:#00b4a6;}
-.mgmt-accent-의장{background:#f77f00;}
-.mgmt-accent-TM{background:#e63946;}
+/* 좌측 배경 컬러 */
+.mgmt-left-총장{background:linear-gradient(160deg,#00c9b8,#00866a);}
+.mgmt-left-의장{background:linear-gradient(160deg,#ff9a3c,#e06200);}
+.mgmt-left-TM{background:linear-gradient(160deg,#f05460,#c0202c);}
+/* 영역 필터 바 */
+.mgmt-area-filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:14px 0 8px;}
+.mgmt-area-filter-bar .fbar-label{font-size:12.5px;font-weight:700;color:var(--text2);margin-right:4px;}
+.mgmt-area-chip{border:1px solid var(--border);border-radius:20px;padding:4px 13px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--text2);transition:all .15s;}
+.mgmt-area-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.mgmt-area-match-badge{display:inline-block;margin-left:5px;background:#e63946;color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 6px;vertical-align:middle;}
 
 /* Tooltip */
 [data-tip]{position:relative;cursor:default;}
@@ -1307,20 +1340,12 @@ body{
         <h2><i data-lucide="clipboard-list" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">Mgmt. Process</span></h2>
         <p>정기 보고 아젠다 관리 — 보고 대상별 컬러 구분</p>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-        <select id="mgmt-add-recipient" class="field-select" style="width:110px;">
-          <option value="총장">총장</option>
-          <option value="의장">의장</option>
-          <option value="TM">TM</option>
-        </select>
-        <button class="btn-add" onclick="mgmtAddSession()">＋ 보고 등록</button>
-      </div>
+      <button class="btn-add" onclick="mgmtAddSession()">＋ 보고 등록</button>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap;">
-      <span style="font-size:12px;font-weight:700;color:var(--text2);">보고 대상:</span>
-      <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;"><span style="width:10px;height:10px;border-radius:50%;background:#00b4a6;display:inline-block;"></span>총장</span>
-      <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;"><span style="width:10px;height:10px;border-radius:50%;background:#f77f00;display:inline-block;"></span>의장</span>
-      <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;"><span style="width:10px;height:10px;border-radius:50%;background:#e63946;display:inline-block;"></span>TM</span>
+    <!-- 영역별 Sorting 필터 -->
+    <div class="mgmt-area-filter-bar">
+      <span class="fbar-label">영역별 보기:</span>
+      <div class="mgmt-area-chip active" id="mgmt-filter-chip-all" onclick="mgmtSetAreaFilter('')">전체</div>
     </div>
     <div class="mgmt-list" id="mgmt-body"></div>
   </div>
@@ -1587,12 +1612,12 @@ body{
 
 <!-- ── Meeting Registration Modal ── -->
 <div class="modal-overlay" id="meeting-reg-overlay" onclick="if(event.target===this)closeMeetingRegModal()">
-  <div class="modal" style="width:520px">
+  <div class="modal" style="width:820px;max-width:96vw;">
     <div class="modal-head">
       <h3>회의록 등록</h3>
       <button class="modal-close" onclick="closeMeetingRegModal()">✕</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="max-height:78vh;overflow-y:auto;">
       <div class="modal-grid">
         <div class="field-group full">
           <div class="field-label">제목 <span style="color:#e63946">*</span></div>
@@ -1614,15 +1639,71 @@ body{
         </div>
         <div class="field-group full">
           <div class="field-label">참석자</div>
-          <input id="mreg-attendees" class="field-input" type="text" placeholder="예: 홍길동, 김철수, 이영희">
+          <div id="mreg-attendee-list" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--border);border-radius:10px;min-height:42px;background:#fff;"></div>
         </div>
         <div class="field-group full">
           <div class="field-label">요약</div>
-          <textarea id="mreg-summary" class="field-input" rows="3" placeholder="핵심 내용을 간략히 입력하세요 (한 줄씩 또는 자유 형식)" style="resize:vertical;min-height:72px;"></textarea>
+          <div class="mreg-rte-wrap">
+            <div class="mreg-toolbar" id="mreg-toolbar-summary">
+              <button type="button" onclick="mregCmd('summary','bold')" title="굵게"><b>B</b></button>
+              <button type="button" onclick="mregCmd('summary','italic')" title="기울임"><i>I</i></button>
+              <button type="button" onclick="mregCmd('summary','underline')" title="밑줄"><u>U</u></button>
+              <span class="mreg-sep"></span>
+              <button type="button" onclick="mregCmd('summary','insertUnorderedList')" title="불릿 목록">• 목록</button>
+              <button type="button" onclick="mregCmd('summary','insertOrderedList')" title="번호 목록">1. 목록</button>
+              <span class="mreg-sep"></span>
+              <select onchange="mregFontSize('summary',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
+                <option value="">글씨 크기</option>
+                <option value="1">소 (10px)</option>
+                <option value="3">중 (기본)</option>
+                <option value="5">대 (18px)</option>
+                <option value="7">특대 (24px)</option>
+              </select>
+              <select onchange="mregFormatBlock('summary',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
+                <option value="">단락 스타일</option>
+                <option value="p">본문</option>
+                <option value="h2">제목 1</option>
+                <option value="h3">제목 2</option>
+                <option value="h4">제목 3</option>
+              </select>
+              <span class="mreg-sep"></span>
+              <button type="button" onclick="mregInsertTable('summary')" title="표 삽입">표 삽입</button>
+              <button type="button" onclick="mregCmd('summary','insertHorizontalRule')" title="구분선">─</button>
+            </div>
+            <div id="mreg-summary" class="mreg-rte" contenteditable="true" data-placeholder="핵심 내용을 입력하세요"></div>
+          </div>
         </div>
         <div class="field-group full">
           <div class="field-label">전체 내용</div>
-          <textarea id="mreg-fullcontent" class="field-input" rows="5" placeholder="회의 전체 내용을 입력하세요 (선택)" style="resize:vertical;min-height:100px;"></textarea>
+          <div class="mreg-rte-wrap">
+            <div class="mreg-toolbar" id="mreg-toolbar-fullcontent">
+              <button type="button" onclick="mregCmd('fullcontent','bold')" title="굵게"><b>B</b></button>
+              <button type="button" onclick="mregCmd('fullcontent','italic')" title="기울임"><i>I</i></button>
+              <button type="button" onclick="mregCmd('fullcontent','underline')" title="밑줄"><u>U</u></button>
+              <span class="mreg-sep"></span>
+              <button type="button" onclick="mregCmd('fullcontent','insertUnorderedList')" title="불릿 목록">• 목록</button>
+              <button type="button" onclick="mregCmd('fullcontent','insertOrderedList')" title="번호 목록">1. 목록</button>
+              <span class="mreg-sep"></span>
+              <select onchange="mregFontSize('fullcontent',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
+                <option value="">글씨 크기</option>
+                <option value="1">소 (10px)</option>
+                <option value="3">중 (기본)</option>
+                <option value="5">대 (18px)</option>
+                <option value="7">특대 (24px)</option>
+              </select>
+              <select onchange="mregFormatBlock('fullcontent',this.value);this.value=''" style="font-size:11.5px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;cursor:pointer;">
+                <option value="">단락 스타일</option>
+                <option value="p">본문</option>
+                <option value="h2">제목 1</option>
+                <option value="h3">제목 2</option>
+                <option value="h4">제목 3</option>
+              </select>
+              <span class="mreg-sep"></span>
+              <button type="button" onclick="mregInsertTable('fullcontent')" title="표 삽입">표 삽입</button>
+              <button type="button" onclick="mregCmd('fullcontent','insertHorizontalRule')" title="구분선">─</button>
+            </div>
+            <div id="mreg-fullcontent" class="mreg-rte" contenteditable="true" data-placeholder="회의 전체 내용을 입력하세요"></div>
+          </div>
         </div>
         <div class="field-group full">
           <div class="field-label">PDF 파일</div>
@@ -1633,7 +1714,7 @@ body{
             </label>
             <span id="mreg-file-name" style="font-size:13px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">선택된 파일 없음</span>
           </div>
-          <div style="font-size:11.5px;color:var(--text3);margin-top:5px;">PDF 업로드 시 자동 추출 내용으로 덮어씌워집니다</div>
+          <div style="font-size:11.5px;color:var(--text3);margin-top:5px;">PDF 업로드 시 자동 추출 내용으로 요약/전문이 덮어씌워집니다</div>
         </div>
       </div>
     </div>
@@ -4112,21 +4193,65 @@ function fmtTs(ts) {
 
 // ── 회의록 등록 모달 ──
 let _mregFile = null;
+
+function _mregRteEl(id) { return document.getElementById('mreg-' + id); }
+
+function mregCmd(id, cmd) {
+  _mregRteEl(id).focus();
+  document.execCommand(cmd, false, null);
+}
+function mregFontSize(id, val) {
+  if (!val) return;
+  _mregRteEl(id).focus();
+  document.execCommand('fontSize', false, val);
+}
+function mregFormatBlock(id, tag) {
+  if (!tag) return;
+  _mregRteEl(id).focus();
+  document.execCommand('formatBlock', false, tag);
+}
+function mregInsertTable(id) {
+  const rows = 3, cols = 3;
+  let html = '<table><thead><tr>' + Array(cols).fill('<th>제목</th>').join('') + '</tr></thead><tbody>';
+  for (let r = 0; r < rows - 1; r++) {
+    html += '<tr>' + Array(cols).fill('<td>&nbsp;</td>').join('') + '</tr>';
+  }
+  html += '</tbody></table><p><br></p>';
+  _mregRteEl(id).focus();
+  document.execCommand('insertHTML', false, html);
+}
+
 function openMeetingRegModal() {
   _mregFile = null;
   document.getElementById('mreg-title').value = '';
   document.getElementById('mreg-topic').value = '';
   document.getElementById('mreg-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('mreg-attendees').value = '';
-  document.getElementById('mreg-summary').value = '';
-  document.getElementById('mreg-fullcontent').value = '';
+  _mregRteEl('summary').innerHTML = '';
+  _mregRteEl('fullcontent').innerHTML = '';
   document.getElementById('mreg-file-name').textContent = '선택된 파일 없음';
   document.getElementById('mreg-file-input').value = '';
   const areaSel = document.getElementById('mreg-area');
   areaSel.innerHTML = '<option value="">전체</option>' +
     Object.keys(taskData).map(k => `<option value="${k}">${_areaLabelMap[k]||k}</option>`).join('');
+  // 참석자 칩
+  const list = document.getElementById('mreg-attendee-list');
+  list.innerHTML = users.map(u => `
+    <div class="mreg-attendee-chip" id="mreg-chip-${u.id}" onclick="mregToggleAttendee('${u.id}')">
+      <div class="chip-avatar">${(u.id||'?')[0].toUpperCase()}</div>
+      ${u.id}${u.role ? ' <span style="font-size:10.5px;opacity:.7">('+u.role+')</span>' : ''}
+    </div>`).join('');
   document.getElementById('meeting-reg-overlay').classList.add('open');
   setTimeout(() => document.getElementById('mreg-title').focus(), 50);
+}
+function mregToggleAttendee(uid) {
+  const chip = document.getElementById('mreg-chip-' + uid);
+  if (chip) chip.classList.toggle('selected');
+}
+function mregGetAttendees() {
+  return users.filter(u => {
+    const chip = document.getElementById('mreg-chip-' + u.id);
+    return chip && chip.classList.contains('selected');
+  }).map(u => u.id).join(', ');
 }
 function closeMeetingRegModal() {
   document.getElementById('meeting-reg-overlay').classList.remove('open');
@@ -4148,15 +4273,13 @@ async function submitMeetingReg() {
   const topic = document.getElementById('mreg-topic').value.trim();
   const date  = document.getElementById('mreg-date').value;
   const area  = document.getElementById('mreg-area').value;
-  const attendees = document.getElementById('mreg-attendees').value.trim();
-  const manualSummary = document.getElementById('mreg-summary').value.trim();
-  const manualFull = document.getElementById('mreg-fullcontent').value.trim();
+  const attendees = mregGetAttendees();
+  const manualSummaryHtml = _mregRteEl('summary').innerHTML.trim();
+  const manualFullHtml    = _mregRteEl('fullcontent').innerHTML.trim();
   const btn = document.getElementById('mreg-submit-btn');
   btn.disabled = true; btn.textContent = '처리중...';
   try {
-    let fileData = '', fileName = '', fullText = manualFull, pageImages = [], summary = [];
-    // summary: manual input → split by newline into bullet array
-    if (manualSummary) summary = manualSummary.split('\n').map(s=>s.trim()).filter(Boolean);
+    let fileData = '', fileName = '', fullText = manualFullHtml, pageImages = [], summary = manualSummaryHtml ? [manualSummaryHtml] : [];
     if (_mregFile) {
       const [dataUrl, buf] = await Promise.all([readFileAsDataURL(_mregFile), readFileAsArrayBuffer(_mregFile)]);
       fileData = dataUrl; fileName = _mregFile.name;
@@ -4166,7 +4289,10 @@ async function submitMeetingReg() {
     }
     const entry = {
       id: 'm' + Date.now(), title, topic, date, area, attendees,
-      fileName, fileData, fullText, pageImages, summary, ts: Date.now()
+      fileName, fileData, fullText, pageImages, summary,
+      summaryHtml: _mregFile ? '' : manualSummaryHtml,
+      fullHtml: _mregFile ? '' : manualFullHtml,
+      ts: Date.now()
     };
     libraryData.meetings.unshift(entry);
     syncLibraryToFirebase();
@@ -4277,14 +4403,21 @@ function openMeetingModal(i) {
   document.getElementById('meeting-modal-meta').innerHTML = chips.join('');
 
   // 요약
-  const summaryArr = Array.isArray(m.summary) ? m.summary : (m.summary ? [m.summary] : []);
   const summaryWrap = document.getElementById('meeting-modal-summary-wrap');
   const summaryLabel = document.getElementById('meeting-modal-summary-label');
-  summaryWrap.style.display = summaryArr.length ? '' : 'none';
-  if (summaryLabel) summaryLabel.textContent = m.fileData ? '자동 요약' : '요약';
-  document.getElementById('meeting-modal-summary').innerHTML = summaryArr.length
-    ? `<ul style="margin:0;padding-left:18px;">${summaryArr.map(s => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ul>`
-    : '';
+  const summaryEl = document.getElementById('meeting-modal-summary');
+  if (m.summaryHtml) {
+    summaryWrap.style.display = '';
+    if (summaryLabel) summaryLabel.textContent = '요약';
+    summaryEl.innerHTML = m.summaryHtml;
+  } else {
+    const summaryArr = Array.isArray(m.summary) ? m.summary : (m.summary ? [m.summary] : []);
+    summaryWrap.style.display = summaryArr.length ? '' : 'none';
+    if (summaryLabel) summaryLabel.textContent = m.fileData ? '자동 요약' : '요약';
+    summaryEl.innerHTML = summaryArr.length
+      ? `<ul style="margin:0;padding-left:18px;">${summaryArr.map(s => `<li style="margin-bottom:4px;">${s}</li>`).join('')}</ul>`
+      : '';
+  }
 
   // 전문
   const fulltextWrap = document.getElementById('meeting-modal-fulltext');
@@ -4292,6 +4425,9 @@ function openMeetingModal(i) {
   if (m.pageImages && m.pageImages.length) {
     ftSection.style.display = '';
     fulltextWrap.innerHTML = m.pageImages.map(src => `<img class="meeting-page-img" src="${src}">`).join('');
+  } else if (m.fullHtml) {
+    ftSection.style.display = '';
+    fulltextWrap.innerHTML = m.fullHtml;
   } else if (m.fullText) {
     ftSection.style.display = '';
     fulltextWrap.textContent = m.fullText;
@@ -4378,22 +4514,53 @@ let mgmtData = { sessions: [] };
 
 const _mgmtRecipientColor = { '총장':'#00b4a6', '의장':'#f77f00', 'TM':'#e63946' };
 
+let _mgmtAreaFilter = ''; // '' = 전체
+
+function mgmtSetAreaFilter(areaKey) {
+  _mgmtAreaFilter = areaKey;
+  // 칩 active 상태 갱신
+  document.querySelectorAll('.mgmt-area-chip').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById(areaKey ? `mgmt-filter-chip-${areaKey}` : 'mgmt-filter-chip-all');
+  if (target) target.classList.add('active');
+  renderMgmtPage();
+}
+
+function _mgmtBuildAreaFilterBar() {
+  const bar = document.querySelector('.mgmt-area-filter-bar');
+  if (!bar) return;
+  const areaKeys = Object.keys(taskData);
+  // 각 영역에 해당 아젠다가 있는 세션 수 계산
+  const counts = {};
+  areaKeys.forEach(k => {
+    counts[k] = (mgmtData.sessions||[]).filter(s => s.items.some(it => it.area === k)).length;
+  });
+  const chips = areaKeys.map(k => {
+    const cnt = counts[k] || 0;
+    const isActive = _mgmtAreaFilter === k;
+    return `<div class="mgmt-area-chip${isActive?' active':''}" id="mgmt-filter-chip-${k}" onclick="mgmtSetAreaFilter('${k}')">${_areaLabelMap[k]||k}${cnt>0?`<span class="mgmt-area-match-badge">${cnt}</span>`:''}</div>`;
+  }).join('');
+  bar.innerHTML = `<span class="fbar-label">영역별 보기:</span>
+    <div class="mgmt-area-chip${_mgmtAreaFilter===''?' active':''}" id="mgmt-filter-chip-all" onclick="mgmtSetAreaFilter('')">전체</div>
+    ${chips}`;
+}
+
 function mgmtAddSession() {
-  const recipient = document.getElementById('mgmt-add-recipient')?.value || '총장';
   const session = {
     id: 'ss_' + Date.now(),
     date: new Date().toISOString().slice(0,10),
-    recipient,
+    recipient: '총장',
     title: '',
     items: [{ topic:'', area:'', presenter:'' }]
   };
-  mgmtData.sessions.unshift(session); // 최신순 상단
+  // 날짜순 정렬 유지: unshift 후 sort
+  mgmtData.sessions.unshift(session);
+  mgmtData.sessions.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
   syncMgmtToFirebase();
   renderMgmtPage();
 }
 
 function mgmtDeleteSession(id) {
-  if (!confirm('이 보고 자리를 삭제하시겠습니까?')) return;
+  if (!confirm('이 보고를 삭제하시겠습니까?')) return;
   mgmtData.sessions = mgmtData.sessions.filter(s => s.id !== id);
   syncMgmtToFirebase();
   renderMgmtPage();
@@ -4402,7 +4569,7 @@ function mgmtDeleteSession(id) {
 function mgmtAddItem(id) {
   const s = mgmtData.sessions.find(s => s.id === id);
   if (!s) return;
-  s.items.push({ topic:'', area:'', presenter:'' });
+  s.items.push({ topic:'', area: _mgmtAreaFilter||'', presenter:'' });
   syncMgmtToFirebase();
   renderMgmtPage();
 }
@@ -4423,6 +4590,11 @@ function mgmtCollectAndSave(id) {
   const titleEl = document.getElementById(`mgmt-title-${id}`);
   if (dateEl) s.date = dateEl.value;
   if (titleEl) s.title = titleEl.value;
+  // recipient from active button
+  ['총장','의장','TM'].forEach(r => {
+    const btn = document.getElementById(`mgmt-rcp-${id}-${r}`);
+    if (btn && btn.classList.contains('active')) s.recipient = r;
+  });
   s.items.forEach((item, i) => {
     const t = document.getElementById(`mgmt-topic-${id}-${i}`);
     const a = document.getElementById(`mgmt-area-${id}-${i}`);
@@ -4431,8 +4603,22 @@ function mgmtCollectAndSave(id) {
     if (a) item.area = a.value;
     if (p) item.presenter = p.value;
   });
+  // re-sort by date
+  mgmtData.sessions.sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
   syncMgmtToFirebase();
   showSave();
+}
+
+function mgmtToggleRecipient(id, r) {
+  ['총장','의장','TM'].forEach(rr => {
+    const btn = document.getElementById(`mgmt-rcp-${id}-${rr}`);
+    if (btn) btn.classList.toggle('active', rr === r);
+  });
+  // update left panel bg color immediately
+  const left = document.getElementById(`mgmt-left-${id}`);
+  if (left) {
+    left.className = `mgmt-card-left mgmt-left-${r}`;
+  }
 }
 
 function _mgmtAreaOptions(selected) {
@@ -4450,47 +4636,80 @@ function renderMgmtPage() {
   const body = document.getElementById('mgmt-body');
   if (!body) return;
 
+  _mgmtBuildAreaFilterBar();
+
   if (!mgmtData.sessions || mgmtData.sessions.length === 0) {
-    body.innerHTML = `<div class="mgmt-empty">보고 자리가 없습니다.<br>"보고 등록" 버튼을 눌러 추가하세요.</div>`;
+    body.innerHTML = `<div class="mgmt-empty">보고 자리가 없습니다.<br>상단 "보고 등록" 버튼을 눌러 추가하세요.</div>`;
     return;
   }
 
-  body.innerHTML = mgmtData.sessions.map(s => {
-    const color = _mgmtRecipientColor[s.recipient] || '#4361ee';
-    const itemRows = s.items.map((item, i) => `
-      <tr>
-        <td style="width:36px;color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
-        <td><input id="mgmt-topic-${s.id}-${i}" value="${item.topic||''}" placeholder="주제 입력"></td>
-        <td style="width:130px;"><select id="mgmt-area-${s.id}-${i}">${_mgmtAreaOptions(item.area||'')}</select></td>
-        <td style="width:130px;"><select id="mgmt-presenter-${s.id}-${i}">${_mgmtPresenterOptions(item.presenter||'')}</select></td>
+  // 날짜 내림차순 정렬
+  const sorted = [...mgmtData.sessions].sort((a,b) => (b.date||'') > (a.date||'') ? 1 : -1);
+
+  // 영역 필터 적용
+  const filtered = _mgmtAreaFilter
+    ? sorted.filter(s => s.items.some(it => it.area === _mgmtAreaFilter))
+    : sorted;
+
+  if (filtered.length === 0) {
+    body.innerHTML = `<div class="mgmt-empty">해당 영역의 보고가 없습니다.</div>`;
+    return;
+  }
+
+  body.innerHTML = filtered.map(s => {
+    const rcpKey = s.recipient || '총장';
+    const titleLen = (s.title||'').length;
+
+    // 아젠다 행: 영역 필터 시 해당 영역 행만 하이라이트
+    const itemRows = s.items.map((item, i) => {
+      const highlight = _mgmtAreaFilter && item.area === _mgmtAreaFilter;
+      return `<tr${highlight ? ' style="background:#fffbeb;"' : ''}>
+        <td style="width:30px;color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
+        <td style="width:38%;"><input id="mgmt-topic-${s.id}-${i}" value="${(item.topic||'').replace(/"/g,'&quot;')}" placeholder="안건 입력"></td>
+        <td style="width:22%;"><select id="mgmt-area-${s.id}-${i}">${_mgmtAreaOptions(item.area||'')}</select></td>
+        <td style="width:22%;"><select id="mgmt-presenter-${s.id}-${i}">${_mgmtPresenterOptions(item.presenter||'')}</select></td>
         <td style="width:36px;text-align:center;"><button class="mgmt-del-row-btn" onclick="mgmtRemoveItem('${s.id}',${i})" title="삭제">✕</button></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
     return `
     <div class="mgmt-card">
-      <div class="mgmt-card-accent" style="background:${color};"></div>
-      <div class="mgmt-card-inner">
-        <div class="mgmt-card-head">
-          <span class="mgmt-recipient-badge mgmt-recipient-${s.recipient}" style="background:${color};">${s.recipient}</span>
-          <input type="date" id="mgmt-date-${s.id}" class="mgmt-card-date-input" value="${s.date||''}">
-          <input type="text" id="mgmt-title-${s.id}" class="mgmt-card-title-input" value="${s.title||''}" placeholder="보고 제목 (선택)">
-          <button onclick="mgmtDeleteSession('${s.id}')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:2px 6px;border-radius:6px;line-height:1;" title="삭제">🗑</button>
+      <!-- 좌측 패널 -->
+      <div class="mgmt-card-left mgmt-left-${rcpKey}" id="mgmt-left-${s.id}">
+        <div class="mgmt-recipient-btns">
+          ${['총장','의장','TM'].map(r => `<button class="mgmt-rcp-btn mgmt-rcp-btn-${r}${rcpKey===r?' active':''}" id="mgmt-rcp-${s.id}-${r}" onclick="mgmtToggleRecipient('${s.id}','${r}')">${r}</button>`).join('')}
         </div>
+        <input type="date" id="mgmt-date-${s.id}" class="mgmt-card-date-input" value="${s.date||''}">
+        <textarea id="mgmt-title-${s.id}" class="mgmt-card-title-input" rows="2" maxlength="10" placeholder="보고 제목&#10;(10자 이내)">${s.title||''}</textarea>
+        <div class="mgmt-char-count">${titleLen}/10</div>
+        <button onclick="mgmtDeleteSession('${s.id}')" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:7px;font-size:11.5px;padding:4px 0;cursor:pointer;font-family:inherit;margin-top:auto;" title="삭제">🗑 삭제</button>
+      </div>
+      <!-- 우측 패널 -->
+      <div class="mgmt-card-right">
         <div class="mgmt-card-body">
           <table class="mgmt-agenda-table">
             <thead><tr>
-              <th>#</th><th>주제</th><th>영역</th><th>발표자</th><th></th>
+              <th>#</th><th>안건</th><th>영역</th><th>발표자</th><th></th>
             </tr></thead>
             <tbody>${itemRows}</tbody>
           </table>
         </div>
         <div class="mgmt-card-foot">
-          <button class="mgmt-add-item-btn" onclick="mgmtAddItem('${s.id}')">＋ 아젠다 추가</button>
+          <button class="mgmt-add-item-btn" onclick="mgmtAddItem('${s.id}')">＋ 안건 추가</button>
           <button class="mgmt-save-btn" onclick="mgmtCollectAndSave('${s.id}')">저장</button>
         </div>
       </div>
     </div>`;
   }).join('');
+
+  // 글자수 카운터 실시간 연동
+  filtered.forEach(s => {
+    const ta = document.getElementById(`mgmt-title-${s.id}`);
+    const counter = ta?.closest('.mgmt-card-left')?.querySelector('.mgmt-char-count');
+    if (ta && counter) {
+      ta.addEventListener('input', () => { counter.textContent = ta.value.length + '/10'; });
+    }
+  });
 }
 
 function syncMgmtToFirebase() {
