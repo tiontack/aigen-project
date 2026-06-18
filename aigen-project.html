@@ -1504,6 +1504,29 @@ body{
   </div>
 </div>
 
+<!-- ── Category Name Modal (add / edit category) ── -->
+<div class="modal-overlay" id="catname-modal-overlay" onclick="if(event.target===this)closeCatNameModal()">
+  <div class="modal" style="width:380px">
+    <div class="modal-head">
+      <h3 id="catname-modal-title">카테고리 추가</h3>
+      <button class="modal-close" onclick="closeCatNameModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group full">
+        <div class="field-label">카테고리 이름</div>
+        <input id="catname-input" class="field-input" type="text" placeholder="예: 브랜딩, 컨텐츠 제작" onkeydown="if(event.key==='Enter')confirmCatName()">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div></div>
+      <div style="display:flex;gap:10px">
+        <button style="padding:9px 18px;background:#f1f2f5;color:var(--text2);border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="closeCatNameModal()">취소</button>
+        <button class="btn-modal-save" onclick="confirmCatName()">확인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Category Select Modal (for adding new task) ── -->
 <div class="modal-overlay" id="catsel-modal-overlay" onclick="if(event.target===this)closeCatSelModal()">
   <div class="modal" style="width:380px">
@@ -2594,21 +2617,39 @@ function filterGanttStatus(pid, status) {
 }
 
 // ── 카테고리 추가/수정/삭제 ──
+let _catNameCtx = null;
 function addCategory(areaKey, pid) {
-  const name = prompt('새 카테고리 이름:');
-  if (!name || !name.trim()) return;
-  taskData[areaKey].tasks.push({ cat: name.trim(), tasks: [] });
-  renderDetailPage(pid, areaKey);
-  logActivity('카테고리 추가', `${areaKey} / ${name.trim()}`);
-  syncToFirebase(); showSave();
+  _catNameCtx = { mode: 'add', areaKey, pid, ci: -1 };
+  document.getElementById('catname-modal-title').textContent = '카테고리 추가';
+  document.getElementById('catname-input').value = '';
+  document.getElementById('catname-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('catname-input').focus(), 50);
 }
 function editCat(areaKey, pid, ci) {
-  const cur = taskData[areaKey].tasks[ci].cat;
-  const name = prompt('카테고리 이름 수정:', cur);
-  if (!name || !name.trim()) return;
-  taskData[areaKey].tasks[ci].cat = name.trim();
+  _catNameCtx = { mode: 'edit', areaKey, pid, ci };
+  document.getElementById('catname-modal-title').textContent = '카테고리 수정';
+  document.getElementById('catname-input').value = taskData[areaKey].tasks[ci].cat;
+  document.getElementById('catname-modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('catname-input').focus(), 50);
+}
+function closeCatNameModal() {
+  document.getElementById('catname-modal-overlay').classList.remove('open');
+  _catNameCtx = null;
+}
+function confirmCatName() {
+  const name = document.getElementById('catname-input').value.trim();
+  if (!name || !_catNameCtx) return;
+  const { mode, areaKey, pid, ci } = _catNameCtx;
+  closeCatNameModal();
+  if (mode === 'add') {
+    taskData[areaKey].tasks.push({ cat: name, tasks: [] });
+    logActivity('카테고리 추가', `${areaKey} / ${name}`);
+  } else {
+    const old = taskData[areaKey].tasks[ci].cat;
+    taskData[areaKey].tasks[ci].cat = name;
+    logActivity('카테고리 수정', `${areaKey} / ${old} → ${name}`);
+  }
   renderDetailPage(pid, areaKey);
-  logActivity('카테고리 수정', `${areaKey} / ${cur} → ${name.trim()}`);
   syncToFirebase(); showSave();
 }
 function delCat(areaKey, pid, ci) {
