@@ -1194,59 +1194,80 @@ body{
 #mob-home-nav{display:none;}
 
 @media (max-width: 900px) {
-  /* 랜딩 페이지: hero-banner만 표시, 나머지 숨김 */
+  /* 랜딩 페이지: hero-banner + mob-home-nav만, 나머지 숨김 */
   #page-summary .page-header,
   #page-summary .summary-top,
   #page-summary .chart-row,
   #page-summary .section {
     display:none !important;
   }
+  /* 모바일에서는 hero-issues 숨김 (이슈 없이 환영 메시지만) */
+  #hero-issues { display:none !important; }
 
-  /* 모바일 홈 네비 그리드 표시 */
+  /* 모바일 홈 컨텐츠 */
   #mob-home-nav {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-    margin-top:8px;
-    padding-bottom:80px; /* 하단 탭바 여백 */
-  }
-
-  .mob-nav-btn {
     display:flex;
     flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
+    gap:14px;
+    margin-top:8px;
+    padding-bottom:90px;
+  }
+
+  /* 홈 위젯 카드 공통 */
+  .mob-home-card {
     background:#fff;
     border:1.5px solid var(--border);
     border-radius:16px;
-    padding:22px 12px;
-    cursor:pointer;
-    transition:all 0.15s;
+    overflow:hidden;
     box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  }
+  .mob-home-card-head {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:13px 16px 10px;
+    border-bottom:1px solid var(--border);
+  }
+  .mob-home-card-title {
+    font-size:13px;font-weight:800;color:var(--text);
+    display:flex;align-items:center;gap:7px;
+  }
+  .mob-home-card-title svg{width:15px;height:15px;stroke-width:2.2;}
+  .mob-home-card-more {
+    font-size:11.5px;color:var(--accent);font-weight:600;cursor:pointer;
     -webkit-tap-highlight-color:transparent;
   }
-  .mob-nav-btn:active {
-    background:#eff3ff;
-    border-color:var(--accent);
-    transform:scale(0.97);
+  .mob-home-card-body { padding:10px 14px 12px; }
+
+  /* 캘린더 이벤트 행 */
+  .mob-cal-row {
+    display:flex;align-items:flex-start;gap:10px;
+    padding:8px 0;border-bottom:1px solid #f0f2f8;
   }
-  .mob-nav-btn .mnb-icon {
-    width:44px;height:44px;border-radius:14px;
-    display:flex;align-items:center;justify-content:center;
-    font-size:20px;
+  .mob-cal-row:last-child{border-bottom:none;}
+  .mob-cal-date {
+    min-width:36px;text-align:center;
+    background:#f0f4ff;border-radius:8px;
+    padding:4px 2px;
   }
-  .mob-nav-btn .mnb-label {
-    font-size:13px;font-weight:700;color:var(--text);text-align:center;line-height:1.3;
+  .mob-cal-date .mcd-day{font-size:16px;font-weight:800;color:var(--accent);line-height:1.1;}
+  .mob-cal-date .mcd-dow{font-size:9px;color:var(--accent);font-weight:600;opacity:0.7;}
+  .mob-cal-info{flex:1;min-width:0;}
+  .mob-cal-info .mci-title{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mob-cal-info .mci-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+  .mob-cal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+
+  /* 아젠다 행 */
+  .mob-agenda-session {
+    padding:8px 0 4px;border-bottom:1px solid #f0f2f8;
   }
-  .mob-nav-btn .mnb-sub {
-    font-size:11px;color:var(--text3);margin-top:-4px;
+  .mob-agenda-session:last-child{border-bottom:none;padding-bottom:0;}
+  .mob-agenda-session-head{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:5px;}
+  .mob-agenda-item{
+    display:flex;align-items:center;gap:8px;
+    padding:4px 0;font-size:12.5px;color:var(--text);
   }
-  .mob-nav-btn .mnb-badge {
-    background:var(--accent);color:#fff;
-    font-size:11px;font-weight:700;
-    padding:2px 8px;border-radius:10px;
-    margin-top:-4px;
+  .mob-agenda-area-chip{
+    flex-shrink:0;font-size:10px;font-weight:700;
+    padding:2px 7px;border-radius:8px;
   }
 
   /* 하단 고정 탭바 */
@@ -1438,67 +1459,31 @@ body{
       </div>
     </div>
 
-    <!-- 모바일 전용 홈 네비 버튼 그리드 -->
+    <!-- 모바일 전용 홈 위젯 -->
     <div id="mob-home-nav">
-      <div class="mob-nav-btn" onclick="showPage('issues');closeSidebar()">
-        <div class="mnb-icon" style="background:#fff0f1;color:#e63946;"><i data-lucide="alert-triangle"></i></div>
-        <div class="mnb-label">Issues</div>
-        <div class="mnb-sub">이슈 현황</div>
+      <!-- 캘린더 카드 -->
+      <div class="mob-home-card">
+        <div class="mob-home-card-head">
+          <div class="mob-home-card-title">
+            <i data-lucide="calendar"></i> 다가오는 일정
+          </div>
+          <span class="mob-home-card-more" onclick="showPage('calendar');closeSidebar()">전체 보기 →</span>
+        </div>
+        <div class="mob-home-card-body" id="mob-cal-body">
+          <div style="color:var(--text3);font-size:12.5px;text-align:center;padding:10px 0;">로딩 중...</div>
+        </div>
       </div>
-      <div class="mob-nav-btn" onclick="showPage('calendar');closeSidebar()">
-        <div class="mnb-icon" style="background:#f0f4ff;color:#4361ee;"><i data-lucide="calendar"></i></div>
-        <div class="mnb-label">Calendar</div>
-        <div class="mnb-sub">일정 캘린더</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('mgmt');closeSidebar()">
-        <div class="mnb-icon" style="background:#f0fff8;color:#0a9979;"><i data-lucide="clipboard-list"></i></div>
-        <div class="mnb-label">Mgmt. Process</div>
-        <div class="mnb-sub">회의 일정/안건</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('pmo');closeSidebar()">
-        <div class="mnb-icon" style="background:#f5f0ff;color:#7b2ff7;"><i data-lucide="briefcase"></i></div>
-        <div class="mnb-label">PMO</div>
-        <div class="mnb-sub">사업기획</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('marketing');closeSidebar()">
-        <div class="mnb-icon" style="background:#fff5f0;color:#f4680a;"><i data-lucide="megaphone"></i></div>
-        <div class="mnb-label">홍보</div>
-        <div class="mnb-sub">마케팅</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('recruit');closeSidebar()">
-        <div class="mnb-icon" style="background:#f0faff;color:#0096c7;"><i data-lucide="target"></i></div>
-        <div class="mnb-label">모집선발</div>
-        <div class="mnb-sub">리쿠르팅</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('curriculum');closeSidebar()">
-        <div class="mnb-icon" style="background:#fffbf0;color:#d4a017;"><i data-lucide="book-open"></i></div>
-        <div class="mnb-label">커리큘럼</div>
-        <div class="mnb-sub">교육 과정</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('infra');closeSidebar()">
-        <div class="mnb-icon" style="background:#f0fff0;color:#2d8653;"><i data-lucide="server"></i></div>
-        <div class="mnb-label">인프라</div>
-        <div class="mnb-sub">시스템 환경</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('meeting');closeSidebar()">
-        <div class="mnb-icon" style="background:#f7f0ff;color:#9b4dca;"><i data-lucide="file-text"></i></div>
-        <div class="mnb-label">회의록</div>
-        <div class="mnb-sub">DATA</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('archive');closeSidebar()">
-        <div class="mnb-icon" style="background:#f0f8ff;color:#1a73e8;"><i data-lucide="folder-open"></i></div>
-        <div class="mnb-label">자료실</div>
-        <div class="mnb-sub">DATA</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('messages');closeSidebar()">
-        <div class="mnb-icon" style="background:#fff0fb;color:#c2185b;"><i data-lucide="message-square"></i></div>
-        <div class="mnb-label">메시지</div>
-        <div class="mnb-sub">채널 대화</div>
-      </div>
-      <div class="mob-nav-btn" onclick="showPage('mypage');closeSidebar()">
-        <div class="mnb-icon" style="background:#f5f5f5;color:#555;"><i data-lucide="user-circle"></i></div>
-        <div class="mnb-label">마이페이지</div>
-        <div class="mnb-sub">내 정보</div>
+      <!-- 다음 보고 아젠다 카드 -->
+      <div class="mob-home-card">
+        <div class="mob-home-card-head">
+          <div class="mob-home-card-title">
+            <i data-lucide="clipboard-list"></i> 다음 보고 아젠다
+          </div>
+          <span class="mob-home-card-more" onclick="showPage('mgmt');closeSidebar()">전체 보기 →</span>
+        </div>
+        <div class="mob-home-card-body" id="mob-agenda-body">
+          <div style="color:var(--text3);font-size:12.5px;text-align:center;padding:10px 0;">로딩 중...</div>
+        </div>
       </div>
     </div>
 
@@ -2545,6 +2530,113 @@ function renderHeroIssues(issues) {
 Chart.defaults.color = '#4a5068';
 Chart.defaults.font.family = "'Freesentation','Apple SD Gothic Neo',sans-serif";
 Chart.defaults.font.size = 13;
+
+// ── 모바일 홈 위젯 렌더링 ──
+const _mobAreaColors = {
+  pmo:        { bg:'#e8f4ff', text:'#1a73e8' },
+  marketing:  { bg:'#fff0e8', text:'#e65100' },
+  recruit:    { bg:'#e8f8f0', text:'#0a7c4e' },
+  curriculum: { bg:'#f3e8ff', text:'#7b1fa2' },
+  infra:      { bg:'#ffeee8', text:'#c62828' },
+};
+const _mobDow = ['일','월','화','수','목','금','토'];
+
+function renderMobHome() {
+  if (window.innerWidth > 900) return; // 모바일에서만
+  _renderMobCal();
+  _renderMobAgenda();
+  if (window.lucide) lucide.createIcons();
+}
+
+function _renderMobCal() {
+  const el = document.getElementById('mob-cal-body');
+  if (!el) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const limit = new Date(today); limit.setDate(limit.getDate() + 14);
+  const fmt = d => d.toISOString().slice(0,10);
+  const todayStr = fmt(today);
+  const limitStr = fmt(limit);
+
+  // gcal 이벤트
+  const rows = [];
+  (_gcalEvents || []).forEach(ev => {
+    if (!ev.date || ev.date < todayStr || ev.date > limitStr) return;
+    rows.push({ date: ev.date, title: ev.title || ev.summary || '일정', sub: ev.description || '', color: '#4285f4', isCal: true });
+  });
+
+  // 과제 마감일 (이번주 + 다음주)
+  Object.keys(taskData).forEach(areaKey => {
+    const ac = _mobAreaColors[areaKey] || { bg:'#eef1ff', text:'#4361ee' };
+    taskData[areaKey].tasks.forEach(cat => {
+      cat.tasks.forEach(t => {
+        if (!t.end || t.status === 'done') return;
+        if (t.end < todayStr || t.end > limitStr) return;
+        rows.push({ date: t.end, title: t.name, sub: (_areaLabelMap[areaKey]||areaKey) + (t.owner ? ' · ' + t.owner : ''), color: ac.text, isCal: false });
+      });
+    });
+  });
+
+  rows.sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!rows.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:10px 0;">2주 내 일정이 없습니다.</div>';
+    return;
+  }
+
+  el.innerHTML = rows.slice(0, 7).map(r => {
+    const d = new Date(r.date + 'T00:00:00');
+    const isToday = r.date === todayStr;
+    const dateBg = isToday ? '#4361ee' : '#f0f4ff';
+    const dateTxt = isToday ? '#fff' : '#4361ee';
+    return `<div class="mob-cal-row">
+      <div class="mob-cal-date" style="background:${dateBg};">
+        <div class="mcd-day" style="color:${dateTxt};">${d.getDate()}</div>
+        <div class="mcd-dow" style="color:${dateTxt};opacity:${isToday?'1':'0.7'};">${_mobDow[d.getDay()]}</div>
+      </div>
+      <div class="mob-cal-info">
+        <div class="mci-title">${r.title}</div>
+        <div class="mci-sub">${r.sub || (r.isCal ? 'Google Calendar' : '과제 마감')}</div>
+      </div>
+      <div class="mob-cal-dot" style="background:${r.color};"></div>
+    </div>`;
+  }).join('');
+}
+
+function _renderMobAgenda() {
+  const el = document.getElementById('mob-agenda-body');
+  if (!el) return;
+
+  const todayStr = new Date().toISOString().slice(0,10);
+  const sessions = [...(mgmtData.sessions || [])]
+    .filter(s => s.date && s.date >= todayStr)
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .slice(0, 3); // 다음 3개 세션
+
+  if (!sessions.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:10px 0;">예정된 보고 일정이 없습니다.</div>';
+    return;
+  }
+
+  el.innerHTML = sessions.map(s => {
+    const d = new Date(s.date + 'T00:00:00');
+    const label = `${d.getMonth()+1}/${d.getDate()} (${_mobDow[d.getDay()]}) ${s.title||''}`;
+    const items = (s.items || []);
+    const itemsHtml = items.length
+      ? items.map(it => {
+          const ac = _mobAreaColors[it.area] || { bg:'#eef1ff', text:'#4361ee' };
+          return `<div class="mob-agenda-item">
+            ${it.area ? `<span class="mob-agenda-area-chip" style="background:${ac.bg};color:${ac.text};">${_areaLabelMap[it.area]||it.area}</span>` : ''}
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.topic||''}</span>
+          </div>`;
+        }).join('')
+      : '<div style="color:var(--text3);font-size:12px;padding:4px 0;">안건 미등록</div>';
+    return `<div class="mob-agenda-session">
+      <div class="mob-agenda-session-head">${label}</div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+}
 
 function renderCharts() {
   const areas = computeSummaryAreas();
@@ -4425,6 +4517,7 @@ function loadGcalEventsFromFirebase() {
     const val = snap.val();
     _gcalEvents = Array.isArray(val) ? val.filter(Boolean) : [];
     renderCalendar();
+    renderMobHome();
   }).catch(e => console.warn('구글 캘린더 일정 로드 실패:', e));
 }
 
@@ -5603,6 +5696,7 @@ function loadFromFirebase(onDone) {
     renderCharts();
     renderMonthlyTable();
     renderHero();
+    renderMobHome();
     ['pmo','curriculum','marketing','recruit','infra'].forEach(pid => {
       renderDetailPage(pid, pid);
       applyZoom(pid);
@@ -5679,6 +5773,7 @@ loadFromFirebase(function() {
     if (document.getElementById('page-mgmt') && document.getElementById('page-mgmt').classList.contains('active')) {
       renderMgmtPage();
     }
+    renderMobHome();
   });
   loadGcalEventsFromFirebase();
   loadPresenceListener();
