@@ -5058,12 +5058,14 @@ function renderMgmtPage() {
     const rcpKey = s.recipient || '총장';
     const _mgmtAreaColors = {pmo:'#00d4ff',curriculum:'#10b981',marketing:'#8b5cf6',recruit:'#f59e0b',infra:'#ef4444'};
     const _mgmtAreaTextColors = {pmo:'#005f5a',curriculum:'#065f46',marketing:'#3b0764',recruit:'#78350f',infra:'#7f1d1d'};
-    const itemRows = s.items.map((item, i) => {
-      const highlight = _mgmtAreaFilter && item.area === _mgmtAreaFilter;
+    const visibleItems = _mgmtAreaFilter
+      ? s.items.filter(it => it.area === _mgmtAreaFilter)
+      : s.items;
+    const itemRows = visibleItems.map((item, i) => {
       const areaLabel = item.area ? (_areaLabelMap[item.area] || item.area) : '전체';
       const areaBg = item.area ? (_mgmtAreaColors[item.area] || '#e0e7ff') : '#e0e7ff';
       const areaFg = item.area ? (_mgmtAreaTextColors[item.area] || '#3730a3') : '#3730a3';
-      return `<tr${highlight ? ' style="background:#fffbeb;"' : ''}>
+      return `<tr>
         <td style="width:30px;color:var(--text3);font-size:12px;text-align:center;">${i+1}</td>
         <td style="width:130px;"><span style="display:inline-block;background:${areaBg};color:${areaFg};font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;">${areaLabel}</span></td>
         <td style="font-size:13px;">${item.topic || '<span style="color:var(--text3);">미입력</span>'}</td>
