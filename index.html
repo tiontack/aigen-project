@@ -1718,7 +1718,7 @@ body{
     </div>
     <!-- 영역별 Sorting 필터 -->
     <div class="mgmt-area-filter-bar">
-      <span class="fbar-label">영역별 보기:</span>
+
       <div class="mgmt-area-chip active" id="mgmt-filter-chip-all" onclick="mgmtSetAreaFilter('')">전체</div>
     </div>
     <div class="mgmt-list" id="mgmt-body"></div>
@@ -5447,7 +5447,7 @@ function _mgmtBuildAreaFilterBar() {
     const isActive = _mgmtAreaFilter === k;
     return `<div class="mgmt-area-chip${isActive?' active':''}" id="mgmt-filter-chip-${k}" onclick="mgmtSetAreaFilter('${k}')">${_areaLabelMap[k]||k}${cnt>0?`<span class="mgmt-area-match-badge">${cnt}</span>`:''}</div>`;
   }).join('');
-  bar.innerHTML = `<span class="fbar-label">영역별 보기:</span>
+  bar.innerHTML = `
     <div class="mgmt-area-chip${_mgmtAreaFilter===''?' active':''}" id="mgmt-filter-chip-all" onclick="mgmtSetAreaFilter('')">전체</div>
     ${chips}`;
 }
