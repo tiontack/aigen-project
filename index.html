@@ -1559,14 +1559,16 @@ body{
   </div>
 
   <div id="page-issues" class="page">
-    <div class="page-header" style="align-items:center;flex-wrap:nowrap;gap:8px;">
-      <div class="page-header-left" style="flex:1;min-width:0;">
-        <h2 style="display:flex;align-items:center;gap:8px;"><i data-lucide="alert-triangle" style="width:20px;height:20px;flex-shrink:0;"></i><span class="hl">Issues</span></h2>
-        <p id="issues-week-label" style="margin:0;">이번 주 기준 지연·임박 과제 현황</p>
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2><i data-lucide="alert-triangle" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">Issues</span></h2>
+        <p id="issues-week-label">이번 주 기준 지연·임박 과제 현황</p>
       </div>
-      <select id="issues-area-filter" class="s-select" onchange="renderIssuesPage()" style="flex-shrink:0;">
-        <option value="">전체 영역</option>
-      </select>
+      <div style="display:flex;align-items:center;">
+        <select id="issues-area-filter" class="s-select" onchange="renderIssuesPage()">
+          <option value="">전체 영역</option>
+        </select>
+      </div>
     </div>
     <div class="issues-grid" id="issues-stat-grid"></div>
     <div id="issues-content"></div>
