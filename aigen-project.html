@@ -1361,12 +1361,37 @@ body{
 
   /* 히어로 배너 (모바일 전용 오버라이드) */
   .hero-banner {
-    border-radius:0 0 28px 28px !important;
+    border-radius:0 0 24px 24px !important;
     margin:-1px -1px 0 !important;
-    padding:calc(env(safe-area-inset-top,0px) + 60px) 20px 24px !important;
+    padding:calc(env(safe-area-inset-top,0px) + 58px) 18px 16px !important;
   }
-  .hero-greeting { font-size:12px !important; }
-  .hero-welcome { font-size:22px !important; margin-bottom:0 !important; }
+  .hero-greeting { font-size:11px !important; opacity:0.8; margin-bottom:2px !important; }
+  .hero-welcome { font-size:19px !important; margin-bottom:10px !important; font-weight:900 !important; }
+  /* 히어로 내 통계 칩 영역 */
+  .mob-hero-stats {
+    display:flex; gap:8px; flex-wrap:nowrap;
+  }
+  .mob-hero-chip {
+    flex:1;
+    background:rgba(255,255,255,0.18);
+    border-radius:12px;
+    padding:7px 10px;
+    display:flex;flex-direction:column;gap:2px;
+    backdrop-filter:blur(4px);
+    min-width:0;
+  }
+  .mob-hero-chip-val { font-size:17px; font-weight:900; color:#fff; line-height:1; }
+  .mob-hero-chip-lbl { font-size:10px; color:rgba(255,255,255,0.75); font-weight:600; }
+  /* 진척률 바 */
+  .mob-hero-prog-wrap {
+    margin-top:10px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .mob-hero-prog-bar {
+    flex:1;height:4px;background:rgba(255,255,255,0.25);border-radius:2px;overflow:hidden;
+  }
+  .mob-hero-prog-fill { height:100%;background:#fff;border-radius:2px;transition:width 0.6s; }
+  .mob-hero-prog-pct { font-size:11px;font-weight:800;color:#fff;white-space:nowrap; }
 
   /* 섹션 카드 공통 */
   .mob-card {
@@ -1695,6 +1720,8 @@ body{
         <div class="hero-greeting" id="hero-greeting"></div>
         <div class="hero-welcome" id="hero-welcome"></div>
         <div class="hero-issues" id="hero-issues"></div>
+        <!-- 모바일 전용 통계 칩 + 진척률 -->
+        <div id="mob-hero-stats-area"></div>
       </div>
     </div>
 
@@ -2710,6 +2737,42 @@ function renderHero() {
   else if (hour >= 18 && hour < 23) greet = '편안한 저녁입니다';
   document.getElementById('hero-greeting').textContent = greet;
   document.getElementById('hero-welcome').textContent = `${currentUser ? currentUser.id : 'TF'}님, 환영합니다!`;
+
+  // 모바일 전용: 통계 칩 + 진척률 바
+  if (window.innerWidth <= 900) {
+    const mobStats = document.getElementById('mob-hero-stats-area');
+    if (mobStats) {
+      const areas = computeSummaryAreas();
+      const total = areas.reduce((s,a) => s+a.total, 0);
+      const done  = areas.reduce((s,a) => s+a.done, 0);
+      const prog  = areas.reduce((s,a) => s+a.progress, 0);
+      const delay = areas.reduce((s,a) => s+a.delay, 0);
+      const pct   = total ? Math.round((done + prog*0.5)/total*100) : 0;
+      mobStats.innerHTML = `
+        <div class="mob-hero-stats">
+          <div class="mob-hero-chip">
+            <div class="mob-hero-chip-val">${total}</div>
+            <div class="mob-hero-chip-lbl">전체 과제</div>
+          </div>
+          <div class="mob-hero-chip">
+            <div class="mob-hero-chip-val">${prog}</div>
+            <div class="mob-hero-chip-lbl">진행 중</div>
+          </div>
+          <div class="mob-hero-chip">
+            <div class="mob-hero-chip-val" style="color:${delay>0?'#fca5a5':'#fff'}">${delay}</div>
+            <div class="mob-hero-chip-lbl">지연</div>
+          </div>
+          <div class="mob-hero-chip">
+            <div class="mob-hero-chip-val">${done}</div>
+            <div class="mob-hero-chip-lbl">완료</div>
+          </div>
+        </div>
+        <div class="mob-hero-prog-wrap">
+          <div class="mob-hero-prog-bar"><div class="mob-hero-prog-fill" style="width:${pct}%"></div></div>
+          <div class="mob-hero-prog-pct">${pct}% 완료</div>
+        </div>`;
+    }
+  }
 
   // 주요 이슈: 지연된 과제 + 시작을 앞둔 과제
   const _dotDate = s => s ? s.replace(/-/g,'.') : '';
@@ -4461,6 +4524,7 @@ function openMsgChannel(key) {
   const c = chans.find(x => x.key === key);
   document.getElementById('msg-header').textContent = c ? c.label : '';
   markChannelMentionsRead(key);
+  markChannelAllRead(key);
   renderMsgChannelList();
   renderMsgThread();
 }
@@ -4486,13 +4550,25 @@ function countUnreadMentionsInChannel(key) {
   const lastRead = _mentionReads[key] || 0;
   return list.filter(m => m.mentions && m.mentions.includes(currentUser.id) && m.from !== currentUser.id && (m.ts || 0) > lastRead).length;
 }
+function countUnreadMsgInChannel(key) {
+  if (!currentUser) return 0;
+  const list = messages[key] || [];
+  const lastRead = _mentionReads[key + '__all'] || 0;
+  return list.filter(m => m.from !== currentUser.id && (m.ts || 0) > lastRead).length;
+}
+function markChannelAllRead(key) {
+  if (!currentUser) return;
+  _mentionReads[key + '__all'] = Date.now();
+  _db.ref('mentionReads/' + currentUser.id + '/' + key + '__all').set(_mentionReads[key + '__all']).catch(() => {});
+  updateMsgUnreadBadge();
+}
 function updateMsgUnreadBadge() {
   if (!currentUser) return;
-  const total = _msgChannels().reduce((sum, c) => sum + countUnreadMentionsInChannel(c.key), 0);
+  const total = _msgChannels().reduce((sum, c) => sum + countUnreadMsgInChannel(c.key), 0);
   ['msg-unread-badge','mbn-msg-badge'].forEach(id => {
     const badge = document.getElementById(id);
     if (!badge) return;
-    badge.textContent = total;
+    badge.textContent = total > 99 ? '99+' : total;
     badge.style.display = total > 0 ? 'inline-flex' : 'none';
   });
 }
