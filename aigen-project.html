@@ -1167,20 +1167,136 @@ body{
 
   /* 메시지: 뷰포트 꽉 채우는 레이아웃 */
   #page-messages{padding:0!important;margin:0!important;}
-  .msg-wrap{
-    flex-direction:column;
-    height:calc(100vh - 68px - 56px); /* 햄버거헤더 - 하단탭바 */
-    min-height:0;border-radius:0;border:none;box-shadow:none;
+  #page-messages .page-header{display:none!important;}
+
+  /* 모바일 메시지 레이아웃 전면 개편 */
+  .msg-wrap {
+    flex-direction: column;
+    height: calc(100dvh - 130px);
+    min-height: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: #f8fafc;
   }
-  .msg-sidebar{
-    width:100%;flex-shrink:0;
-    max-height:140px;overflow-y:auto;
-    border-right:none;border-bottom:1px solid var(--border);
+  .msg-sidebar { display: none !important; } /* 기존 사이드바 완전 숨김 */
+  .msg-main { flex:1; min-height:0; display:flex; flex-direction:column; }
+  .msg-header { flex-shrink:0; padding:10px 14px; font-size:14px; background:#fff; border-bottom:1px solid #f0f2f8; }
+  .msg-thread { flex:1; min-height:0; overflow-y:auto; padding:10px 12px; background:#f8fafc; }
+  .msg-input-bar { flex-shrink:0; padding:8px 10px; gap:8px; background:#fff; border-top:1px solid #f0f2f8; padding-bottom:calc(8px + env(safe-area-inset-bottom)); }
+
+  /* 모바일 채널/DM 선택 패널 */
+  #mob-msg-panel {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-bottom: 1px solid #f0f2f8;
+    flex-shrink: 0;
   }
-  .msg-main{flex:1;min-height:0;height:0;display:flex;flex-direction:column;}
-  .msg-thread{flex:1;min-height:0;overflow-y:auto;padding:12px 14px;}
-  .msg-input-bar{flex-shrink:0;padding:10px 12px;gap:8px;}
-  .msg-header{flex-shrink:0;padding:10px 14px;font-size:13px;}
+  /* 채널 pill 스크롤 줄 */
+  #mob-channel-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #mob-channel-row::-webkit-scrollbar { display: none; }
+  .mob-ch-pill {
+    flex-shrink: 0;
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 700;
+    background: #f1f3f9;
+    color: #64748b;
+    cursor: pointer;
+    white-space: nowrap;
+    border: 1.5px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .mob-ch-pill.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .mob-ch-pill .mob-ch-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    background: #e63946;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+  }
+  /* DM 아바타 줄 */
+  #mob-dm-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-top: 1px solid #f4f5f8;
+  }
+  #mob-dm-row::-webkit-scrollbar { display: none; }
+  .mob-dm-item {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mob-dm-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 15px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: 2.5px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .mob-dm-avatar.active { border-color: var(--accent); background: #eef1ff; color: var(--accent); }
+  .mob-dm-status {
+    position: absolute;
+    bottom: 1px; right: 1px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: #9298ad;
+  }
+  .mob-dm-status.online { background: #3ecf6a; }
+  .mob-dm-status.idle   { background: #f5a623; }
+  .mob-dm-status.offline{ background: #cbd5e1; }
+  .mob-dm-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    max-width: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .mob-dm-label.active { color: var(--accent); font-weight: 800; }
 
   /* 마이페이지 담당 과제 필터 줄바꿈 */
   #mypage-task-area{max-width:none;width:100%;}
@@ -1415,10 +1531,11 @@ body{
   .mgmt-card-menu-btn { top: 8px; right: 8px; }
 }
 
-/* 태블릿 이상에서는 하단 탭바 / 홈 네비 숨김 */
+/* 태블릿 이상에서는 하단 탭바 / 홈 네비 / 모바일 메시지 패널 숨김 */
 @media (min-width: 901px) {
   #mob-bottom-nav { display:none !important; }
   #mob-home-nav { display:none !important; }
+  #mob-msg-panel { display:none !important; }
 }
 </style>
 </head>
@@ -1901,6 +2018,11 @@ body{
     <div class="msg-wrap">
       <div class="msg-sidebar" id="msg-channel-list"></div>
       <div class="msg-main">
+        <!-- 모바일 전용 채널/DM 선택 패널 -->
+        <div id="mob-msg-panel">
+          <div id="mob-channel-row"></div>
+          <div id="mob-dm-row"></div>
+        </div>
         <div class="msg-header" id="msg-header">채널을 선택하세요</div>
         <div class="msg-thread" id="msg-thread"></div>
         <div class="msg-input-bar" style="position:relative;">
@@ -4277,6 +4399,8 @@ function renderMsgChannelList() {
   if (!wrap) return;
   const chans = _msgChannels();
   const groups = ['채널', 'DM'];
+
+  // ── 데스크톱 사이드바 ──
   wrap.innerHTML = `
     <div class="msg-sidebar-head">
       <span class="msg-sidebar-title">채널</span>
@@ -4286,14 +4410,47 @@ function renderMsgChannelList() {
     <div class="msg-channel-group-label">${g}</div>
     ${chans.filter(c => c.group === g).map(c => `
       <div class="msg-channel-item ${_curChannel===c.key?'active':''}" onclick="openMsgChannel('${c.key}')">
-        ${g==='DM' ? `<span class="msg-dot ${getPresenceStatus(c.label)}" title="${getPresenceStatus(c.label)==='online'?'접속 중':getPresenceStatus(c.label)==='idle'?'자리 비움':'오프라인'}"></span>` : ''}<span class="msg-channel-label">${c.label}</span>
+        ${g==='DM' ? `<span class="msg-dot ${getPresenceStatus(c.label)}"></span>` : ''}
+        <span class="msg-channel-label">${c.label}</span>
         ${countUnreadMentionsInChannel(c.key) > 0 ? `<span class="msg-channel-mention-badge">${countUnreadMentionsInChannel(c.key)}</span>` : ''}
         ${c.custom ? `<span class="msg-channel-edit-btns">
           <span onclick="renameCustomChannel('${c.id}',event)" title="수정">✎</span>
           <span onclick="deleteCustomChannel('${c.id}',event)" title="삭제">✕</span>
         </span>` : ''}
       </div>`).join('')}
-  `).join('')}`;
+    `).join('')}`;
+
+  // ── 모바일 패널 ──
+  if (window.innerWidth > 900) return;
+  const chRow = document.getElementById('mob-channel-row');
+  const dmRow = document.getElementById('mob-dm-row');
+  if (!chRow || !dmRow) return;
+
+  const channelChans = chans.filter(c => c.group === '채널');
+  const dmChans = chans.filter(c => c.group === 'DM');
+
+  // 채널 pill 줄
+  chRow.innerHTML = channelChans.map(c => {
+    const unread = countUnreadMentionsInChannel(c.key);
+    return `<div class="mob-ch-pill${_curChannel===c.key?' active':''}" onclick="openMsgChannel('${c.key}')">
+      # ${c.label}
+      ${unread > 0 ? `<span class="mob-ch-badge">${unread}</span>` : ''}
+    </div>`;
+  }).join('') + `<div class="mob-ch-pill" style="background:#f1f3f9;color:#94a3b8;border-style:dashed;" onclick="addCustomChannel()">+ 채널 추가</div>`;
+
+  // DM 아바타 줄
+  dmRow.innerHTML = dmChans.map(c => {
+    const status = getPresenceStatus(c.label);
+    const isActive = _curChannel === c.key;
+    const initials = c.label.charAt(0);
+    return `<div class="mob-dm-item" onclick="openMsgChannel('${c.key}')">
+      <div class="mob-dm-avatar${isActive?' active':''}">
+        ${initials}
+        <div class="mob-dm-status ${status}"></div>
+      </div>
+      <div class="mob-dm-label${isActive?' active':''}">${c.label}</div>
+    </div>`;
+  }).join('');
 }
 function openMsgChannel(key) {
   _curChannel = key;
