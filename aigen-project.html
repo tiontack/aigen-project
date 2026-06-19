@@ -1117,6 +1117,30 @@ body{
 }
 #mob-overlay.show{opacity:1;pointer-events:all;}
 
+/* ── 중간 화면 (1200px 이하): 사이드바 축소 + 그리드 재배치 ── */
+@media (max-width: 1200px) {
+  :root { --sidebar-w: 220px; }
+  #main { padding: 24px 22px; }
+  .summary-top { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .chart-row { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .page-header-left h2 { font-size: 22px; }
+  .hero-issues-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+/* ── 태블릿 가로 (601px–900px): 사이드바 없음, 2열 유지 ── */
+@media (min-width: 601px) and (max-width: 900px) {
+  .chart-row { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .issues-cards-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .summary-top { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+/* ── 대형 화면 (1600px 이상): 여백 확대 + 최대 너비 ── */
+@media (min-width: 1600px) {
+  #main { padding: 40px 56px; }
+  .summary-top { grid-template-columns: repeat(5, minmax(0,1fr)); }
+  .chart-row { grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+
 @media (max-width: 900px) {
   /* 사이드바 슬라이드인 */
   #mob-toggle{display:flex;}
@@ -1157,8 +1181,9 @@ body{
   .gantt-cat-row .gantt-label{width:140px;min-width:140px;}
   .gantt-status-col{width:44px;min-width:44px;}
 
-  /* 모달 전체폭 */
+  /* 모달 전체폭 + 그리드 1열 */
   .modal{width:94vw!important;max-height:90vh;overflow-y:auto;}
+  .modal-grid{grid-template-columns:1fr;}
 
   /* 로그인 박스 */
   .login-box{width:92vw;padding:32px 24px;}
