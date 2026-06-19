@@ -649,8 +649,10 @@ body{
 .mgmt-card-right{flex:1;min-width:0;background:#fff;display:flex;flex-direction:column;}
 .mgmt-card-body{padding:14px 18px 0;flex:1;}
 .mgmt-agenda-table{width:100%;border-collapse:collapse;font-size:13px;}
-.mgmt-agenda-table th{background:#f5f7ff;font-size:11.5px;font-weight:700;color:var(--text2);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);}
-.mgmt-agenda-table td{padding:7px 8px;border-bottom:1px solid #f0f1f5;vertical-align:middle;}
+.mgmt-agenda-table th{background:#f5f7ff;font-size:11.5px;font-weight:700;color:var(--text2);padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);}
+.mgmt-agenda-table th:nth-child(3){text-align:left;}
+.mgmt-agenda-table td{padding:7px 8px;border-bottom:1px solid #f0f1f5;vertical-align:middle;text-align:center;}
+.mgmt-agenda-table td:nth-child(3){text-align:left;}
 .mgmt-agenda-table tr:last-child td{border-bottom:none;}
 .mgmt-agenda-table input,.mgmt-agenda-table select{border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:12.5px;font-family:inherit;color:var(--text);background:#fff;width:100%;box-sizing:border-box;}
 .mgmt-agenda-table input:focus,.mgmt-agenda-table select:focus{outline:none;border-color:var(--accent);}
@@ -6270,7 +6272,7 @@ function renderMgmtPage() {
       <div class="mgmt-card-right">
         <div class="mgmt-card-body" style="padding-bottom:14px;">
           ${itemRows ? `<table class="mgmt-agenda-table">
-            <thead><tr><th style="width:30px;">#</th><th style="width:130px;">영역</th><th>안건</th><th style="width:110px;"></th></tr></thead>
+            <thead><tr><th style="width:30px;">#</th><th style="width:80px;">영역</th><th>안건</th><th style="width:110px;"></th></tr></thead>
             <tbody>${itemRows}</tbody>
           </table>` : `<div style="padding:24px 0;color:var(--text3);font-size:13px;text-align:center;">등록된 안건이 없습니다. <button onclick="mgmtOpenItemModal()" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 안건 추가</button></div>`}
         </div>
