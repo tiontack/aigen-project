@@ -1179,7 +1179,10 @@ body{
   .gantt-mobile-list{display:block;}
 
   /* Issues 통계 2열, 카드 1열 */
-  .issues-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .issues-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+  .issues-stat-card{padding:10px 10px;}
+  .issues-stat-card .stat-num{font-size:22px;}
+  .issues-stat-card .stat-lbl{font-size:10px;}
   .issues-cards-grid{grid-template-columns:1fr;}
 }
 
@@ -1556,17 +1559,14 @@ body{
   </div>
 
   <div id="page-issues" class="page">
-    <div class="page-header">
-      <div class="page-header-left">
-        <h2><i data-lucide="alert-triangle" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"></i><span class="hl">Issues</span></h2>
-        <p id="issues-week-label">이번 주 기준 지연·임박 과제 현황</p>
+    <div class="page-header" style="align-items:center;flex-wrap:nowrap;gap:8px;">
+      <div class="page-header-left" style="flex:1;min-width:0;">
+        <h2 style="display:flex;align-items:center;gap:8px;"><i data-lucide="alert-triangle" style="width:20px;height:20px;flex-shrink:0;"></i><span class="hl">Issues</span></h2>
+        <p id="issues-week-label" style="margin:0;">이번 주 기준 지연·임박 과제 현황</p>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <select id="issues-area-filter" class="s-select" onchange="renderIssuesPage()">
-          <option value="">전체 영역</option>
-        </select>
-        <span id="issues-refresh-info" style="font-size:11px;color:var(--text3);white-space:nowrap;"></span>
-      </div>
+      <select id="issues-area-filter" class="s-select" onchange="renderIssuesPage()" style="flex-shrink:0;">
+        <option value="">전체 영역</option>
+      </select>
     </div>
     <div class="issues-grid" id="issues-stat-grid"></div>
     <div id="issues-content"></div>
@@ -3188,13 +3188,6 @@ function renderIssuesPage() {
   const wLabel = document.getElementById('issues-week-label');
   if (wLabel) wLabel.textContent =
     `이번 주 (${_d(weekStart.toISOString().slice(0,10))} ~ ${_d(weekEnd.toISOString().slice(0,10))}) 기준`;
-
-  // 마지막 갱신 시각
-  const refreshInfo = document.getElementById('issues-refresh-info');
-  if (refreshInfo) {
-    const t = new Date();
-    refreshInfo.textContent = `최근 갱신 ${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
-  }
 
   // 영역 필터
   const areaFilter = (document.getElementById('issues-area-filter') || {}).value || '';
