@@ -346,6 +346,7 @@ body{
 .cal-cell.weekend-col{background:#fdfafe;}
 .cal-event-layer{display:flex;flex-direction:column;gap:2px;}
 .cal-event{font-size:13px;font-weight:700;color:#fff;border-radius:4px;padding:3px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:filter 0.15s;}
+@media(max-width:900px){.cal-event{font-size:10px;padding:2px 4px;font-weight:600;}}
 .cal-event:hover{filter:brightness(1.15);}
 .cal-event.gcal-event{opacity:0.85;border-left:3px solid rgba(255,255,255,0.5);}
 .cal-week-overlay{position:absolute;left:0;top:0;width:100%;height:100%;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:23px;gap:3px;padding:28px 4px 4px 4px;pointer-events:none;}
@@ -1428,6 +1429,14 @@ body{
   <span></span><span></span><span></span>
 </button>
 <div id="mob-overlay" onclick="closeSidebar()"></div>
+
+<!-- 모바일 캘린더 이벤트 상세 바텀 시트 -->
+<div id="mob-cal-sheet" onclick="if(event.target===this)closeMobCalSheet()" style="display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,0.45);">
+  <div style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:70vh;overflow-y:auto;">
+    <div style="width:36px;height:4px;background:#e2e8f0;border-radius:2px;margin:0 auto 16px;"></div>
+    <div id="mob-cal-sheet-content"></div>
+  </div>
+</div>
 
 <!-- 모바일 하단 고정 탭바 -->
 <nav id="mob-bottom-nav">
@@ -4830,6 +4839,61 @@ function toggleCalArea(area) {
   renderCalendar();
 }
 
+let _calEventMap = {};
+
+function closeMobCalSheet() {
+  document.getElementById('mob-cal-sheet').style.display = 'none';
+}
+
+function calEventTap(key, e) {
+  if (window.innerWidth > 900) return; // 데스크톱은 기존 onclick 처리
+  e.stopPropagation();
+  const ev = _calEventMap[key];
+  if (!ev) return;
+  const statusLabel = { done:'완료', progress:'진행 중', planned:'예정', overdue:'지연' };
+  const statusColor = { done:'#10b981', progress:'#4361ee', planned:'#94a3b8', overdue:'#e63946' };
+  const eff = ev.status === 'done' ? 'done' : (ev.end && ev.end < new Date().toISOString().slice(0,10) && ev.status !== 'done') ? 'overdue' : ev.status || 'planned';
+  const s = ev.start ? ev.start.replace(/-/g,'.') : '';
+  const en = ev.end ? ev.end.replace(/-/g,'.') : '';
+  const period = s && en && s !== en ? `${s} ~ ${en}` : (s || en);
+  const areaName = _areaLabelMap[ev.area] || ev.area || '';
+
+  let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+    <div style="width:10px;height:10px;border-radius:50%;background:${ev.color||'#4285f4'};flex-shrink:0;"></div>
+    <div style="font-size:17px;font-weight:800;color:var(--text);flex:1;">${ev.title}</div>
+  </div>`;
+
+  if (ev.type === 'task') {
+    html += `<div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="color:var(--text3);width:52px;flex-shrink:0;">기간</span>
+        <span style="font-weight:600;">${period}</span>
+      </div>
+      ${areaName ? `<div style="display:flex;gap:8px;align-items:center;">
+        <span style="color:var(--text3);width:52px;flex-shrink:0;">영역</span>
+        <span style="font-weight:600;">${areaName}</span>
+      </div>` : ''}
+      ${ev.cat ? `<div style="display:flex;gap:8px;align-items:center;">
+        <span style="color:var(--text3);width:52px;flex-shrink:0;">카테고리</span>
+        <span style="font-weight:600;">${ev.cat}</span>
+      </div>` : ''}
+      ${ev.owner ? `<div style="display:flex;gap:8px;align-items:center;">
+        <span style="color:var(--text3);width:52px;flex-shrink:0;">담당자</span>
+        <span style="font-weight:600;">${ev.owner}</span>
+      </div>` : ''}
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="color:var(--text3);width:52px;flex-shrink:0;">상태</span>
+        <span style="font-weight:700;color:${statusColor[eff]||'#64748b'};">${statusLabel[eff]||eff}</span>
+      </div>
+    </div>`;
+  } else {
+    html += `<div style="font-size:13.5px;color:var(--text2);">${period}</div>`;
+  }
+
+  document.getElementById('mob-cal-sheet-content').innerHTML = html;
+  document.getElementById('mob-cal-sheet').style.display = 'block';
+}
+
 function renderCalendar() {
   const yr = _calYear, mo = _calMonth;
   document.getElementById('cal-title').textContent =
@@ -4918,10 +4982,13 @@ function renderCalendar() {
       const contStart = s > t.start ? '' : 'border-radius:4px 0 0 4px;';
       const contEnd = e < (t.end||t.start) ? '' : 'border-radius:0 4px 4px 0;';
       const radius = (s===t.start && e===(t.end||t.start)) ? 'border-radius:4px;' : (s > t.start && e < (t.end||t.start)) ? 'border-radius:0;' : (contStart+contEnd);
+      const evKey = `${w}_${t.name}_${t.start}`.replace(/[^a-zA-Z0-9가-힣_]/g,'_');
       if (t._isGcal) {
-        overlayH += `<div class="cal-event cal-event-bar gcal-event" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:#4285f4;border-radius:4px;" title="${t.name}">${t.name}</div>`;
+        _calEventMap[evKey] = { title: t.name, start: t.start, end: t.end || t.start, color: '#4285f4', type: 'gcal' };
+        overlayH += `<div class="cal-event cal-event-bar gcal-event" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:#4285f4;border-radius:4px;" title="${t.name}" onclick="calEventTap('${evKey}',event)">${t.name}</div>`;
       } else {
-        overlayH += `<div class="cal-event cal-event-bar" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:${bg};${radius}" title="${t.name}" onclick="event.stopPropagation();openModal('${t.area}', '${t.area}', ${taskData[t.area].tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat))}, ${taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.find(x=>x.name===t.name))})">${t.name}</div>`;
+        _calEventMap[evKey] = { title: t.name, start: t.start, end: t.end || t.start, color: bg, type: 'task', area: t.area, cat: t.cat, owner: t.owner, status: t.status };
+        overlayH += `<div class="cal-event cal-event-bar" style="grid-column:${colStart}/${colEnd};grid-row:${t._lane+1};background:${bg};${radius}" title="${t.name}" onclick="if(window.innerWidth<=900){calEventTap('${evKey}',event)}else{event.stopPropagation();openModal('${t.area}', '${t.area}', ${taskData[t.area].tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat))}, ${taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.indexOf(taskData[t.area].tasks.find(c=>c.cat===t.cat).tasks.find(x=>x.name===t.name))})}">${t.name}</div>`;
       }
     });
 
