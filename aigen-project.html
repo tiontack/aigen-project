@@ -1717,7 +1717,8 @@ body{
       </div>
     </div>
     <!-- 영역별 Sorting 필터 -->
-    <div class="mgmt-area-filter-bar">
+    <div class="mgmt-area-filter-bar" style="padding:8px 0 10px;">
+      <select id="mgmt-area-select" class="s-select" onchange="mgmtSetAreaFilter(this.value)" style="width:100%;max-width:200px;"></select>
 
       <div class="mgmt-area-chip active" id="mgmt-filter-chip-all" onclick="mgmtSetAreaFilter('')">전체</div>
     </div>
@@ -5433,23 +5434,19 @@ function mgmtSetAreaFilter(areaKey) {
 }
 
 function _mgmtBuildAreaFilterBar() {
-  const bar = document.querySelector('.mgmt-area-filter-bar');
-  if (!bar) return;
+  const sel = document.getElementById('mgmt-area-select');
+  if (!sel) return;
   const _mgmtAreaOrder = ['pmo','marketing','recruit','curriculum','infra'];
   const areaKeys = _mgmtAreaOrder.filter(k => taskData[k]);
-  // 각 영역에 해당 아젠다가 있는 세션 수 계산
   const counts = {};
   areaKeys.forEach(k => {
     counts[k] = (mgmtData.sessions||[]).filter(s => s.items.some(it => it.area === k)).length;
   });
-  const chips = areaKeys.map(k => {
+  const options = areaKeys.map(k => {
     const cnt = counts[k] || 0;
-    const isActive = _mgmtAreaFilter === k;
-    return `<div class="mgmt-area-chip${isActive?' active':''}" id="mgmt-filter-chip-${k}" onclick="mgmtSetAreaFilter('${k}')">${_areaLabelMap[k]||k}${cnt>0?`<span class="mgmt-area-match-badge">${cnt}</span>`:''}</div>`;
+    return `<option value="${k}"${_mgmtAreaFilter===k?' selected':''}>${_areaLabelMap[k]||k}${cnt>0?' ('+cnt+')':''}</option>`;
   }).join('');
-  bar.innerHTML = `
-    <div class="mgmt-area-chip${_mgmtAreaFilter===''?' active':''}" id="mgmt-filter-chip-all" onclick="mgmtSetAreaFilter('')">전체</div>
-    ${chips}`;
+  sel.innerHTML = `<option value=""${_mgmtAreaFilter===''?' selected':''}>전체 영역</option>${options}`;
 }
 
 // ── Mgmt. Process 모달 상태 ──
