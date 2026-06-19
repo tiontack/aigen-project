@@ -1323,6 +1323,50 @@ body{
 
   /* 하단 탭바 공간 확보 */
   #main { padding-bottom:80px; }
+
+  /* ── Mgmt 카드 모바일 재배치 ── */
+  .mgmt-card {
+    flex-direction: column;
+    border-radius: 14px;
+  }
+  .mgmt-card-left {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    padding: 10px 14px !important;
+    gap: 10px !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    border-radius: 14px 14px 0 0;
+  }
+  .mgmt-card-ro-date {
+    font-size: 15px !important;
+    font-weight: 800;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .mgmt-card-ro-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mgmt-card-left > div:last-child { display: none; } /* 영문 부제 숨김 */
+  /* 테이블: # 열·버튼 열 숨기고, 안건 한 줄에 표시 */
+  .mgmt-agenda-table th:nth-child(1),
+  .mgmt-agenda-table td:nth-child(1),
+  .mgmt-agenda-table th:nth-child(4),
+  .mgmt-agenda-table td:nth-child(4) { display: none !important; }
+  .mgmt-agenda-table { table-layout: fixed; }
+  .mgmt-agenda-table th:nth-child(2),
+  .mgmt-agenda-table td:nth-child(2) { width: 68px; }
+  .mgmt-agenda-table td:nth-child(3) { font-size: 13px; white-space: normal; word-break: keep-all; }
+  .mgmt-card-body { padding: 0 !important; }
+  .mgmt-card-menu-btn { top: 8px; right: 8px; }
 }
 
 /* 태블릿 이상에서는 하단 탭바 / 홈 네비 숨김 */
