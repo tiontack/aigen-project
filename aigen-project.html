@@ -1171,10 +1171,13 @@ body{
   .page-header-left{align-items:flex-end;display:flex;flex-direction:column;}
   .header-stat{flex-direction:row;flex-wrap:wrap;gap:16px;}
 
-  /* 간트 툴바 줄바꿈 */
-  .task-toolbar{flex-wrap:wrap;gap:8px;}
-  .s-input{width:100%;box-sizing:border-box;}
-  .gantt-zoom{margin-left:0;}
+  /* 간트 툴바: 2행 재배치 */
+  .task-toolbar{flex-wrap:wrap;gap:8px;padding:10px 14px;}
+  .s-input{width:100%;box-sizing:border-box;order:0;}
+  .s-select{flex:1;min-width:0;order:1;}
+  .btn-action-group{display:flex;gap:6px;flex-shrink:0;order:2;}
+  /* 배율 조절 모바일 숨김 */
+  .gantt-zoom{display:none !important;}
 
   /* 간트 레이블 너비 줄이기 */
   .gantt-label{width:140px;min-width:140px;}
