@@ -2801,9 +2801,10 @@ function _renderMobWeek() {
     Object.keys(_mobAreaColors).forEach(k => { areaColorMap[(_areaLabelMap[k]||k)] = _mobAreaColors[k]; });
     const itemsHtml = items.length
       ? items.map(it => {
-          const itAreaKey = Object.keys(_areaLabelMap).find(k => _areaLabelMap[k] === it.area) || '';
+          const itAreaKey = it.area || '';
           const itAc = _mobAreaColors[itAreaKey] || { bg:'#eef1ff', text:'#4361ee' };
-          const areaTag = `<span style="flex-shrink:0;width:52px;display:inline-block;text-align:center;font-size:10px;font-weight:700;color:${it.area ? itAc.text : 'transparent'};background:${it.area ? itAc.bg : 'transparent'};padding:2px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${it.area||''}</span>`;
+          const itAreaLabel = itAreaKey ? (_areaLabelMap[itAreaKey] || itAreaKey) : '';
+          const areaTag = `<span style="flex-shrink:0;width:52px;display:inline-block;text-align:center;font-size:10px;font-weight:700;color:${itAreaKey ? itAc.text : 'transparent'};background:${itAreaKey ? itAc.bg : 'transparent'};padding:2px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itAreaLabel}</span>`;
           return `<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border);">
             ${areaTag}
             <div style="flex:1;min-width:0;">
