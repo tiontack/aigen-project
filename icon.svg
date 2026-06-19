@@ -1,56 +1,80 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
+    <!-- SK 계열 다홍-주황-붉은 그라데이션 배경 -->
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2563eb"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
+      <stop offset="0%" stop-color="#ff4500"/>
+      <stop offset="45%" stop-color="#e8210a"/>
+      <stop offset="100%" stop-color="#c0110a"/>
     </linearGradient>
+
+    <!-- A 글자용 밝은 그라데이션 -->
     <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#bfdbfe"/>
+      <stop offset="100%" stop-color="#ffd0c0"/>
     </linearGradient>
+
+    <!-- 대각 광택 오버레이 -->
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="60%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.10"/>
+    </linearGradient>
+
     <filter id="blur-glow">
       <feGaussianBlur stdDeviation="5" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <filter id="soft-glow">
-      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feGaussianBlur stdDeviation="14" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="text-shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000040"/>
     </filter>
   </defs>
 
   <!-- 배경 -->
   <rect width="512" height="512" rx="110" fill="url(#bg)"/>
 
-  <!-- 배경 그리드 점 -->
-  <g opacity="0.15" fill="#ffffff">
-    <circle cx="80"  cy="80"  r="3"/><circle cx="160" cy="80"  r="3"/><circle cx="240" cy="80"  r="3"/><circle cx="320" cy="80"  r="3"/><circle cx="432" cy="80"  r="3"/>
-    <circle cx="80"  cy="160" r="3"/><circle cx="160" cy="160" r="3"/><circle cx="320" cy="160" r="3"/><circle cx="432" cy="160" r="3"/>
-    <circle cx="80"  cy="240" r="3"/><circle cx="432" cy="240" r="3"/>
-    <circle cx="80"  cy="340" r="3"/><circle cx="432" cy="340" r="3"/>
-    <circle cx="80"  cy="432" r="3"/><circle cx="160" cy="432" r="3"/><circle cx="320" cy="432" r="3"/><circle cx="432" cy="432" r="3"/>
+  <!-- 광택 오버레이 -->
+  <rect width="512" height="512" rx="110" fill="url(#sheen)"/>
+
+  <!-- 배경 그리드 점 (더 많고 밝게) -->
+  <g opacity="0.18" fill="#ffffff">
+    <circle cx="60"  cy="60"  r="3"/><circle cx="140" cy="60"  r="3"/><circle cx="220" cy="60"  r="3"/><circle cx="300" cy="60"  r="3"/><circle cx="380" cy="60"  r="3"/><circle cx="452" cy="60"  r="3"/>
+    <circle cx="60"  cy="140" r="3"/><circle cx="140" cy="140" r="3"/>                                   <circle cx="300" cy="140" r="3"/><circle cx="380" cy="140" r="3"/><circle cx="452" cy="140" r="3"/>
+    <circle cx="60"  cy="220" r="3"/>                                                                                                                                          <circle cx="452" cy="220" r="3"/>
+    <circle cx="60"  cy="300" r="3"/>                                                                                                                                          <circle cx="452" cy="300" r="3"/>
+    <circle cx="60"  cy="380" r="3"/><circle cx="140" cy="380" r="3"/>                                   <circle cx="300" cy="380" r="3"/><circle cx="380" cy="380" r="3"/><circle cx="452" cy="380" r="3"/>
+    <circle cx="60"  cy="452" r="3"/><circle cx="140" cy="452" r="3"/><circle cx="220" cy="452" r="3"/><circle cx="300" cy="452" r="3"/><circle cx="380" cy="452" r="3"/><circle cx="452" cy="452" r="3"/>
   </g>
 
-  <!-- 글로우 레이어 -->
-  <g filter="url(#soft-glow)" opacity="0.35">
-    <polygon points="256,74 142,360 192,360 256,200 320,360 370,360" fill="#ffffff"/>
+  <!-- A 글로우 레이어 -->
+  <g filter="url(#soft-glow)" opacity="0.40">
+    <polygon points="256,72 138,356 190,356 256,192 322,356 374,356" fill="#ffffff"/>
   </g>
 
   <!-- A 메인 -->
-  <polygon points="256,74 142,360 192,360 256,200 320,360 370,360" fill="url(#glow)" filter="url(#blur-glow)"/>
+  <polygon points="256,72 138,356 190,356 256,192 322,356 374,356" fill="url(#glow)" filter="url(#blur-glow)"/>
 
-  <!-- 컷아웃 -->
-  <polygon points="256,158 220,268 292,268" fill="#2563eb"/>
+  <!-- 컷아웃 (배경색 맞춤) -->
+  <polygon points="256,155 219,265 293,265" fill="#d4180e"/>
 
   <!-- 크로스바 -->
-  <rect x="180" y="278" width="152" height="22" rx="11" fill="url(#glow)" filter="url(#blur-glow)"/>
+  <rect x="178" y="275" width="156" height="22" rx="11" fill="url(#glow)" filter="url(#blur-glow)"/>
 
   <!-- 노드 포인트 -->
-  <circle cx="256" cy="74"  r="9" fill="#ffffff" filter="url(#blur-glow)"/>
-  <circle cx="142" cy="360" r="7" fill="#bfdbfe" filter="url(#blur-glow)"/>
-  <circle cx="370" cy="360" r="7" fill="#bfdbfe" filter="url(#blur-glow)"/>
-  <circle cx="180" cy="289" r="5" fill="#e0f2fe"/>
-  <circle cx="332" cy="289" r="5" fill="#e0f2fe"/>
+  <circle cx="256" cy="72"  r="10" fill="#ffffff" filter="url(#blur-glow)"/>
+  <circle cx="138" cy="356" r="8"  fill="#ffd0c0" filter="url(#blur-glow)"/>
+  <circle cx="374" cy="356" r="8"  fill="#ffd0c0" filter="url(#blur-glow)"/>
+  <circle cx="178" cy="286" r="5"  fill="#ffe0d0"/>
+  <circle cx="334" cy="286" r="5"  fill="#ffe0d0"/>
 
-  <!-- -TF 텍스트: A 꼭짓점 우측 상단 -->
-  <text x="292" y="108" font-family="'Arial',sans-serif" font-size="48" font-weight="300" text-anchor="start" fill="#ffffff" opacity="0.65" letter-spacing="1">-TF</text>
+  <!-- -TF 텍스트: A 꼭짓점 우측 (크기 키움) -->
+  <text x="288" y="112" font-family="'Arial',sans-serif" font-size="68" font-weight="300" text-anchor="start" fill="#ffffff" opacity="0.80" letter-spacing="0" filter="url(#text-shadow)">-TF</text>
+
+  <!-- AI-GEN 하단 텍스트 -->
+  <text x="256" y="448" font-family="'Arial',sans-serif" font-size="52" font-weight="700" text-anchor="middle" fill="#ffffff" opacity="0.90" letter-spacing="3" filter="url(#text-shadow)">AI-GEN</text>
+  <!-- AI-GEN 하단 구분선 -->
+  <rect x="120" y="460" width="272" height="2" rx="1" fill="#ffffff" opacity="0.30"/>
 </svg>

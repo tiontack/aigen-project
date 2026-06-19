@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aigen-v2';
+const CACHE_NAME = 'aigen-v3';
 const OFFLINE_URL = '/index.html';
 
 // 설치: 앱 셸 캐시
