@@ -2027,7 +2027,7 @@ body{
         <div class="msg-thread" id="msg-thread"></div>
         <div class="msg-input-bar" style="position:relative;">
           <button onclick="triggerChannelPicker()" title="채널 선택" style="flex-shrink:0;padding:0 10px;height:38px;background:#eef1ff;border:1px solid #c7d0ff;border-radius:8px;font-size:14px;font-weight:700;color:var(--accent);cursor:pointer;">#</button>
-          <input id="msg-input" class="field-input" placeholder="메시지 입력... (@멘션, #채널이동)">
+          <input id="msg-input" class="field-input" placeholder="메시지 입력... (@멘션, #채널멘션)">
           <button class="btn-add" onclick="sendMessage()">전송</button>
         </div>
       </div>
@@ -4324,9 +4324,12 @@ function _msgChannels() {
   const areaChannels = Object.keys(taskData).map(k => ({ key: 'area-'+k, label: '# '+(_areaLabelMap[k]||taskData[k].title), group: '채널' }));
   const general = [{ key: 'general', label: '# 전체', group: '채널' }];
   const custom = customChannels.map(c => ({ key: 'custom-'+c.id, label: '# '+c.name, group: '채널', custom: true, id: c.id }));
-  const dms = currentUser ? users.filter(u => u.id !== currentUser.id).map(u => ({
-    key: 'dm-' + [currentUser.id, u.id].sort().join('_'), label: u.id, group: 'DM'
-  })) : [];
+  const dms = currentUser ? users.filter(u => u.id !== currentUser.id).map(u => {
+    const key = 'dm-' + [currentUser.id, u.id].sort().join('_');
+    const lastMsg = (messages[key] || []).reduce((mx, m) => Math.max(mx, m.ts || 0), 0);
+    const lastActive = (_presence[u.id] && _presence[u.id].lastActive) || 0;
+    return { key, label: u.id, group: 'DM', _lastTs: Math.max(lastMsg, lastActive) };
+  }).sort((a, b) => b._lastTs - a._lastTs) : [];
   return general.concat(areaChannels, custom, dms);
 }
 function syncMessagesToFirebase() {
@@ -4503,11 +4506,14 @@ function renderMsgThread() {
   }
   wrap.innerHTML = list.map(m => {
     const mentioned = currentUser && m.mentions && m.mentions.includes(currentUser.id) && m.from !== currentUser.id;
+    const crossBadge = m.crossFrom
+      ? `<span style="font-size:10px;font-weight:600;color:#7c3aed;background:rgba(124,58,237,0.1);border-radius:4px;padding:1px 6px;margin-left:4px;">↗ #${m.crossFrom}에서</span>`
+      : '';
     return `
     <div class="msg-bubble-row${mentioned ? ' mentioned' : ''}">
       <div class="msg-avatar">${m.from.charAt(0)}</div>
       <div class="msg-bubble-body">
-        <div class="msg-bubble-meta"><span class="msg-who">${m.from}</span><span class="msg-time">${m.time}</span></div>
+        <div class="msg-bubble-meta"><span class="msg-who">${m.from}</span><span class="msg-time">${m.time}</span>${crossBadge}</div>
         <div class="msg-bubble-text">${highlightMentions(m.text.replace(/</g,'&lt;'))}</div>
       </div>
     </div>`;
@@ -4515,7 +4521,7 @@ function renderMsgThread() {
   wrap.scrollTop = wrap.scrollHeight;
   updateMsgUnreadBadge();
 }
-// ── #채널 자동완성 ──
+// ── #채널 멘션 자동완성 ──
 let _channelPickState = { el: null, dropdown: null, items: [], activeIdx: 0, matchLen: 0 };
 
 function getChannelCandidates(query) {
@@ -4533,11 +4539,11 @@ function showChannelDropdown(el, items, matchLen) {
   dd.innerHTML = items.map((it, i) => `
     <div class="mention-item${i===0?' active':''}" data-idx="${i}">
       <span class="mention-label" style="color:var(--accent);">${it.label}</span>
-      <span class="mention-sub">채널로 이동</span>
+      <span class="mention-sub">채널 멘션</span>
     </div>`).join('');
   document.body.appendChild(dd);
   dd.querySelectorAll('.mention-item').forEach(node => {
-    node.addEventListener('mousedown', e => { e.preventDefault(); selectChannelFromInput(el, items[+node.dataset.idx], matchLen); });
+    node.addEventListener('mousedown', e => { e.preventDefault(); selectChannelMention(el, items[+node.dataset.idx], matchLen); });
   });
   _channelPickState = { el, dropdown: dd, items, activeIdx: 0, matchLen };
 }
@@ -4545,14 +4551,16 @@ function closeChannelDropdown() {
   if (_channelPickState.dropdown) _channelPickState.dropdown.remove();
   _channelPickState = { el: null, dropdown: null, items: [], activeIdx: 0, matchLen: 0 };
 }
-function selectChannelFromInput(el, channel, matchLen) {
+// 채널 선택 → 입력창에 #채널명 텍스트 삽입 (이동 아님)
+function selectChannelMention(el, channel, matchLen) {
+  const rawLabel = channel.label.replace(/^#\s*/, '');
   const pos = el.selectionStart;
   const before = el.value.slice(0, pos - matchLen);
   const after  = el.value.slice(pos);
-  el.value = before + after;
-  el.focus(); el.setSelectionRange(before.length, before.length);
+  const inserted = '#' + rawLabel + ' ';
+  el.value = before + inserted + after;
+  el.focus(); el.setSelectionRange(before.length + inserted.length, before.length + inserted.length);
   closeChannelDropdown();
-  openMsgChannel(channel.key);
 }
 function triggerChannelPicker() {
   const el = document.getElementById('msg-input');
@@ -4560,6 +4568,33 @@ function triggerChannelPicker() {
   el.value = el.value.slice(0, pos) + '#' + el.value.slice(pos);
   el.focus(); el.setSelectionRange(pos + 1, pos + 1);
   showChannelDropdown(el, getChannelCandidates(''), 1);
+}
+// 채널 멘션 태그 하이라이트
+function highlightChannelMentions(text) {
+  const chans = _msgChannels().filter(c => c.group === '채널');
+  if (!chans.length) return text;
+  const labels = chans.map(c => c.label.replace(/^#\s*/, '')).sort((a,b) => b.length - a.length);
+  const escaped = labels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp('#(' + escaped.join('|') + ')(?!\\S)', 'g');
+  return text.replace(re, (_, name) => `<span class="mention-tag mention-channel" style="color:#7c3aed;background:rgba(124,58,237,0.10);cursor:pointer;" onclick="openMsgChannelByLabel('${name}')">#${name}</span>`);
+}
+function openMsgChannelByLabel(name) {
+  const chan = _msgChannels().find(c => c.label.replace(/^#\s*/,'') === name);
+  if (chan) openMsgChannel(chan.key);
+}
+// 메시지에서 #채널 멘션 추출
+function extractChannelMentions(text) {
+  const chans = _msgChannels().filter(c => c.group === '채널');
+  const labels = chans.map(c => c.label.replace(/^#\s*/, '')).sort((a,b) => b.length - a.length);
+  const escaped = labels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp('#(' + escaped.join('|') + ')(?!\\S)', 'g');
+  const found = [];
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const chan = chans.find(c => c.label.replace(/^#\s*/,'') === m[1]);
+    if (chan && !found.find(f => f.key === chan.key)) found.push(chan);
+  }
+  return found;
 }
 
 // ── @멘션 자동완성 (메시지 입력 / 과제 비고란 공용) ──
@@ -4710,7 +4745,9 @@ function handleMentionKeydown(el, e, opts) {
   if (e.key === 'Enter' && opts && opts.onEnter) { opts.onEnter(); }
 }
 function highlightMentions(text) {
-  // @all / @channel 먼저 처리
+  // #채널 멘션 먼저 처리
+  text = highlightChannelMentions(text);
+  // @all / @channel 처리
   text = text.replace(/@(all|channel)(?!\S)/g, (_, kw) =>
     `<span class="mention-tag mention-broadcast">@${kw}</span>`);
   const candidates = getMentionCandidates().filter(c => c.type !== 'broadcast').sort((a, b) => b.label.length - a.label.length);
@@ -4732,18 +4769,36 @@ function sendMessage() {
   const input = document.getElementById('msg-input');
   const text = input.value.trim();
   if (!text || !_curChannel || !currentUser) return;
+  const ts = Date.now();
+  const msgId = ts.toString(36) + Math.random().toString(36).slice(2);
+  const timeStr = new Date().toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  const curChanLabel = (_msgChannels().find(c => c.key === _curChannel)?.label || '').replace(/^#\s*/, '');
+
+  // 현재 채널에 저장
   if (!messages[_curChannel]) messages[_curChannel] = [];
-  messages[_curChannel].push({
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-    ts: Date.now(),
-    from: currentUser.id,
-    text,
-    mentions: extractMentionedUsers(text),
-    time: new Date().toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
+  messages[_curChannel].push({ id: msgId, ts, from: currentUser.id, text, mentions: extractMentionedUsers(text), time: timeStr });
+
+  // #채널 멘션된 채널에 cross-post
+  const mentionedChans = extractChannelMentions(text);
+  mentionedChans.forEach(c => {
+    if (c.key === _curChannel) return; // 현재 채널은 이미 저장됨
+    if (!messages[c.key]) messages[c.key] = [];
+    const crossLabel = c.label.replace(/^#\s*/, '');
+    messages[c.key].push({
+      id: msgId + '_x',
+      ts,
+      from: currentUser.id,
+      text,
+      mentions: extractMentionedUsers(text),
+      time: timeStr,
+      crossFrom: curChanLabel // 원래 채널 표시용
+    });
   });
+
   input.value = '';
   syncMessagesToFirebase();
   renderMsgThread();
+  if (mentionedChans.length) renderMsgChannelList();
 }
 function renderMessagesPage() {
   renderMsgChannelList();
