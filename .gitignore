@@ -8,3 +8,6 @@
 !scripts/sync-gcal.js
 !firebase.json
 !.firebaserc
+!manifest.json
+!sw.js
+!icon.svg
