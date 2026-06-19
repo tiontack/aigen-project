@@ -51,6 +51,6 @@
   <circle cx="180" cy="289" r="5" fill="#e0f2fe"/>
   <circle cx="332" cy="289" r="5" fill="#e0f2fe"/>
 
-  <!-- -TF 텍스트 -->
-  <text x="256" y="430" font-family="'Arial',sans-serif" font-size="62" font-weight="700" text-anchor="middle" fill="#ffffff" opacity="0.75" letter-spacing="2">-TF</text>
+  <!-- -TF 텍스트: A 꼭짓점 우측 상단 -->
+  <text x="292" y="108" font-family="'Arial',sans-serif" font-size="48" font-weight="300" text-anchor="start" fill="#ffffff" opacity="0.65" letter-spacing="1">-TF</text>
 </svg>
