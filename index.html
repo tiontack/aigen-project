@@ -2729,6 +2729,46 @@ function _renderMobWeek() {
     return;
   }
 
+  // ── 다음 보고 안건 ──
+  const nextSession = (mgmtData.sessions || [])
+    .filter(s => s.date && s.date >= todayStr)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+
+  html += `<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px;">
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+    <span style="font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;">다음 보고 안건</span>
+    <div style="flex:1;height:1px;background:var(--border);"></div>
+  </div>`;
+
+  if (!nextSession) {
+    html += '<div class="mob-week-empty" style="padding:4px 0 8px;">등록된 보고 일정 없음</div>';
+  } else {
+    const sd = new Date(nextSession.date + 'T00:00:00');
+    const dateLabel = `${sd.getMonth()+1}/${sd.getDate()}(${_mobDow[sd.getDay()]})`;
+    const rcpColor = { '총장':'#00b4a6', '의장':'#f77f00', 'TM':'#e63946' }[nextSession.recipient] || '#4361ee';
+    const items = nextSession.items || [];
+    const itemsHtml = items.length
+      ? items.map(it => `<div style="display:flex;align-items:flex-start;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);">
+          <div style="flex-shrink:0;width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:6px;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12.5px;font-weight:600;color:var(--text);">${it.topic||'(제목 없음)'}</div>
+            <div style="font-size:10.5px;color:var(--text3);margin-top:1px;">${it.area||''} ${it.presenter ? '· '+it.presenter : ''}</div>
+          </div>
+        </div>`).join('')
+      : '<div style="font-size:12px;color:var(--text3);padding:6px 0;">등록된 안건 없음</div>';
+    html += `<div style="background:var(--bg2,#f8fafc);border-radius:10px;padding:10px 12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${nextSession.title||'보고'}</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;font-weight:700;color:${rcpColor};background:${rcpColor}1a;padding:2px 8px;border-radius:20px;">${nextSession.recipient||''}</span>
+          <span style="font-size:11px;color:var(--text3);">${dateLabel}</span>
+        </div>
+      </div>
+      <div>${itemsHtml}</div>
+      <div style="font-size:10.5px;color:var(--text3);margin-top:6px;text-align:right;">총 ${items.length}개 안건</div>
+    </div>`;
+  }
+
   eventsEl.innerHTML = html;
 }
 
