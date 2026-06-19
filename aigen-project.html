@@ -1235,101 +1235,132 @@ body{
   /* 모바일에서는 hero-issues 숨김 (이슈 없이 환영 메시지만) */
   #hero-issues { display:none !important; }
 
-  /* 모바일 홈: 이번 주 일정 */
+  /* ── 모바일 홈 전체 ── */
   #mob-home-nav {
     display:flex;
     flex-direction:column;
-    gap:0;
-    margin-top:12px;
-    padding-bottom:90px;
+    gap:14px;
+    padding:0 0 100px;
   }
-  .mob-week-section {
+
+  /* 히어로 배너 (모바일 전용 오버라이드) */
+  .hero-banner {
+    border-radius:0 0 28px 28px !important;
+    margin:-1px -1px 0 !important;
+    padding:calc(env(safe-area-inset-top,0px) + 60px) 20px 24px !important;
+  }
+  .hero-greeting { font-size:12px !important; }
+  .hero-welcome { font-size:22px !important; margin-bottom:0 !important; }
+
+  /* 섹션 카드 공통 */
+  .mob-card {
     background:#fff;
-    border:1.5px solid var(--border);
-    border-radius:16px;
+    border-radius:18px;
     overflow:hidden;
-    box-shadow:0 2px 8px rgba(0,0,0,0.05);
+    box-shadow:0 2px 12px rgba(0,0,0,0.07);
+    border:1px solid rgba(0,0,0,0.05);
   }
-  .mob-week-head {
+  .mob-card-head {
     display:flex;align-items:center;justify-content:space-between;
-    padding:13px 16px 11px;
-    border-bottom:1px solid var(--border);
-    background:#fafbff;
+    padding:14px 16px 12px;
+    border-bottom:1px solid #f0f2f8;
   }
-  .mob-week-head-title {
+  .mob-card-head-left {
+    display:flex;align-items:center;gap:8px;
+  }
+  .mob-card-head-icon {
+    width:30px;height:30px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;flex-shrink:0;
+  }
+  .mob-card-head-title {
     font-size:13px;font-weight:800;color:var(--text);
-    display:flex;align-items:center;gap:6px;
   }
-  .mob-week-head-sub { font-size:11px;color:var(--text3); }
+  .mob-card-head-sub {
+    font-size:11px;color:var(--text3);font-weight:500;
+  }
+  .mob-card-body {
+    padding:12px 14px;
+  }
+
   /* 날짜 헤더 행 */
   .mob-week-days {
     display:grid;grid-template-columns:repeat(7,1fr);
-    border-bottom:1px solid var(--border);
+    background:#fafbff;
   }
   .mob-week-day-col {
     display:flex;flex-direction:column;align-items:center;
-    padding:8px 2px 6px;
-    border-right:1px solid #f0f2f8;
-    gap:4px;
+    padding:10px 2px 8px;
+    gap:5px;
   }
-  .mob-week-day-col:last-child{border-right:none;}
   .mob-wdc-dow { font-size:10px;font-weight:600;color:var(--text3); }
   .mob-wdc-num {
-    width:28px;height:28px;border-radius:50%;
+    width:30px;height:30px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     font-size:14px;font-weight:700;color:var(--text);
   }
-  .mob-wdc-num.today { background:var(--accent);color:#fff; }
+  .mob-wdc-num.today { background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(67,97,238,0.35); }
   .mob-wdc-num.sat { color:#4361ee; }
   .mob-wdc-num.sun { color:#e63946; }
+
   /* 일정 목록 */
-  .mob-week-events { padding:8px 4px 12px; }
   .mob-week-event {
-    display:flex;align-items:flex-start;gap:10px;
-    padding:8px 0;border-bottom:1px solid #f5f6fa;
+    display:flex;align-items:center;gap:10px;
+    padding:10px 0;border-bottom:1px solid #f5f6fa;
   }
   .mob-week-event:last-child{border-bottom:none;}
-  .mwe-date {
-    min-width:32px;text-align:center;flex-shrink:0;
-    font-size:11px;font-weight:700;color:var(--text2);
-    padding-top:2px;
+  .mwe-dot {
+    width:8px;height:8px;border-radius:50%;flex-shrink:0;
   }
-  .mwe-bar { width:3px;border-radius:3px;flex-shrink:0;min-height:36px;margin-top:2px; }
+  .mwe-date {
+    min-width:34px;text-align:center;flex-shrink:0;
+    font-size:11px;font-weight:700;color:var(--text2);
+    line-height:1.3;
+  }
   .mwe-info { flex:1;min-width:0; }
-  .mwe-title { font-size:13px;font-weight:700;color:var(--text);line-height:1.3; }
-  .mwe-sub { font-size:11px;color:var(--text3);margin-top:2px; }
-  .mwe-chip {
-    display:inline-block;font-size:10px;font-weight:700;
-    padding:1px 7px;border-radius:8px;margin-top:3px;
+  .mwe-title { font-size:13px;font-weight:700;color:var(--text);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .mwe-sub { font-size:10.5px;color:var(--text3);margin-top:1px; }
+  .mwe-chip-inline {
+    flex-shrink:0;font-size:10px;font-weight:700;
+    padding:2px 8px;border-radius:20px;
   }
   .mob-week-empty {
-    padding:18px;text-align:center;color:var(--text3);font-size:13px;
+    padding:20px 16px;text-align:center;color:var(--text3);font-size:13px;
   }
-  .mob-week-event.mwe-today {
-    background:#f0f4ff;margin:0 -14px;padding:8px 14px;border-radius:10px;
+  .mob-sect-divider {
+    display:flex;align-items:center;gap:8px;
+    font-size:11px;font-weight:700;color:var(--text3);
+    padding:0 2px;
+  }
+  .mob-sect-divider::before,.mob-sect-divider::after {
+    content:'';flex:1;height:1px;background:var(--border);
   }
 
   /* 하단 고정 탭바 */
   #mob-bottom-nav {
     display:flex;
     position:fixed;bottom:0;left:0;right:0;z-index:200;
-    background:#fff;border-top:1.5px solid var(--border);
-    box-shadow:0 -2px 12px rgba(0,0,0,0.08);
-    padding:0;
-    padding-bottom:env(safe-area-inset-bottom);
+    background:rgba(255,255,255,0.92);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border-top:1px solid rgba(0,0,0,0.07);
+    box-shadow:0 -4px 20px rgba(0,0,0,0.06);
+    padding:6px 4px;
+    padding-bottom:calc(6px + env(safe-area-inset-bottom));
   }
   .mbn-item {
     flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    padding:8px 4px;cursor:pointer;gap:3px;
+    padding:4px 4px 2px;cursor:pointer;gap:3px;
     -webkit-tap-highlight-color:transparent;
-    transition:color 0.12s;
-    color:var(--text3);font-size:10px;font-weight:600;
-    position:relative;
+    transition:color 0.15s;
+    color:#94a3b8;font-size:10px;font-weight:600;
+    position:relative;border-radius:12px;
   }
-  .mbn-item svg{width:22px;height:22px;stroke-width:1.8;}
+  .mbn-item svg{width:22px;height:22px;stroke-width:1.8;transition:transform 0.15s;}
   .mbn-item.active{color:var(--accent);}
+  .mbn-item.active svg{transform:scale(1.1);}
   .mbn-item .mbn-badge {
-    position:absolute;top:5px;right:calc(50% - 18px);
+    position:absolute;top:2px;right:calc(50% - 20px);
     background:#e63946;color:#fff;
     font-size:9px;font-weight:700;min-width:16px;height:16px;
     border-radius:8px;display:flex;align-items:center;justify-content:center;
@@ -1550,15 +1581,21 @@ body{
       </div>
     </div>
 
-    <!-- 모바일 전용: 이번 주 일정 -->
+    <!-- 모바일 전용: 홈 화면 -->
     <div id="mob-home-nav">
-      <div class="mob-week-section">
-        <div class="mob-week-head">
-          <div class="mob-week-head-title">이번 주 일정</div>
-          <div class="mob-week-head-sub" id="mob-week-range"></div>
+      <!-- 이번 주 날짜 미니 캘린더 카드 -->
+      <div class="mob-card">
+        <div class="mob-card-head">
+          <div class="mob-card-head-left">
+            <div class="mob-card-head-icon" style="background:#eef1ff;">📅</div>
+            <div>
+              <div class="mob-card-head-title">이번 주 일정</div>
+            </div>
+          </div>
+          <div class="mob-card-head-sub" id="mob-week-range"></div>
         </div>
         <div class="mob-week-days" id="mob-week-days"></div>
-        <div class="mob-week-events" id="mob-week-events">
+        <div class="mob-card-body" id="mob-week-events">
           <div class="mob-week-empty">로딩 중...</div>
         </div>
       </div>
@@ -2720,141 +2757,125 @@ function _renderMobWeek() {
     return { label:'예정',    bg:'#e2e8f0', color:'#475569' };
   };
 
-  const renderTaskRow = ev => {
-    const badge = _taskBadge(ev);
-    const s = ev.start ? ev.start.slice(5).replace('-','/') : '';
-    const e = ev.date.slice(5).replace('-','/');
-    const period = s ? `${s}~${e}` : e;
-    const owner = ev.owner || '-';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;background:var(--bg2,#f8fafc);margin-bottom:4px;">
-      <div style="flex-shrink:0;padding:4px 8px;border-radius:6px;background:${badge.bg};color:${badge.color};font-size:10px;font-weight:800;white-space:nowrap;letter-spacing:-0.2px;text-align:center;min-width:44px;">${badge.label}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.title}</div>
-        <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">${period} · <span style="color:var(--text2);font-weight:600;">${owner}</span></div>
-      </div>
-    </div>`;
-  };
-
+  // ── 캘린더 일정 행 렌더 ──
   const renderRow = ev => {
     const d = new Date(ev.date + 'T00:00:00');
     const isToday = ev.date === todayStr;
     const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
     const dowStr  = _mobDow[d.getDay()];
-    const infoHtml = `<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-        <div class="mwe-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.title}</div>
-        <div style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;">${ev.sub}</div>
-      </div>`;
-    return `<div class="mob-week-event${isToday ? ' mwe-today' : ''}">
-      <div class="mwe-date">${dateStr}<br><small>${dowStr}</small></div>
-      <div class="mwe-bar" style="background:${ev.color};"></div>
-      <div class="mwe-info">${infoHtml}</div>
+    const chipBg  = ev.type === 'mgmt' ? '#dcfce7' : '#e8f0fe';
+    const chipColor = ev.type === 'mgmt' ? '#15803d' : '#1a56db';
+    const chipLabel = ev.type === 'mgmt' ? '보고' : 'GCal';
+    return `<div class="mob-week-event" style="${isToday?'background:#f0f4ff;margin:0 -2px;padding:10px 4px;border-radius:10px;border-bottom:none;':''}" >
+      <div class="mwe-dot" style="background:${ev.color};margin-top:2px;flex-shrink:0;"></div>
+      <div class="mwe-date">${dateStr}<br><span style="font-size:9.5px;font-weight:500;color:var(--text3);">${dowStr}</span></div>
+      <div class="mwe-info">
+        <div class="mwe-title">${ev.title}</div>
+        <div class="mwe-sub">${ev.sub}</div>
+      </div>
+      <div class="mwe-chip-inline" style="background:${chipBg};color:${chipColor};">${chipLabel}</div>
     </div>`;
   };
 
-  let html = '';
+  // ── 나의 과제 행 렌더 ──
+  const renderTaskRow = ev => {
+    const badge = _taskBadge(ev);
+    const s = ev.start ? ev.start.slice(5).replace('-','/') : '';
+    const e = ev.date.slice(5).replace('-','/');
+    const period = s && s !== e ? `${s} ~ ${e}` : e;
+    return `<div style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;background:#f8fafc;margin-bottom:5px;border:1px solid #f0f2f8;">
+      <div style="flex-shrink:0;padding:3px 9px;border-radius:20px;background:${badge.bg};color:${badge.color};font-size:10px;font-weight:800;white-space:nowrap;min-width:46px;text-align:center;">${badge.label}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.title}</div>
+        <div style="font-size:10.5px;color:var(--text3);margin-top:2px;">${period}</div>
+      </div>
+    </div>`;
+  };
 
-  // ── 상단: Google Calendar + Mgmt 보고 ──
+  // ── 렌더 조립 ──
+  // 섹션1: 캘린더 일정
+  let calHtml = '';
   if (calEvents.length) {
-    html += calEvents.map(renderRow).join('');
+    calHtml = calEvents.map(renderRow).join('');
   } else {
-    html += '<div class="mob-week-empty" style="padding:10px 0 4px;">이번 주 캘린더 일정 없음</div>';
+    calHtml = '<div class="mob-week-empty">이번 주 캘린더 일정이 없습니다</div>';
   }
 
-  // ── 구분선 ──
-  html += `<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px;">
-    <div style="flex:1;height:1px;background:var(--border);"></div>
-    <span style="font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;">나의 과제</span>
-    <div style="flex:1;height:1px;background:var(--border);"></div>
-  </div>`;
-
-  // ── 하단: 영역별 그룹 ──
+  // 섹션2: 나의 과제 (영역별)
   const areaOrder = ['pmo','marketing','recruit','curriculum','infra'];
   const byArea = {};
-  taskEvents.forEach(ev => {
-    if (!byArea[ev.area]) byArea[ev.area] = [];
-    byArea[ev.area].push(ev);
-  });
-
+  taskEvents.forEach(ev => { (byArea[ev.area] = byArea[ev.area]||[]).push(ev); });
   const hasTask = areaOrder.some(a => byArea[a]?.length);
+
+  let taskHtml = '';
   if (!hasTask) {
-    html += '<div class="mob-week-empty" style="padding:4px 0 8px;">이번 주 나의 과제 없음</div>';
+    taskHtml = '<div class="mob-week-empty">이번 주 나의 과제가 없습니다</div>';
   } else {
     areaOrder.forEach(areaKey => {
       const list = byArea[areaKey];
       if (!list?.length) return;
       const ac = _mobAreaColors[areaKey] || { bg:'#eef1ff', text:'#4361ee' };
-      html += `<div style="margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
-          <div style="width:3px;height:14px;border-radius:2px;background:${ac.text};flex-shrink:0;"></div>
-          <span style="font-size:11px;font-weight:800;color:${ac.text};letter-spacing:0.2px;">${_areaLabelMap[areaKey]||areaKey}</span>
-          <div style="flex:1;height:1px;background:${ac.text}30;"></div>
+      taskHtml += `<div style="margin-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <div style="width:3px;height:13px;border-radius:2px;background:${ac.text};flex-shrink:0;"></div>
+          <span style="font-size:11px;font-weight:800;color:${ac.text};">${_areaLabelMap[areaKey]||areaKey}</span>
+          <div style="flex:1;height:1px;background:${ac.text}25;"></div>
         </div>
         ${list.map(renderTaskRow).join('')}
       </div>`;
     });
   }
 
-  if (!calEvents.length && !hasTask) {
-    eventsEl.innerHTML = '<div class="mob-week-empty">이번 주 일정이 없습니다.</div>';
-    return;
-  }
-
-  // ── 다음 보고 안건 ──
+  // 섹션3: 다음 보고 안건
   const nextSession = (mgmtData.sessions || [])
     .filter(s => s.date && s.date >= todayStr)
     .sort((a, b) => a.date.localeCompare(b.date))[0];
 
-  html += `<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px;">
-    <div style="flex:1;height:1px;background:var(--border);"></div>
-    <span style="font-size:11px;font-weight:700;color:var(--text3);white-space:nowrap;">다음 보고 안건</span>
-    <div style="flex:1;height:1px;background:var(--border);"></div>
-  </div>`;
-
+  let mgmtHtml = '';
   if (!nextSession) {
-    html += '<div class="mob-week-empty" style="padding:4px 0 8px;">등록된 보고 일정 없음</div>';
+    mgmtHtml = '<div class="mob-week-empty">등록된 보고 일정이 없습니다</div>';
   } else {
     const sd = new Date(nextSession.date + 'T00:00:00');
     const td = new Date(todayStr + 'T00:00:00');
     const dDiff = Math.ceil((sd - td) / 86400000);
     const dLabel = dDiff === 0 ? 'D-Day' : dDiff > 0 ? `D-${dDiff}` : `D+${Math.abs(dDiff)}`;
-    const dateLabel = `${sd.getMonth()+1}/${sd.getDate()}(${_mobDow[sd.getDay()]})`;
+    const dateLabel = `${sd.getMonth()+1}.${sd.getDate()}(${_mobDow[sd.getDay()]})`;
     const rcpColor = { '총장':'#00b4a6', '의장':'#f77f00', 'TM':'#e63946' }[nextSession.recipient] || '#4361ee';
     const items = nextSession.items || [];
-    const areaColorMap = {};
-    Object.keys(_mobAreaColors).forEach(k => { areaColorMap[(_areaLabelMap[k]||k)] = _mobAreaColors[k]; });
     const itemsHtml = items.length
       ? items.map(it => {
           const itAreaKey = it.area || '';
           const itAc = _mobAreaColors[itAreaKey] || { bg:'#eef1ff', text:'#4361ee' };
           const itAreaLabel = itAreaKey ? (_areaLabelMap[itAreaKey] || itAreaKey) : '';
-          const areaTag = `<span style="flex-shrink:0;width:52px;display:inline-block;text-align:center;font-size:10px;font-weight:700;color:${itAreaKey ? itAc.text : 'transparent'};background:${itAreaKey ? itAc.bg : 'transparent'};padding:2px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${itAreaLabel}</span>`;
-          return `<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border);">
-            ${areaTag}
-            <div style="flex:1;min-width:0;">
-              <span style="font-size:12.5px;font-weight:600;color:var(--text);">${it.topic||'(제목 없음)'}</span>
-              ${it.presenter ? `<span style="font-size:10.5px;color:var(--text3);margin-left:5px;">· ${it.presenter}</span>` : ''}
-            </div>
+          return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f0f2f8;">
+            <span style="flex-shrink:0;width:48px;text-align:center;font-size:10px;font-weight:700;color:${itAc.text};background:${itAc.bg};padding:2px 4px;border-radius:5px;">${itAreaLabel}</span>
+            <div style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.topic||'(제목 없음)'}${it.presenter?`<span style="color:var(--text3);font-weight:400;"> · ${it.presenter}</span>`:''}</div>
           </div>`;
         }).join('')
       : '<div style="font-size:12px;color:var(--text3);padding:6px 0;">등록된 안건 없음</div>';
-    html += `<div onclick="showPage('mgmt')" style="background:var(--bg2,#f8fafc);border-radius:10px;padding:10px 12px;cursor:pointer;active:opacity:0.8;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <span style="font-size:12px;font-weight:900;color:${rcpColor};background:${rcpColor};color:#fff;padding:3px 10px;border-radius:6px;flex-shrink:0;">${nextSession.recipient||''}</span>
-        <div style="flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nextSession.title||'보고'}</div>
-        <div style="flex-shrink:0;display:flex;align-items:baseline;gap:4px;white-space:nowrap;">
-          <span style="font-size:14px;font-weight:900;color:${rcpColor};line-height:1;">${dLabel}</span>
-          <span style="font-size:10px;color:var(--text3);">${dateLabel}</span>
+
+    mgmtHtml = `<div onclick="showPage('mgmt')" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="background:${rcpColor};color:#fff;font-size:11px;font-weight:800;padding:4px 11px;border-radius:20px;flex-shrink:0;">${nextSession.recipient||''}</div>
+        <div style="flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${nextSession.title||'보고'}</div>
+        <div style="flex-shrink:0;text-align:right;">
+          <div style="font-size:15px;font-weight:900;color:${rcpColor};line-height:1.1;">${dLabel}</div>
+          <div style="font-size:10px;color:var(--text3);">${dateLabel}</div>
         </div>
       </div>
       <div>${itemsHtml}</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:4px;">
-        <span>총 ${items.length}개 안건</span>
-        <span style="color:var(--accent);">→ 상세보기</span>
-      </div>
+      <div style="margin-top:8px;text-align:right;font-size:11px;font-weight:600;color:var(--accent);">상세보기 →</div>
     </div>`;
   }
 
-  eventsEl.innerHTML = html;
+  // 카드 3개 조립
+  eventsEl.innerHTML = `
+    ${calHtml}
+    <div class="mob-sect-divider" style="margin:4px 0 2px;">나의 과제</div>
+    ${taskHtml}
+    <div class="mob-sect-divider" style="margin:4px 0 2px;">다음 보고 안건</div>
+    ${mgmtHtml}
+  `;
 }
 
 function renderCharts() {
