@@ -1,19 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0d1117"/>
-      <stop offset="100%" stop-color="#161b2e"/>
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
     </linearGradient>
     <linearGradient id="glow" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#60a5fa"/>
-      <stop offset="100%" stop-color="#3b82f6"/>
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#bfdbfe"/>
     </linearGradient>
     <filter id="blur-glow">
-      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feGaussianBlur stdDeviation="5" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <filter id="soft-glow">
-      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feGaussianBlur stdDeviation="12" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
@@ -21,37 +21,36 @@
   <!-- 배경 -->
   <rect width="512" height="512" rx="110" fill="url(#bg)"/>
 
-  <!-- 배경 그리드 점 패턴 (AI 느낌) -->
-  <g opacity="0.12" fill="#60a5fa">
-    <circle cx="80"  cy="80"  r="3"/><circle cx="160" cy="80"  r="3"/><circle cx="240" cy="80"  r="3"/><circle cx="320" cy="80"  r="3"/><circle cx="400" cy="80"  r="3"/>
-    <circle cx="80"  cy="160" r="3"/><circle cx="160" cy="160" r="3"/><circle cx="240" cy="160" r="3"/><circle cx="320" cy="160" r="3"/><circle cx="400" cy="160" r="3"/>
-    <circle cx="80"  cy="240" r="3"/><circle cx="160" cy="240" r="3"/><circle cx="320" cy="240" r="3"/><circle cx="400" cy="240" r="3"/>
-    <circle cx="80"  cy="320" r="3"/><circle cx="160" cy="320" r="3"/><circle cx="240" cy="320" r="3"/><circle cx="320" cy="320" r="3"/><circle cx="400" cy="320" r="3"/>
-    <circle cx="80"  cy="400" r="3"/><circle cx="160" cy="400" r="3"/><circle cx="240" cy="400" r="3"/><circle cx="320" cy="400" r="3"/><circle cx="400" cy="400" r="3"/>
+  <!-- 배경 그리드 점 -->
+  <g opacity="0.15" fill="#ffffff">
+    <circle cx="80"  cy="80"  r="3"/><circle cx="160" cy="80"  r="3"/><circle cx="240" cy="80"  r="3"/><circle cx="320" cy="80"  r="3"/><circle cx="432" cy="80"  r="3"/>
+    <circle cx="80"  cy="160" r="3"/><circle cx="160" cy="160" r="3"/><circle cx="320" cy="160" r="3"/><circle cx="432" cy="160" r="3"/>
+    <circle cx="80"  cy="240" r="3"/><circle cx="432" cy="240" r="3"/>
+    <circle cx="80"  cy="340" r="3"/><circle cx="432" cy="340" r="3"/>
+    <circle cx="80"  cy="432" r="3"/><circle cx="160" cy="432" r="3"/><circle cx="320" cy="432" r="3"/><circle cx="432" cy="432" r="3"/>
   </g>
 
-  <!-- 글로우 레이어 (블루 후광) -->
-  <g filter="url(#soft-glow)" opacity="0.5">
-    <polygon points="256,88 148,390 196,390 256,222 316,390 364,390" fill="#3b82f6"/>
+  <!-- 글로우 레이어 -->
+  <g filter="url(#soft-glow)" opacity="0.35">
+    <polygon points="256,74 142,360 192,360 256,200 320,360 370,360" fill="#ffffff"/>
   </g>
 
-  <!-- A 메인 획 -->
-  <polygon points="256,88 148,390 196,390 256,222 316,390 364,390" fill="url(#glow)" filter="url(#blur-glow)"/>
+  <!-- A 메인 -->
+  <polygon points="256,74 142,360 192,360 256,200 320,360 370,360" fill="url(#glow)" filter="url(#blur-glow)"/>
 
-  <!-- 가운데 컷아웃 -->
-  <polygon points="256,168 222,278 290,278" fill="#0d1117"/>
+  <!-- 컷아웃 -->
+  <polygon points="256,158 220,268 292,268" fill="#2563eb"/>
 
   <!-- 크로스바 -->
-  <rect x="186" y="288" width="140" height="24" rx="12" fill="url(#glow)" filter="url(#blur-glow)"/>
+  <rect x="180" y="278" width="152" height="22" rx="11" fill="url(#glow)" filter="url(#blur-glow)"/>
 
-  <!-- 노드 포인트 (AI 느낌 서킷 점) -->
-  <circle cx="256" cy="88"  r="8" fill="#93c5fd" filter="url(#blur-glow)"/>
-  <circle cx="148" cy="390" r="7" fill="#60a5fa" filter="url(#blur-glow)"/>
-  <circle cx="364" cy="390" r="7" fill="#60a5fa" filter="url(#blur-glow)"/>
-  <circle cx="186" cy="300" r="5" fill="#bfdbfe"/>
-  <circle cx="326" cy="300" r="5" fill="#bfdbfe"/>
+  <!-- 노드 포인트 -->
+  <circle cx="256" cy="74"  r="9" fill="#ffffff" filter="url(#blur-glow)"/>
+  <circle cx="142" cy="360" r="7" fill="#bfdbfe" filter="url(#blur-glow)"/>
+  <circle cx="370" cy="360" r="7" fill="#bfdbfe" filter="url(#blur-glow)"/>
+  <circle cx="180" cy="289" r="5" fill="#e0f2fe"/>
+  <circle cx="332" cy="289" r="5" fill="#e0f2fe"/>
 
-  <!-- 연결선 (서킷 느낌) -->
-  <line x1="148" y1="390" x2="186" y2="390" stroke="#3b82f6" stroke-width="2.5" opacity="0.6"/>
-  <line x1="326" y1="390" x2="364" y2="390" stroke="#3b82f6" stroke-width="2.5" opacity="0.6"/>
+  <!-- -TF 텍스트 -->
+  <text x="256" y="430" font-family="'Arial',sans-serif" font-size="62" font-weight="700" text-anchor="middle" fill="#ffffff" opacity="0.75" letter-spacing="2">-TF</text>
 </svg>
