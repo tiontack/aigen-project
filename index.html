@@ -1634,6 +1634,7 @@ body{
   <div class="mbn-item" data-page="calendar" onclick="showPage('calendar');closeSidebar()">
     <i data-lucide="calendar"></i>
     <span>캘린더</span>
+    <span class="mbn-badge" id="mbn-cal-badge" style="display:none">0</span>
   </div>
   <div class="mbn-item" data-page="mgmt" onclick="showPage('mgmt');closeSidebar()">
     <i data-lucide="clipboard-list"></i>
@@ -2856,6 +2857,7 @@ const _mobDow = ['일','월','화','수','목','금','토'];
 function renderMobHome() {
   if (window.innerWidth > 900) return;
   _renderMobWeek();
+  updateCalBadge();
 }
 
 function _renderMobWeek() {
@@ -4565,6 +4567,18 @@ function markChannelAllRead(key) {
   _mentionReads[key + '__all'] = Date.now();
   _db.ref('mentionReads/' + currentUser.id + '/' + key + '__all').set(_mentionReads[key + '__all']).catch(() => {});
   updateMsgUnreadBadge();
+}
+function updateCalBadge() {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  let count = 0;
+  // Google Calendar 오늘 일정
+  count += (_gcalEvents || []).filter(ev => ev.date === todayStr).length;
+  // Mgmt 보고 오늘 일정
+  count += (mgmtData.sessions || []).filter(s => s.date === todayStr).length;
+  const badge = document.getElementById('mbn-cal-badge');
+  if (!badge) return;
+  badge.textContent = count > 99 ? '99+' : count;
+  badge.style.display = count > 0 ? 'inline-flex' : 'none';
 }
 function updateMsgUnreadBadge() {
   if (!currentUser) return;
