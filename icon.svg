@@ -1,4 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#4361ee"/>
-  <text x="256" y="300" font-family="'Arial Black',Arial,sans-serif" font-size="200" font-weight="900" text-anchor="middle" fill="#ffffff" letter-spacing="-8">AG</text>
+  <!-- 배경 -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4361ee"/>
+      <stop offset="100%" stop-color="#2541c4"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 둥근 사각형 배경 -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- 상단 광택 -->
+  <rect width="512" height="256" rx="112" fill="url(#shine)"/>
+
+  <!-- 스타일드 A: 삼각형 두 획 + 가운데 가로줄 -->
+  <!-- 왼쪽 사선 획 -->
+  <polygon points="256,90 160,390 210,390 256,240 302,390 352,390" fill="#ffffff"/>
+  <!-- 가운데 구멍 (역삼각형 컷아웃) -->
+  <polygon points="256,175 220,290 292,290" fill="url(#bg)"/>
+  <!-- 가로 바 -->
+  <rect x="192" y="300" width="128" height="28" rx="14" fill="#ffffff"/>
+
+  <!-- 하단 작은 점 강조 (세리프 느낌) -->
+  <rect x="148" y="378" width="52" height="22" rx="11" fill="#ffffff" opacity="0.7"/>
+  <rect x="312" y="378" width="52" height="22" rx="11" fill="#ffffff" opacity="0.7"/>
 </svg>
