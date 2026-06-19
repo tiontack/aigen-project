@@ -1006,10 +1006,14 @@ body{
 
 /* 햄버거 토글 버튼 - 모바일에서만 표시 */
 #mob-toggle{
-  display:none;position:fixed;top:14px;left:14px;z-index:9100;
-  width:40px;height:40px;background:#1a1d2e;border:none;border-radius:10px;
+  display:none;position:fixed;
+  top:calc(env(safe-area-inset-top, 0px) + 12px);
+  left:12px;
+  z-index:9100;
+  width:48px;height:48px;background:#1a1d2e;border:none;border-radius:14px;
   cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.25);
+  box-shadow:0 4px 16px rgba(0,0,0,0.35);
+  -webkit-tap-highlight-color:transparent;
 }
 #mob-toggle span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:all 0.25s;}
 #mob-toggle.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
