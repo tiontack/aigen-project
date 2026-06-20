@@ -4471,7 +4471,8 @@ function renderMyPageTasks(resetCat) {
     </div>`;
   };
 
-  const gridWrap = items => `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">${items.map(itemHtml).join('')}</div>`;
+  const cols = window.innerWidth <= 900 ? '1fr' : 'repeat(2,minmax(0,1fr))';
+  const gridWrap = items => `<div style="display:grid;grid-template-columns:${cols};gap:10px;">${items.map(itemHtml).join('')}</div>`;
 
   if (selectedArea || selectedCat) {
     wrap.innerHTML = gridWrap(filtered);
