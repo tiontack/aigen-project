@@ -1383,8 +1383,8 @@ body{
   #page-summary .section {
     display:none !important;
   }
-  /* 모바일에서는 hero-issues 숨김 (이슈 없이 환영 메시지만) */
-  #hero-issues { display:none !important; }
+  /* 모바일에서는 hero-issues 티커만 표시 */
+  #hero-issues { display:block; }
 
   /* ── 모바일 홈 전체 ── */
   #mob-home-nav {
@@ -2789,10 +2789,8 @@ function renderHero() {
   document.getElementById('hero-greeting').textContent = greet;
   document.getElementById('hero-welcome').textContent = `${currentUser ? currentUser.id : 'TF'}님, 환영합니다!`;
 
-  // 모바일 전용: 통계 칩 + 진척률 바
-  if (window.innerWidth <= 900) {
-    setHeroMode(window._heroMode || 'all');
-  }
+  // 통계 칩 + 진척률 바 (PC/모바일 공통)
+  setHeroMode(window._heroMode || 'all');
 
   // 주요 이슈: 지연된 과제 + 시작을 앞둔 과제
   const _dotDate = s => s ? s.replace(/-/g,'.') : '';
@@ -2832,24 +2830,26 @@ function renderHeroIssues(issues) {
     issuesWrap.innerHTML = '<div class="hero-issue-empty">⚠ 지연되거나 임박한 과제가 없습니다. 좋은 흐름이에요!</div>';
     return;
   }
-  // 항상 3개씩 동시에 노출, 4개 이상이면 3개 단위 페이지로 순환
-  const pages = [];
-  for (let i = 0; i < issues.length; i += 3) pages.push(issues.slice(i, i + 3));
-  let pageIdx = 0;
-  const renderPage = () => {
-    issuesWrap.innerHTML = `<div class="hero-issues-grid" id="hero-issues-grid">${
-      pages[pageIdx].map(i => `<div class="hero-issue-item${i.overdue ? ' overdue' : ''}">${i.html}</div>`).join('')
-    }</div>`;
+  // 한 건씩 티커 스타일로 순환
+  let tickerIdx = 0;
+  const renderTicker = () => {
+    const it = issues[tickerIdx];
+    const badge = it.overdue ? '지연' : '임박';
+    issuesWrap.innerHTML = `<div class="hero-ticker">
+      <span class="hero-ticker-badge">${badge}</span>
+      <span class="hero-ticker-text" id="hero-ticker-text">${it.html}</span>
+      ${issues.length > 1 ? `<span style="font-size:10px;opacity:0.6;flex-shrink:0;">${tickerIdx+1}/${issues.length}</span>` : ''}
+    </div>`;
   };
-  renderPage();
-  if (pages.length > 1) {
+  renderTicker();
+  if (issues.length > 1) {
     _heroTickerTimer = setInterval(() => {
-      const grid = document.getElementById('hero-issues-grid');
-      if (!grid) { clearInterval(_heroTickerTimer); return; }
-      grid.classList.add('fading');
+      const txt = document.getElementById('hero-ticker-text');
+      if (!txt) { clearInterval(_heroTickerTimer); return; }
+      txt.classList.add('fading');
       setTimeout(() => {
-        pageIdx = (pageIdx + 1) % pages.length;
-        renderPage();
+        tickerIdx = (tickerIdx + 1) % issues.length;
+        renderTicker();
       }, 300);
     }, 4000);
   }
