@@ -2954,16 +2954,16 @@ function _renderMobWeek() {
     const daysToEnd   = Math.ceil((endD - todayD) / 86400000);
     const daysToStart = Math.ceil((startD - todayD) / 86400000);
     if (ev.effStatus === 'overdue' || end < todayStr)
-      return { label:'지연', bg:'#e63946', color:'#fff' };
+      return { label:'지연', bg:'#fef2f2', color:'#dc2626', border:'1px solid #fecaca' };
     if (start > todayStr && daysToStart <= 3)
-      return { label:'착수임박', bg:'#10b981', color:'#fff' };
+      return { label:'착수임박', bg:'#f0fdf4', color:'#16a34a', border:'1px solid #bbf7d0' };
     if (daysToEnd <= 3) {
       const dTag = daysToEnd === 0 ? 'D-0' : `D-${daysToEnd}`;
-      return { label:`종료 ${dTag}`, bg:'#f59e0b', color:'#fff' };
+      return { label:`종료 ${dTag}`, bg:'#fffbeb', color:'#d97706', border:'1px solid #fde68a' };
     }
     if (start <= todayStr && end >= todayStr)
-      return { label:'진행 중', bg:'#4361ee', color:'#fff' };
-    return { label:'예정', bg:'#e2e8f0', color:'#475569' };
+      return { label:'진행 중', bg:'#eff6ff', color:'#2563eb', border:'1px solid #bfdbfe' };
+    return { label:'예정', bg:'#f8fafc', color:'#94a3b8', border:'1px solid #e2e8f0' };
   };
 
   // ── 캘린더 일정 행 렌더 ──
@@ -2994,7 +2994,7 @@ function _renderMobWeek() {
       ? owners.map(o => `<span style="display:inline-block;background:#eef1ff;color:#4361ee;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:10px;">${o}</span>`).join(' ')
       : '';
     return `<div style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;background:#f8fafc;margin-bottom:5px;border:1px solid #f0f2f8;">
-      <div style="flex-shrink:0;padding:3px 8px;border-radius:20px;background:${badge.bg};color:${badge.color};font-size:10px;font-weight:800;white-space:nowrap;text-align:center;">${badge.label}</div>
+      <div style="flex-shrink:0;padding:3px 9px;border-radius:20px;background:${badge.bg};color:${badge.color};border:${badge.border||'none'};font-size:10px;font-weight:700;white-space:nowrap;text-align:center;">${badge.label}</div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ev.title}</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:5px;margin-top:3px;">
