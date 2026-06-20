@@ -2,7 +2,7 @@ name: Sync Google Calendar
 
 on:
   schedule:
-    - cron: '*/10 * * * *'          # 10분마다
+    - cron: '* * * * *'              # 1분마다
   workflow_dispatch:                # 수동 실행 버튼도 유지
 
 jobs:
