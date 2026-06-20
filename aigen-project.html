@@ -3545,12 +3545,12 @@ function buildGanttMobileList(data, areaKey, pid) {
 let _issuesRefreshTimer = null;
 
 function _issuesWeekRange() {
-  // 이번 주 월~일 (오늘 기준)
+  // 이번 주 일~토 (모바일 캘린더와 동일 기준)
   const now = new Date(); now.setHours(0,0,0,0);
   const dow = now.getDay(); // 0=일
-  const mon = new Date(now); mon.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-  return { weekStart: mon, weekEnd: sun };
+  const sun = new Date(now); sun.setDate(now.getDate() - dow);       // 이번 주 일요일
+  const sat = new Date(sun); sat.setDate(sun.getDate() + 6);         // 이번 주 토요일
+  return { weekStart: sun, weekEnd: sat };
 }
 
 function _initIssuesAreaFilter() {
