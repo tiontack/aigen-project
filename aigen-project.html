@@ -3715,6 +3715,24 @@ function renderIssuesPage() {
   _issuesRefreshTimer = setInterval(() => {
     if (document.getElementById('page-issues').classList.contains('active')) renderIssuesPage();
   }, 5 * 60 * 1000);
+
+  // 일요일 자정 정각에 주간 갱신
+  _scheduleWeeklyRefresh();
+}
+
+function _scheduleWeeklyRefresh() {
+  const now = new Date();
+  const next = new Date(now);
+  // 다음 일요일 00:00:00 계산
+  const daysUntilSun = (7 - now.getDay()) % 7 || 7;
+  next.setDate(now.getDate() + daysUntilSun);
+  next.setHours(0, 0, 0, 0);
+  const msUntil = next - now;
+  setTimeout(() => {
+    renderIssuesPage();
+    renderMobHome();
+    _scheduleWeeklyRefresh(); // 다음 주 자정에 재예약
+  }, msUntil);
 }
 
 // ── Gantt Zoom ──
