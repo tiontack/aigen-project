@@ -4626,6 +4626,11 @@ function updateMsgUnreadBadge() {
     badge.textContent = total > 99 ? '99+' : total;
     badge.style.display = total > 0 ? 'inline-flex' : 'none';
   });
+  // PWA 홈화면 아이콘 뱃지 (App Badging API)
+  if ('setAppBadge' in navigator) {
+    if (total > 0) navigator.setAppBadge(total).catch(() => {});
+    else navigator.clearAppBadge().catch(() => {});
+  }
 }
 function renderMsgThread() {
   const wrap = document.getElementById('msg-thread');
