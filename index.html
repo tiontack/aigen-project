@@ -1762,6 +1762,13 @@ body{
         <div class="hero-welcome" id="hero-welcome"></div>
         <div class="hero-issues" id="hero-issues"></div>
         <!-- 모바일 전용 통계 칩 + 진척률 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;margin-top:2px;" id="mob-hero-stats-header">
+          <div></div>
+          <div style="display:flex;gap:4px;background:rgba(255,255,255,0.15);border-radius:10px;padding:3px;">
+            <button id="hero-btn-all" onclick="setHeroMode('all')" style="font-size:11px;font-weight:800;padding:3px 11px;border-radius:7px;border:none;cursor:pointer;background:#fff;color:var(--accent);-webkit-tap-highlight-color:transparent;transition:all 0.15s;">ALL</button>
+            <button id="hero-btn-my"  onclick="setHeroMode('my')"  style="font-size:11px;font-weight:800;padding:3px 11px;border-radius:7px;border:none;cursor:pointer;background:transparent;color:rgba(255,255,255,0.75);-webkit-tap-highlight-color:transparent;transition:all 0.15s;">MY</button>
+          </div>
+        </div>
         <div id="mob-hero-stats-area"></div>
       </div>
     </div>
@@ -2782,38 +2789,7 @@ function renderHero() {
 
   // 모바일 전용: 통계 칩 + 진척률 바
   if (window.innerWidth <= 900) {
-    const mobStats = document.getElementById('mob-hero-stats-area');
-    if (mobStats) {
-      const areas = computeSummaryAreas();
-      const total = areas.reduce((s,a) => s+a.total, 0);
-      const done  = areas.reduce((s,a) => s+a.done, 0);
-      const prog  = areas.reduce((s,a) => s+a.progress, 0);
-      const delay = areas.reduce((s,a) => s+a.delay, 0);
-      const pct   = total ? Math.round((done + prog*0.5)/total*100) : 0;
-      mobStats.innerHTML = `
-        <div class="mob-hero-stats">
-          <div class="mob-hero-chip">
-            <div class="mob-hero-chip-val">${total}</div>
-            <div class="mob-hero-chip-lbl">전체 과제</div>
-          </div>
-          <div class="mob-hero-chip">
-            <div class="mob-hero-chip-val">${prog}</div>
-            <div class="mob-hero-chip-lbl">진행 중</div>
-          </div>
-          <div class="mob-hero-chip">
-            <div class="mob-hero-chip-val" style="color:${delay>0?'#fca5a5':'#fff'}">${delay}</div>
-            <div class="mob-hero-chip-lbl">지연</div>
-          </div>
-          <div class="mob-hero-chip">
-            <div class="mob-hero-chip-val">${done}</div>
-            <div class="mob-hero-chip-lbl">완료</div>
-          </div>
-        </div>
-        <div class="mob-hero-prog-wrap">
-          <div class="mob-hero-prog-bar"><div class="mob-hero-prog-fill" style="width:${pct}%"></div></div>
-          <div class="mob-hero-prog-pct">${pct}% 완료</div>
-        </div>`;
-    }
+    setHeroMode(window._heroMode || 'all');
   }
 
   // 주요 이슈: 지연된 과제 + 시작을 앞둔 과제
@@ -3314,6 +3290,74 @@ const _areaConfig = {
   curriculum: { name:'커리큘럼',   color:'#10b981', page:'curriculum' },
   infra:      { name:'인프라',     color:'#ef4444', page:'infra' },
 };
+let _heroMode = 'all';
+function setHeroMode(mode) {
+  _heroMode = mode;
+  window._heroMode = mode;
+  // 버튼 스타일 토글
+  const btnAll = document.getElementById('hero-btn-all');
+  const btnMy  = document.getElementById('hero-btn-my');
+  if (btnAll) {
+    btnAll.style.background = mode === 'all' ? '#fff' : 'transparent';
+    btnAll.style.color      = mode === 'all' ? 'var(--accent)' : 'rgba(255,255,255,0.75)';
+    btnMy.style.background  = mode === 'my'  ? '#fff' : 'transparent';
+    btnMy.style.color       = mode === 'my'  ? 'var(--accent)' : 'rgba(255,255,255,0.75)';
+  }
+  const mobStats = document.getElementById('mob-hero-stats-area');
+  if (!mobStats) return;
+
+  let total, done, prog, delay;
+  if (mode === 'my' && currentUser) {
+    // 내 담당 과제만 집계
+    total = 0; done = 0; prog = 0; delay = 0;
+    Object.keys(taskData).forEach(areaKey => {
+      taskData[areaKey].tasks.forEach(cat => {
+        cat.tasks.forEach(t => {
+          const owners = (t.owner || '').split(',').map(o => o.trim()).filter(Boolean);
+          if (!owners.includes(currentUser.id)) return;
+          total++;
+          const eff = autoComputeStatus(t);
+          if (eff === 'done') done++;
+          else if (eff === 'overdue') { delay++; prog++; }
+          else if (eff === 'progress') prog++;
+        });
+      });
+    });
+  } else {
+    // 전체 과제 집계
+    const areas = computeSummaryAreas();
+    total = areas.reduce((s,a) => s+a.total, 0);
+    done  = areas.reduce((s,a) => s+a.done, 0);
+    prog  = areas.reduce((s,a) => s+a.progress, 0);
+    delay = areas.reduce((s,a) => s+a.delay, 0);
+  }
+  const pct = total ? Math.round((done + prog*0.5)/total*100) : 0;
+  const label = mode === 'my' ? '내 과제' : '전체 과제';
+  mobStats.innerHTML = `
+    <div class="mob-hero-stats">
+      <div class="mob-hero-chip">
+        <div class="mob-hero-chip-val">${total}</div>
+        <div class="mob-hero-chip-lbl">${label}</div>
+      </div>
+      <div class="mob-hero-chip">
+        <div class="mob-hero-chip-val">${prog}</div>
+        <div class="mob-hero-chip-lbl">진행 중</div>
+      </div>
+      <div class="mob-hero-chip">
+        <div class="mob-hero-chip-val" style="color:${delay>0?'#fca5a5':'#fff'}">${delay}</div>
+        <div class="mob-hero-chip-lbl">지연</div>
+      </div>
+      <div class="mob-hero-chip">
+        <div class="mob-hero-chip-val">${done}</div>
+        <div class="mob-hero-chip-lbl">완료</div>
+      </div>
+    </div>
+    <div class="mob-hero-prog-wrap">
+      <div class="mob-hero-prog-bar"><div class="mob-hero-prog-fill" style="width:${pct}%"></div></div>
+      <div class="mob-hero-prog-pct">${pct}% 완료</div>
+    </div>`;
+}
+
 function computeSummaryAreas() {
   return Object.keys(_areaConfig).map(key => {
     const cfg = _areaConfig[key];
