@@ -2062,21 +2062,23 @@ body{
         <span class="section-title"><div class="dot"></div>내가 담당하는 과제</span>
       </div>
       <div class="section-body" style="padding:20px 22px;">
-        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-          <select id="mypage-task-area" class="field-input" style="max-width:140px;" onchange="renderMyPageTasks(true)">
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <select id="mypage-task-area" class="field-input" style="flex:1;min-width:0;" onchange="renderMyPageTasks(true)">
             <option value="">전체 영역</option>
           </select>
-          <select id="mypage-task-cat" class="field-input" style="max-width:150px;" onchange="renderMyPageTasks()">
+          <select id="mypage-task-cat" class="field-input" style="flex:1;min-width:0;" onchange="renderMyPageTasks()">
             <option value="">전체 과제모음</option>
           </select>
-          <select id="mypage-task-status" class="field-input" style="max-width:130px;" onchange="renderMyPageTasks()">
+          <select id="mypage-task-status" class="field-input" style="flex:1;min-width:0;" onchange="renderMyPageTasks()">
             <option value="">전체 상태</option>
             <option value="planned">예정</option>
             <option value="progress">진행중</option>
             <option value="done">완료</option>
             <option value="needs-input">검토필요</option>
           </select>
-          <input id="mypage-task-search" class="field-input" style="flex:1;min-width:140px;" placeholder="과제명 검색" oninput="renderMyPageTasks()">
+        </div>
+        <div style="margin-bottom:14px;">
+          <input id="mypage-task-search" class="field-input" style="width:100%;box-sizing:border-box;" placeholder="과제명 검색" oninput="renderMyPageTasks()">
         </div>
         <div id="mypage-task-list" class="lib-list"></div>
       </div>
