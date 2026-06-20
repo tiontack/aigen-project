@@ -1760,8 +1760,7 @@ body{
       <div class="hero-left">
         <div class="hero-greeting" id="hero-greeting"></div>
         <div class="hero-welcome" id="hero-welcome"></div>
-        <div class="hero-issues" id="hero-issues"></div>
-        <!-- 모바일 전용 통계 칩 + 진척률 -->
+        <!-- 통계 칩 + 진척률 (PC/모바일 공통) -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;margin-top:2px;" id="mob-hero-stats-header">
           <div></div>
           <div style="display:flex;gap:4px;background:rgba(255,255,255,0.15);border-radius:10px;padding:3px;">
@@ -1770,6 +1769,7 @@ body{
           </div>
         </div>
         <div id="mob-hero-stats-area"></div>
+        <div class="hero-issues" id="hero-issues"></div>
       </div>
     </div>
 
@@ -2932,11 +2932,12 @@ function _renderMobWeek() {
       cat.tasks.forEach(t => {
         if (!t.end || t.status === 'done') return;
         const tStart = t.start || t.end;
-        if (t.end < monStr || tStart > sunStr) return;
         if (!currentUser) return;
         const owners = (t.owner || '').split(',').map(s => s.trim()).filter(Boolean);
         if (!owners.includes(currentUser.id)) return;
         const eff = autoComputeStatus(t);
+        // 지연 과제는 기간과 무관하게 항상 포함, 나머지는 이번 주 범위만
+        if (eff !== 'overdue' && (t.end < monStr || tStart > sunStr)) return;
         events.push({ date: t.end, title: t.name, sub: _areaLabelMap[areaKey]||areaKey, color: ac.text, type: 'task', area: areaKey, start: t.start, owner: t.owner, effStatus: eff });
       });
     });
@@ -3718,23 +3719,6 @@ function renderIssuesPage() {
     if (document.getElementById('page-issues').classList.contains('active')) renderIssuesPage();
   }, 5 * 60 * 1000);
 
-  // 일요일 자정 정각에 주간 갱신
-  _scheduleWeeklyRefresh();
-}
-
-function _scheduleWeeklyRefresh() {
-  const now = new Date();
-  const next = new Date(now);
-  // 다음 일요일 00:00:00 계산
-  const daysUntilSun = (7 - now.getDay()) % 7 || 7;
-  next.setDate(now.getDate() + daysUntilSun);
-  next.setHours(0, 0, 0, 0);
-  const msUntil = next - now;
-  setTimeout(() => {
-    renderIssuesPage();
-    renderMobHome();
-    _scheduleWeeklyRefresh(); // 다음 주 자정에 재예약
-  }, msUntil);
 }
 
 // ── Gantt Zoom ──
@@ -4215,6 +4199,7 @@ function _applyLogin(user, animate) {
   startPresence();
   loadMentionReads();
   renderMobHome();
+  _scheduleWeeklyRefresh();
 }
 
 function renderSidebarUser() {
@@ -4254,6 +4239,24 @@ function tryRestoreSession() {
     _applyLogin(user, false);
     return true;
   } catch(e) { return false; }
+}
+
+// 일요일 자정마다 이슈/홈 자동 갱신
+let _weeklyRefreshTimer = null;
+function _scheduleWeeklyRefresh() {
+  if (_weeklyRefreshTimer) return; // 중복 방지
+  const now = new Date();
+  const next = new Date(now);
+  const daysUntilSun = (7 - now.getDay()) % 7 || 7;
+  next.setDate(now.getDate() + daysUntilSun);
+  next.setHours(0, 0, 0, 0);
+  _weeklyRefreshTimer = setTimeout(() => {
+    _weeklyRefreshTimer = null;
+    renderIssuesPage();
+    renderMobHome();
+    renderHero();
+    _scheduleWeeklyRefresh(); // 다음 주 재예약
+  }, next - now);
 }
 
 // =================== 접속 상태(presence) ===================
