@@ -3052,11 +3052,13 @@ function _renderMobWeek() {
       const list = byArea[areaKey];
       if (!list?.length) return;
       const ac = _mobAreaColors[areaKey] || { bg:'#eef1ff', text:'#4361ee' };
-      taskHtml += `<div style="margin-bottom:10px;">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-          <div style="width:3px;height:13px;border-radius:2px;background:${ac.text};flex-shrink:0;"></div>
-          <span style="font-size:11px;font-weight:800;color:${ac.text};">${_areaLabelMap[areaKey]||areaKey}</span>
-          <div style="flex:1;height:1px;background:${ac.text}25;"></div>
+      const aLabel = _areaLabelMap[areaKey] || areaKey;
+      taskHtml += `<div style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div style="display:inline-flex;align-items:center;gap:5px;background:${ac.text};color:#fff;font-size:11px;font-weight:800;letter-spacing:0.4px;padding:5px 20px 5px 11px;border-radius:5px;clip-path:polygon(0 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 0 100%);box-shadow:0 2px 6px ${ac.text}40;">
+            ${aLabel}
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${ac.text};opacity:0.65;">${list.length}건</span>
         </div>
         ${list.map(renderTaskRow).join('')}
       </div>`;
