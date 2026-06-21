@@ -6646,15 +6646,6 @@ loadFromFirebase(function() {
           + '<button onclick="location.reload()" style="background:#4361ee;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">지금 업데이트</button>'
           + '<button onclick="document.getElementById(\'update-popup\').remove()" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;font-family:inherit;">나중에</button>';
         document.body.appendChild(popup);
-        // 상단 고정 바 (업데이트 전까지 유지)
-        const bar = document.createElement('div');
-        bar.id = 'update-topbar';
-        bar.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#f59e0b;color:#1a1a1a;display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 16px;font-size:13px;font-weight:600;font-family:inherit;z-index:99998;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
-        bar.innerHTML = '⚠️ 새 업데이트가 배포되었습니다. 업데이트 후 정상 이용하세요.'
-          + '<button onclick="location.reload()" style="background:#1a1a1a;color:#fff;border:none;border-radius:6px;padding:4px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">업데이트</button>';
-        document.body.appendChild(bar);
-        // 상단 바 높이만큼 앱 컨텐츠 내려주기
-        document.body.style.paddingTop = (document.body.style.paddingTop ? parseInt(document.body.style.paddingTop) + 38 : 38) + 'px';
       }
     } catch(e) {}
   }
