@@ -1093,6 +1093,8 @@ body{
   border-bottom:2px solid #d8e0ff;
 }
 .gantt-mobile-row.cat-row .gml-cat-name{font-weight:800;color:var(--accent);font-size:12.5px;flex:1;}
+.gml-cat-actions{display:flex;gap:5px;flex-shrink:0;}
+.gml-cat-actions .cat-btn{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;font-size:11.5px;}
 /* 과제 행: 2줄 레이아웃 */
 .gantt-mobile-row{
   display:flex;align-items:stretch;gap:0;
@@ -3485,7 +3487,13 @@ function buildGanttMobileList(data, areaKey, pid) {
   const _d = s => s ? s.replace(/-/g,'.') : '-';
   let h = '<div class="gantt-mobile-list">';
   data.tasks.forEach((cg, ci) => {
-    h += `<div class="gantt-mobile-row cat-row"><div class="gml-cat-name">▸ ${cg.cat}</div></div>`;
+    h += `<div class="gantt-mobile-row cat-row">
+      <div class="gml-cat-name">▸ ${cg.cat}</div>
+      <div class="gml-cat-actions">
+        <button class="cat-btn" onclick="editCat('${areaKey}','${pid}',${ci})">✏ 수정</button>
+        <button class="cat-btn del" onclick="delCat('${areaKey}','${pid}',${ci})">🗑 삭제</button>
+      </div>
+    </div>`;
     cg.tasks.forEach((t, ti) => {
       const overdue = isOverdue(t);
       const cfg = statusCfg[t.status] || statusCfg[''];
