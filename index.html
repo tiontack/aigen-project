@@ -4349,12 +4349,23 @@ function syncAreaOwnersToFirebase() {
   _db.ref('areaOwners').set(JSON.parse(JSON.stringify(areaOwners))).catch(e => console.warn('담당자 저장 실패:', e));
 }
 function loadAreaOwnersFromFirebase(onDone) {
-  _db.ref('areaOwners').once('value').then(snap => {
+  let _first = true;
+  _db.ref('areaOwners').on('value', snap => {
     const val = snap.val();
-    if (val) Object.assign(areaOwners, val);
-    else syncAreaOwnersToFirebase();
-    onDone();
-  }).catch(e => { console.warn('담당자 로드 실패:', e); onDone(); });
+    if (_first) {
+      _first = false;
+      if (val) Object.assign(areaOwners, val);
+      else syncAreaOwnersToFirebase();
+      onDone();
+      return;
+    }
+    if (!val) return;
+    Object.assign(areaOwners, val);
+    // 메인 담당자 변경: 영역 페이지 + 관리자 편집 목록 갱신
+    ['pmo','curriculum','marketing','recruit','infra'].forEach(pid => renderDetailPage(pid, pid));
+    if (document.getElementById('page-admin')?.classList.contains('active')) renderAreaOwnerEditList();
+    initIcons();
+  }, e => { console.warn('담당자 로드 실패:', e); onDone(); });
 }
 function renderAreaOwnerEditList() {
   const wrap = document.getElementById('area-owner-edit-list');
@@ -5488,11 +5499,17 @@ function syncLibraryToFirebase() {
     .catch(e => console.warn('자료 저장 실패:', e));
 }
 function loadLibraryFromFirebase(onDone) {
-  _db.ref('libraryData').once('value').then(snap => {
+  let _first = true;
+  _db.ref('libraryData').on('value', snap => {
     const val = snap.val();
     if (val) { libraryData.meetings = val.meetings || []; libraryData.resources = val.resources || []; }
-    onDone();
-  }).catch(e => { console.warn('자료 로드 실패, 로컬 데이터 사용:', e); onDone(); });
+    if (_first) { _first = false; onDone(); return; }
+    // 실시간 갱신: 자료실/회의록 탭이 열려있을 때만
+    const archiveActive = document.getElementById('page-archive')?.classList.contains('active');
+    const meetingActive = document.getElementById('page-meeting')?.classList.contains('active');
+    if (archiveActive) renderArchiveList();
+    if (meetingActive) renderMeetingList();
+  }, e => { console.warn('자료 로드 실패:', e); onDone(); });
 }
 
 function fillAreaSelect(sel, withAll) {
@@ -6419,28 +6436,27 @@ function syncMgmtToFirebase() {
     .catch(e => console.warn('Mgmt 저장 실패:', e));
 }
 
+function _parseMgmtSnap(val) {
+  if (val && typeof val === 'object' && val.sessions) {
+    const rawSessions = Array.isArray(val.sessions) ? val.sessions : Object.values(val.sessions);
+    const sessions = rawSessions.map(s => ({
+      ...s,
+      items: !s.items ? [] : Array.isArray(s.items) ? s.items : Object.values(s.items)
+    }));
+    return { ...val, sessions };
+  }
+  return { sessions: [] };
+}
 function loadMgmtFromFirebase(onDone) {
-  _db.ref('mgmtProcess').once('value').then(snap => {
+  let _first = true;
+  _db.ref('mgmtProcess').on('value', snap => {
     const val = snap.val();
-    if (val && typeof val === 'object') {
-      if (val.sessions) {
-        // Firebase returns arrays as objects with numeric keys — convert back
-        const rawSessions = Array.isArray(val.sessions)
-          ? val.sessions
-          : Object.values(val.sessions);
-        const sessions = rawSessions.map(s => ({
-          ...s,
-          items: !s.items ? [] : Array.isArray(s.items) ? s.items : Object.values(s.items)
-        }));
-        mgmtData = { ...val, sessions };
-      } else {
-        mgmtData = { sessions: [] };
-      }
-    } else {
-      mgmtData = { sessions: [] };
-    }
-    if (onDone) onDone();
-  }).catch(() => { if (onDone) onDone(); });
+    mgmtData = _parseMgmtSnap(val);
+    if (_first) { _first = false; if (onDone) onDone(); return; }
+    // 실시간 갱신: 보고 탭 + 모바일 홈 보고 섹션
+    if (document.getElementById('page-mgmt')?.classList.contains('active')) renderMgmtPage();
+    renderMobHome();
+  }, () => { if (onDone) onDone(); });
 }
 
 function _seedPresidentBiweekly() {
