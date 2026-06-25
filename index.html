@@ -5191,7 +5191,8 @@ function syncUsersToFirebase() {
 }
 const _defaultPositions = { '조만희':'팀장', '은현지':'담당', '김진택':'담당' };
 function loadUsersFromFirebase(onDone) {
-  _db.ref('users').once('value').then(snap => {
+  let _first = true;
+  _db.ref('users').on('value', snap => {
     const val = snap.val();
     if (Array.isArray(val) && val.length > 0) {
       let migrated = false;
@@ -5202,9 +5203,11 @@ function loadUsersFromFirebase(onDone) {
       });
       users = val;
       if (migrated) syncUsersToFirebase();
-    } else syncUsersToFirebase();
-    onDone();
-  }).catch(e => { console.warn('사용자 정보 로드 실패:', e); onDone(); });
+    } else if (_first) syncUsersToFirebase();
+    if (_first) { _first = false; onDone(); return; }
+    // 실시간 갱신: 관리자 페이지가 열려 있으면 테이블 재렌더
+    if (document.getElementById('page-admin')?.classList.contains('active')) renderUserTable();
+  }, e => { console.warn('사용자 정보 로드 실패:', e); onDone(); });
 }
 
 // =================== 활동 로그 ===================
