@@ -6483,13 +6483,13 @@ function _seedPresidentBiweekly() {
   }
 }
 
-let _fbWriting = false; // syncToFirebase 진행 중 플래그 (자신의 에코 무시용)
+let _fbWriting = 0; // 카운터: 0이면 자신의 쓰기 없음 (boolean 대신 카운터로 경쟁조건 방지)
 
 function syncToFirebase() {
-  _fbWriting = true;
+  _fbWriting++;
   _db.ref('taskData').set(JSON.parse(JSON.stringify(taskData)))
-    .then(() => { _fbWriting = false; })
-    .catch(e => { _fbWriting = false; console.warn('Firebase 저장 실패:', e); });
+    .then(() => { _fbWriting = Math.max(0, _fbWriting - 1); })
+    .catch(e => { _fbWriting = Math.max(0, _fbWriting - 1); console.warn('Firebase 저장 실패:', e); });
 }
 
 function loadFromFirebase(onDone) {
@@ -6510,11 +6510,11 @@ function loadFromFirebase(onDone) {
       return;
     }
 
-    // 이후 실시간 업데이트: 자신의 저장 에코는 무시, 다른 탭/사용자 변경은 반영
-    if (_fbWriting) return;
+    // 이후 실시간 업데이트: 자신의 저장 에코는 무시, 다른 탭/기기 변경은 반영
+    if (_fbWriting > 0) return;
     if (!val) return;
     Object.assign(taskData, val);
-    // 변경된 데이터를 현재 화면에 반영
+    // 모든 관련 페이지 재렌더링
     renderSummaryCards();
     renderCharts();
     renderMonthlyTable();
@@ -6524,6 +6524,9 @@ function loadFromFirebase(onDone) {
       renderDetailPage(pid, pid);
       applyZoom(pid);
     });
+    if (document.getElementById('page-issues')?.classList.contains('active')) renderIssuesPage();
+    if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
+    if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
     initIcons();
   }, e => {
     console.warn('Firebase 로드 실패, 로컬 데이터 사용:', e);
