@@ -6483,13 +6483,43 @@ function _seedPresidentBiweekly() {
   }
 }
 
-let _fbWriting = 0; // 카운터: 0이면 자신의 쓰기 없음 (boolean 대신 카운터로 경쟁조건 방지)
+let _fbWriting = 0; // 카운터: 0이면 자신의 쓰기 없음
+let _fbPendingSnap = null; // 쓰기 중 도착한 원격 스냅샷 보관
 
 function syncToFirebase() {
   _fbWriting++;
   _db.ref('taskData').set(JSON.parse(JSON.stringify(taskData)))
-    .then(() => { _fbWriting = Math.max(0, _fbWriting - 1); })
-    .catch(e => { _fbWriting = Math.max(0, _fbWriting - 1); console.warn('Firebase 저장 실패:', e); });
+    .then(() => {
+      _fbWriting = Math.max(0, _fbWriting - 1);
+      // 쓰기 중 놓친 원격 업데이트가 있으면 지금 적용
+      if (_fbWriting === 0 && _fbPendingSnap) {
+        const pending = _fbPendingSnap;
+        _fbPendingSnap = null;
+        _applyRemoteTaskData(pending);
+      }
+    })
+    .catch(e => {
+      _fbWriting = Math.max(0, _fbWriting - 1);
+      console.warn('Firebase 저장 실패:', e);
+    });
+}
+
+function _applyRemoteTaskData(val) {
+  if (!val) return;
+  Object.assign(taskData, val);
+  renderSummaryCards();
+  renderCharts();
+  renderMonthlyTable();
+  renderHero();
+  renderMobHome();
+  ['pmo','curriculum','marketing','recruit','infra'].forEach(pid => {
+    renderDetailPage(pid, pid);
+    applyZoom(pid);
+  });
+  if (document.getElementById('page-issues')?.classList.contains('active')) renderIssuesPage();
+  if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
+  if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
+  initIcons();
 }
 
 function loadFromFirebase(onDone) {
@@ -6498,7 +6528,6 @@ function loadFromFirebase(onDone) {
     const val = snap.val();
 
     if (_firstLoad) {
-      // 최초 로드: Firebase 데이터가 있으면 메모리에 반영, 없으면 기본값 업로드
       _firstLoad = false;
       if (val && Object.keys(val).length > 0) {
         Object.assign(taskData, val);
@@ -6511,23 +6540,12 @@ function loadFromFirebase(onDone) {
     }
 
     // 이후 실시간 업데이트: 자신의 저장 에코는 무시, 다른 탭/기기 변경은 반영
-    if (_fbWriting > 0) return;
-    if (!val) return;
-    Object.assign(taskData, val);
-    // 모든 관련 페이지 재렌더링
-    renderSummaryCards();
-    renderCharts();
-    renderMonthlyTable();
-    renderHero();
-    renderMobHome();
-    ['pmo','curriculum','marketing','recruit','infra'].forEach(pid => {
-      renderDetailPage(pid, pid);
-      applyZoom(pid);
-    });
-    if (document.getElementById('page-issues')?.classList.contains('active')) renderIssuesPage();
-    if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
-    if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
-    initIcons();
+    if (_fbWriting > 0) {
+      // 쓰기 중이면 스냅샷 보관 (나중에 적용)
+      _fbPendingSnap = val;
+      return;
+    }
+    _applyRemoteTaskData(val);
   }, e => {
     console.warn('Firebase 로드 실패, 로컬 데이터 사용:', e);
     _fbLoaded = true;
