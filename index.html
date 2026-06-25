@@ -3261,7 +3261,8 @@ function applyAutoStatusAll() {
   Object.values(taskData).forEach(area => {
     area.tasks.forEach(cat => {
       cat.tasks.forEach(t => {
-        // 사용자가 직접 설정한 상태(progress, done, overdue, needs-input)는 건드리지 않음
+        // 완료일이 있거나 done 상태인 과제는 절대 건드리지 않음
+        if (t.done || t.status === 'done') return;
         // planned 상태인 과제만 날짜 기반으로 자동 전환 (예정→진행중)
         if (t.status !== 'planned' && t.status) return;
         const newStatus = autoComputeStatus(t);
@@ -6678,6 +6679,22 @@ loadFromFirebase(function() {
         });
       });
       if (ownerMigrated) { syncToFirebase(); localStorage.setItem(_ownerMigKey, '1'); }
+    }
+    // 완료 상태이지만 완료일이 없는 과제에 날짜 백필 (최초 1회)
+    const _doneMigKey = 'aigen_doneDateMigrated_v1';
+    if (!localStorage.getItem(_doneMigKey)) {
+      let doneMigrated = false;
+      const today = new Date().toISOString().slice(0,10);
+      Object.keys(taskData).forEach(areaKey => {
+        if (!taskData[areaKey] || !taskData[areaKey].tasks) return;
+        taskData[areaKey].tasks.forEach(cat => {
+          cat.tasks.forEach(t => {
+            if (t.status === 'done' && !t.done) { t.done = today; doneMigrated = true; }
+          });
+        });
+      });
+      if (doneMigrated) syncToFirebase();
+      localStorage.setItem(_doneMigKey, '1');
     }
   });
   loadMessagesFromFirebase(function() {});
