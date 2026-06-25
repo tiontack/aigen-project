@@ -3241,8 +3241,8 @@ function isOverdue(t) {
 // 규칙: 완료(done) > 지연(overdue-진행 중인데 종료일 초과) > 진행중(progress) > 예정(planned)
 // 완료는 수동 표시 또는 done 날짜 기입 시에만 유지; 나머지는 날짜로 덮어씀
 function autoComputeStatus(t) {
-  // 완료 상태는 유지 (수동 완료 처리)
-  if (t.status === 'done') return 'done';
+  // 완료 상태는 유지 (수동 완료 처리 또는 완료일 기입 시)
+  if (t.status === 'done' || t.done) return 'done';
   const today = new Date(); today.setHours(0,0,0,0);
   const start = t.start ? (() => { const d = new Date(t.start); d.setHours(0,0,0,0); return d; })() : null;
   const end   = t.end   ? (() => { const d = new Date(t.end);   d.setHours(0,0,0,0); return d; })() : null;
@@ -4092,8 +4092,10 @@ function saveModal() {
   t.name   = document.getElementById('m-name').value.trim() || t.name;
   t.start  = document.getElementById('m-start').value;
   t.end    = document.getElementById('m-end').value;
-  t.done   = document.getElementById('m-done').value;
-  t.status = document.getElementById('m-status').value;
+  const doneVal = document.getElementById('m-done').value;
+  const statusVal = document.getElementById('m-status').value;
+  t.done   = doneVal || (statusVal === 'done' ? new Date().toISOString().slice(0,10) : '');
+  t.status = statusVal;
   t.output = document.getElementById('m-output').value.trim();
   t.owner  = document.getElementById('m-owner').value.trim();
   t.note   = document.getElementById('m-note').value.trim();
