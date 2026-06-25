@@ -3844,6 +3844,7 @@ function applyZoom(pid) {
     if (changed) {
       renderDetailPage(pid, areaKey);
       applyZoom(pid);
+      renderAfterTaskChange();
       initIcons();
       syncToFirebase();
       showSave();
@@ -3902,7 +3903,7 @@ function confirmCatName() {
     logActivity('카테고리 수정', `${areaKey} / ${old} → ${name}`);
   }
   renderDetailPage(pid, areaKey);
-  renderSummaryCards();
+  renderAfterTaskChange();
   syncToFirebase(); showSave();
 }
 function delCat(areaKey, pid, ci) {
@@ -3910,7 +3911,7 @@ function delCat(areaKey, pid, ci) {
   if (!confirm(`"${cat.cat}" 카테고리와 하위 과제 ${cat.tasks.length}개를 모두 삭제하시겠습니까?`)) return;
   taskData[areaKey].tasks.splice(ci, 1);
   renderDetailPage(pid, areaKey);
-  renderSummaryCards();
+  renderAfterTaskChange();
   logActivity('카테고리 삭제', `${areaKey} / ${cat.cat} (과제 ${cat.tasks.length}개 포함)`);
   syncToFirebase(); showSave();
 }
@@ -3939,7 +3940,7 @@ function confirmAddTask() {
   const ti = cats[idx].tasks.length - 1;
   closeCatSelModal();
   renderDetailPage(pid, areaKey);
-  renderOverviewAll();
+  renderAfterTaskChange();
   logActivity('과제 추가', `${areaKey} / ${cats[idx].cat}`);
   syncToFirebase();
   showSave();
@@ -4074,6 +4075,15 @@ function renderOverviewAll() {
   renderHero();
 }
 
+// 과제 데이터 변경 후 모든 관련 페이지 즉시 갱신 (같은 기기 내)
+function renderAfterTaskChange() {
+  renderOverviewAll();
+  renderMobHome();
+  if (document.getElementById('page-issues')?.classList.contains('active')) renderIssuesPage();
+  if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
+  if (document.getElementById('page-calendar')?.classList.contains('active')) renderCalendar();
+}
+
 function saveModal() {
   const { area, pid, ci, ti } = _ctx;
   const t = taskData[area].tasks[ci].tasks[ti];
@@ -4088,8 +4098,7 @@ function saveModal() {
   // 사용자가 직접 선택한 상태는 그대로 유지 (자동 재계산 없음)
   closeModal();
   renderDetailPage(pid, area);
-  renderOverviewAll();
-  if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
+  renderAfterTaskChange();
   logActivity('과제 수정', `${area} / ${t.name}`);
   syncToFirebase(showSave);
 }
@@ -4100,8 +4109,7 @@ function deleteFromModal() {
   taskData[area].tasks[ci].tasks.splice(ti, 1);
   closeModal();
   renderDetailPage(pid, area);
-  renderOverviewAll();
-  if (document.getElementById('page-mypage')?.classList.contains('active')) renderMyPageTasks();
+  renderAfterTaskChange();
   logActivity('과제 삭제', `${area} / ${tname}`);
   syncToFirebase(showSave);
 }
