@@ -3443,12 +3443,13 @@ function buildGantt(data, areaKey, pid) {
     cg.tasks.forEach((t, ti) => {
       const left  = datePct(t.start);
       const right = datePct(t.end || t.start);
-      const cfg   = statusCfg[t.status] || statusCfg[''];
-      const overdue = t.status === 'overdue' || isOverdue(t);
+      const effStatus = autoComputeStatus(t);
+      const cfg   = statusCfg[effStatus] || statusCfg[''];
+      const overdue = effStatus === 'overdue';
       const gbcls  = overdue ? 'gb-overdue' : cfg.gbcls;
-      const sCls  = overdue ? 'gs-overdue' : ({done:'gs-done',progress:'gs-progress',planned:'gs-planned','needs-input':'gs-needs',overdue:'gs-overdue'}[t.status]||'');
-      const sIcon = overdue ? 'alarm-clock' : ({done:'check-circle-2',progress:'loader-2',planned:'circle','needs-input':'alert-circle'}[t.status]||'minus');
-      const sTitle = overdue ? '⚠ 지연' : (cfg.label||'');
+      const sCls  = ({done:'gs-done',progress:'gs-progress',planned:'gs-planned','needs-input':'gs-needs',overdue:'gs-overdue'}[effStatus]||'');
+      const sIcon = ({done:'check-circle-2',progress:'loader-2',planned:'circle','needs-input':'alert-circle',overdue:'alarm-clock'}[effStatus]||'minus');
+      const sTitle = cfg.label || '';
       let bar = '';
       if (left !== null && right !== null) {
         const w = Math.max(0.4, right - left);
@@ -3465,7 +3466,7 @@ function buildGantt(data, areaKey, pid) {
         todayLine = `<div class="${cls}" style="left:${todayPct}%"></div>`;
         todayLabelShown = true;
       }
-      h += `<div class="gantt-row" data-status="${t.status}" data-overdue="${overdue}" data-name="${t.name.toLowerCase()}">
+      h += `<div class="gantt-row" data-status="${effStatus}" data-overdue="${overdue}" data-name="${t.name.toLowerCase()}">
         <div class="gantt-label sub"
           onclick="openModal('${areaKey}','${pid}',${ci},${ti})"
           title="클릭하여 편집">${t.name}</div>
@@ -3495,21 +3496,22 @@ function buildGanttMobileList(data, areaKey, pid) {
       </div>
     </div>`;
     cg.tasks.forEach((t, ti) => {
-      const overdue = isOverdue(t);
-      const cfg = statusCfg[t.status] || statusCfg[''];
+      const effSt = autoComputeStatus(t);
+      const overdue = effSt === 'overdue';
+      const cfg = statusCfg[effSt] || statusCfg[''];
       // 좌측 상태 띠 색상
       const barColor = overdue ? '#e63946' :
-        t.status === 'done' ? '#06b68a' :
-        t.status === 'progress' ? '#f4a10a' :
-        t.status === 'planned' ? '#4361ee' :
-        t.status === 'needs-input' ? '#e63946' : '#c0c4d6';
+        effSt === 'done' ? '#06b68a' :
+        effSt === 'progress' ? '#f4a10a' :
+        effSt === 'planned' ? '#4361ee' :
+        effSt === 'needs-input' ? '#e63946' : '#c0c4d6';
       // 상태 배지
       const sBadgeCls = overdue ? 's-needs' :
-        t.status === 'done' ? 's-done' :
-        t.status === 'progress' ? 's-progress' :
-        t.status === 'planned' ? 's-planned' :
-        t.status === 'needs-input' ? 's-needs' : 's-empty';
-      const sLabel = overdue ? '⚠ 지연' : cfg.label;
+        effSt === 'done' ? 's-done' :
+        effSt === 'progress' ? 's-progress' :
+        effSt === 'planned' ? 's-planned' :
+        effSt === 'needs-input' ? 's-needs' : 's-empty';
+      const sLabel = cfg.label;
       // 날짜 칩
       const startChip = t.start
         ? `<span class="gml-date-chip gml-start-chip">▶ ${_d(t.start)}</span>` : '';
@@ -6492,16 +6494,21 @@ function _seedPresidentBiweekly() {
   }
 }
 
-let _fbWriting = 0; // 카운터: 0이면 자신의 쓰기 없음
-let _fbPendingSnap = null; // 쓰기 중 도착한 원격 스냅샷 보관
+let _fbWriting = 0;       // 현재 진행 중인 Firebase 쓰기 수
+let _fbPendingSnap = null; // 쓰기 중 도착한 원격 스냅샷
+let _fbMyWriteTs = 0;      // 내가 마지막으로 Firebase에 쓴 타임스탬프
 
 function syncToFirebase(onSuccess) {
   _fbWriting++;
-  _db.ref('taskData').set(JSON.parse(JSON.stringify(taskData)))
+  const payload = JSON.parse(JSON.stringify(taskData));
+  const writeTs = Date.now();
+  payload._writeTs = writeTs;  // 타임스탬프 기록 — 오래된 스냅샷 거부에 사용
+  _db.ref('taskData').set(payload)
     .then(() => {
+      _fbMyWriteTs = writeTs;  // 성공 확인 시 내 쓰기 시각 업데이트
       _fbWriting = Math.max(0, _fbWriting - 1);
       if (onSuccess) onSuccess();
-      // 쓰기 중 놓친 원격 업데이트가 있으면 지금 적용
+      // 쓰기 중 도착한 원격 스냅샷 적용
       if (_fbWriting === 0 && _fbPendingSnap) {
         const pending = _fbPendingSnap;
         _fbPendingSnap = null;
@@ -6511,7 +6518,6 @@ function syncToFirebase(onSuccess) {
     .catch(e => {
       _fbWriting = Math.max(0, _fbWriting - 1);
       console.warn('Firebase 저장 실패:', e);
-      // 저장 실패 시 사용자에게 알림
       const el = document.getElementById('save-notice');
       if (el) {
         const orig = el.textContent;
@@ -6530,6 +6536,11 @@ function syncToFirebase(onSuccess) {
 
 function _applyRemoteTaskData(val) {
   if (!val) return;
+  // 내가 최근에 쓴 데이터보다 오래된 스냅샷이면 무시 (되돌림 방지)
+  const remoteTs = val._writeTs || 0;
+  if (remoteTs > 0 && remoteTs < _fbMyWriteTs) {
+    return;
+  }
   Object.assign(taskData, val);
   renderSummaryCards();
   renderCharts();
@@ -6555,6 +6566,8 @@ function loadFromFirebase(onDone) {
       _firstLoad = false;
       if (val && Object.keys(val).length > 0) {
         Object.assign(taskData, val);
+        // 로드 시 타임스탬프 동기화 (내가 쓴 게 아니라도 기준점으로 사용)
+        _fbMyWriteTs = val._writeTs || 0;
       } else {
         syncToFirebase();
       }
@@ -6563,9 +6576,8 @@ function loadFromFirebase(onDone) {
       return;
     }
 
-    // 이후 실시간 업데이트: 자신의 저장 에코는 무시, 다른 탭/기기 변경은 반영
+    // 이후 실시간 업데이트
     if (_fbWriting > 0) {
-      // 쓰기 중이면 스냅샷 보관 (나중에 적용)
       _fbPendingSnap = val;
       return;
     }
@@ -6590,9 +6602,8 @@ function initIcons() {
 
 // Firebase에서 데이터 로드 후 앱 초기화
 loadFromFirebase(function() {
-  // 날짜 기반 상태 자동 계산 적용
-  const changed = applyAutoStatusAll();
-  if (changed) syncToFirebase();
+  // 날짜 기반 상태 메모리 적용 — Firebase에 다시 쓰지 않음 (되돌림 방지)
+  applyAutoStatusAll();
   renderSummaryCards();
   renderCharts();
   renderMonthlyTable();
