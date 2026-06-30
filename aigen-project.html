@@ -6544,7 +6544,9 @@ function _applyRemoteTaskData(val) {
   if (remoteTs > 0 && remoteTs < _fbMyWriteTs) {
     return;
   }
-  Object.assign(taskData, val);
+  // _writeTs는 메타 필드 — taskData에 섞이면 area 순회 시 크래시
+  const { _writeTs: _ignored, ...areaData } = val;
+  Object.assign(taskData, areaData);
   renderSummaryCards();
   renderCharts();
   renderMonthlyTable();
@@ -6568,7 +6570,9 @@ function loadFromFirebase(onDone) {
     if (_firstLoad) {
       _firstLoad = false;
       if (val && Object.keys(val).length > 0) {
-        Object.assign(taskData, val);
+        // _writeTs는 메타 필드 — taskData에 섞이면 area 순회 시 크래시
+        const { _writeTs: _ignored, ...areaData } = val;
+        Object.assign(taskData, areaData);
         // 로드 시 타임스탬프 동기화 (내가 쓴 게 아니라도 기준점으로 사용)
         _fbMyWriteTs = val._writeTs || 0;
       } else {
