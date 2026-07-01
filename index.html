@@ -4122,13 +4122,11 @@ function deleteFromModal() {
   const { area, pid, ci, ti } = _ctx;
   const tname = taskData[area].tasks[ci].tasks[ti].name;
   if (!confirm(`"${tname}" 과제를 삭제하시겠습니까?`)) return;
-  taskData[area].tasks[ci].tasks.splice(ti, 1);
   closeModal();
-  renderDetailPage(pid, area);
-  renderAfterTaskChange();
   logActivity('과제 삭제', `${area} / ${tname}`);
-  // Firebase 최신 과제 배열을 읽은 뒤 splice → 다른 기기 변경사항 보존
-  _fbReadArr(`taskData/${area}/tasks/${ci}/tasks`, taskData[area].tasks[ci].tasks).then(tasksArr => {
+  // fallback 스냅샷을 splice 전에 캡처 — 이중 splice 버그 방지
+  const fallback = JSON.parse(JSON.stringify(taskData[area].tasks[ci].tasks));
+  _fbReadArr(`taskData/${area}/tasks/${ci}/tasks`, fallback).then(tasksArr => {
     tasksArr.splice(ti, 1);
     taskData[area].tasks[ci].tasks = tasksArr;
     renderDetailPage(pid, area);
@@ -6531,10 +6529,11 @@ function _fbDone(onSuccess) {
 
 // targeted update — 지정 경로만 write, 다른 경로 절대 불변
 function _fbUpdate(updates, onSuccess) {
+  console.warn('[FB WRITE]', Object.keys(updates).join(', '));
   _fbWriting++;
   _db.ref('taskData').update(updates)
-    .then(() => _fbDone(onSuccess))
-    .catch(e => { console.warn('Firebase 저장 실패:', e); _fbDone(); });
+    .then(() => { console.warn('[FB WRITE OK]', Object.keys(updates).join(', ')); _fbDone(onSuccess); })
+    .catch(e => { console.error('[FB WRITE FAIL]', e); _fbDone(); });
 }
 
 // Firebase에서 특정 경로를 읽어 latest 배열 얻기 (object→array 자동 변환)
@@ -6596,9 +6595,26 @@ function _normalizeAreas(data) {
   });
 }
 
+// ── Firebase 진단 로그 (브라우저 콘솔에서 확인) ──
+function _dbg(label, val) {
+  try {
+    const areas = ['pmo','curriculum','marketing','recruit','infra'];
+    const summary = areas.map(k => {
+      const area = val[k];
+      if (!area || !area.tasks) return `${k}:없음`;
+      const cats = Array.isArray(area.tasks) ? area.tasks : Object.values(area.tasks);
+      const total = cats.reduce((s, c) => s + (Array.isArray(c.tasks) ? c.tasks : Object.values(c.tasks || {})).length, 0);
+      const done  = cats.reduce((s, c) => s + (Array.isArray(c.tasks) ? c.tasks : Object.values(c.tasks || {})).filter(t => t.done || t.status === 'done').length, 0);
+      return `${k}:${done}완료/${total}건`;
+    }).join(' | ');
+    console.warn(`[FB ${label}] ${new Date().toLocaleTimeString()} | _fbWriting=${_fbWriting} | ${summary}`);
+  } catch(e) {}
+}
+
 // 원격 Firebase 스냅샷 적용 — staleness 체크 없음 (멀티 디바이스 클럭 차이 문제 제거)
 function _applyRemoteTaskData(val) {
   if (!val) return;
+  _dbg('APPLY', val);
   const { _writeTs: _ignored, ...areaData } = val;
   _normalizeAreas(areaData);
   Object.assign(taskData, areaData);
@@ -6624,10 +6640,12 @@ function loadFromFirebase(onDone) {
     if (_firstLoad) {
       _firstLoad = false;
       if (val && Object.keys(val).length > 0) {
+        _dbg('INIT', val);
         const { _writeTs: _ignored, ...areaData } = val;
         _normalizeAreas(areaData);
         Object.assign(taskData, areaData);
       } else {
+        console.warn('[FB INIT] Firebase 비어있음 → 기본값으로 초기화');
         syncToFirebase(); // 빈 DB 최초 1회만
       }
       _fbLoaded = true;
