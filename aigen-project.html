@@ -421,6 +421,12 @@ body{
   position:sticky;left:0;z-index:6;
 }
 .gantt-label.cat{font-weight:700;color:var(--accent);font-size:12px;padding-left:14px;}
+.task-order-btns{display:inline-flex;flex-direction:column;gap:1px;flex-shrink:0;}
+.task-order-btn{background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);font-size:8px;line-height:1;padding:1px 3px;cursor:pointer;transition:background .15s;}
+.task-order-btn:hover:not(:disabled){background:var(--accent);color:#fff;border-color:var(--accent);}
+.task-order-btn:disabled{opacity:0.25;cursor:default;}
+.task-order-btns.mob{margin-left:4px;}
+
 .gantt-label.sub{padding-left:26px;color:var(--text2);}
 .gantt-timeline{flex:1;display:flex;position:relative;height:32px;align-items:center;}
 .gantt-col{flex:1;min-width:76px;height:100%;border-right:1px solid var(--border);}
@@ -3474,10 +3480,15 @@ function buildGantt(data, areaKey, pid) {
         todayLine = `<div class="${cls}" style="left:${todayPct}%"></div>`;
         todayLabelShown = true;
       }
+      const isFirst = ti === 0, isLast = ti === cg.tasks.length - 1;
       h += `<div class="gantt-row" data-status="${effStatus}" data-overdue="${overdue}" data-name="${t.name.toLowerCase()}">
-        <div class="gantt-label sub"
-          onclick="openModal('${areaKey}','${pid}',${ci},${ti})"
-          title="클릭하여 편집">${t.name}</div>
+        <div class="gantt-label sub" style="display:flex;align-items:center;gap:4px;padding-left:10px;">
+          <span class="task-order-btns">
+            <button class="task-order-btn" onclick="event.stopPropagation();moveTask('${areaKey}','${pid}',${ci},${ti},-1)" ${isFirst?'disabled':''} title="위로">▲</button>
+            <button class="task-order-btn" onclick="event.stopPropagation();moveTask('${areaKey}','${pid}',${ci},${ti},1)" ${isLast?'disabled':''} title="아래로">▼</button>
+          </span>
+          <span onclick="openModal('${areaKey}','${pid}',${ci},${ti})" title="클릭하여 편집" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</span>
+        </div>
         <div class="gantt-status-col ${sCls}" title="${sTitle}"><i data-lucide="${sIcon}" style="width:14px;height:14px;"></i></div>
         <div class="gantt-timeline" style="position:relative">
           ${ganttMonths.map((_,mi)=>`<div class="gantt-col${mi%2===1?' odd-col':''}"></div>`).join('')}
@@ -3507,6 +3518,7 @@ function buildGanttMobileList(data, areaKey, pid) {
       const effSt = autoComputeStatus(t);
       const overdue = effSt === 'overdue';
       const cfg = statusCfg[effSt] || statusCfg[''];
+      const isMFirst = ti === 0, isMlast = ti === cg.tasks.length - 1;
       // 좌측 상태 띠 색상
       const barColor = overdue ? '#e63946' :
         effSt === 'done' ? '#06b68a' :
@@ -3536,6 +3548,10 @@ function buildGanttMobileList(data, areaKey, pid) {
         </div>
         <div class="gml-badge-wrap">
           <span class="gml-status-badge ${sBadgeCls}">${sLabel}</span>
+          <span class="task-order-btns mob">
+            <button class="task-order-btn" onclick="moveTask('${areaKey}','${pid}',${ci},${ti},-1)" ${isMFirst?'disabled':''}>▲</button>
+            <button class="task-order-btn" onclick="moveTask('${areaKey}','${pid}',${ci},${ti},1)" ${isMlast?'disabled':''}>▼</button>
+          </span>
         </div>
       </div>`;
     });
@@ -3923,6 +3939,19 @@ function confirmCatName() {
   renderDetailPage(pid, areaKey);
   renderAfterTaskChange();
 }
+function moveTask(area, pid, ci, ti, dir) {
+  const tasks = taskData[area].tasks[ci].tasks;
+  const newTi = ti + dir;
+  if (newTi < 0 || newTi >= tasks.length) return;
+  [tasks[ti], tasks[newTi]] = [tasks[newTi], tasks[ti]];
+  renderDetailPage(pid, area);
+  renderAfterTaskChange();
+  _fbUpdate({
+    [`${area}/tasks/${ci}/tasks/${ti}`]: JSON.parse(JSON.stringify(tasks[ti])),
+    [`${area}/tasks/${ci}/tasks/${newTi}`]: JSON.parse(JSON.stringify(tasks[newTi])),
+  }, showSave);
+}
+
 function delCat(areaKey, pid, ci) {
   const cat = taskData[areaKey].tasks[ci];
   if (!confirm(`"${cat.cat}" 카테고리와 하위 과제 ${cat.tasks.length}개를 모두 삭제하시겠습니까?`)) return;
