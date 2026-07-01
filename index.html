@@ -3086,6 +3086,10 @@ function _renderMobWeek() {
 }
 
 function renderCharts() {
+  // 기존 차트 파괴 (중복 렌더링 방지)
+  ['chartBar','chartDoughnut','chartLine'].forEach(id => {
+    const c = Chart.getChart(id); if (c) c.destroy();
+  });
   const areas = computeSummaryAreas();
   // Bar chart - progress rate
   new Chart(document.getElementById('chartBar'), {
