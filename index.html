@@ -6548,6 +6548,11 @@ function syncTaskToFirebase(area, ci, ti, onSuccess) {
   }).catch(e => {
     _fbWriting = Math.max(0, _fbWriting - 1);
     console.warn('Firebase 저장 실패 (task patch):', e);
+    // 실패해도 쓰기 중 밀린 원격 스냅샷 적용 (크로스 디바이스 업데이트 복구)
+    if (_fbWriting === 0 && _fbPendingSnap) {
+      const pending = _fbPendingSnap; _fbPendingSnap = null;
+      _applyRemoteTaskData(pending);
+    }
   });
 }
 
@@ -6571,6 +6576,11 @@ function syncToFirebase(onSuccess) {
     .catch(e => {
       _fbWriting = Math.max(0, _fbWriting - 1);
       console.warn('Firebase 저장 실패:', e);
+      // 실패해도 쓰기 중 밀린 원격 스냅샷 적용
+      if (_fbWriting === 0 && _fbPendingSnap) {
+        const pending = _fbPendingSnap; _fbPendingSnap = null;
+        _applyRemoteTaskData(pending);
+      }
       const el = document.getElementById('save-notice');
       if (el) {
         const orig = el.textContent;
@@ -6760,6 +6770,16 @@ loadFromFirebase(function() {
   });
   loadMessagesFromFirebase(function() {});
   initIcons();
+});
+
+// ── 탭/앱 포그라운드 복귀 시 강제 재렌더링 (모바일 백그라운드 후 업데이트 누락 방지) ──
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && _fbLoaded) {
+    _db.ref('taskData').once('value').then(snap => {
+      const val = snap.val();
+      if (val) _applyRemoteTaskData(val);
+    }).catch(() => {});
+  }
 });
 
 // ── 배포 감지 업데이트 알림 ──
