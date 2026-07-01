@@ -3855,8 +3855,7 @@ function applyZoom(pid) {
       applyZoom(pid);
       renderAfterTaskChange();
       initIcons();
-      syncToFirebase();
-      showSave();
+      syncTaskToFirebase(areaKey, ci, ti, showSave);
     }
   });
 })();
@@ -4051,8 +4050,7 @@ async function handleTaskAttachUpload(event) {
       renderArchiveList();
       logActivity('첨부파일 업로드', `${t.name} / ${file.name}`);
     }
-    syncToFirebase();
-    showSave();
+    syncTaskToFirebase(area, ci, ti, showSave);
   } catch (e) {
     console.warn('첨부 업로드 실패:', e);
     alert('업로드 중 오류가 발생했습니다.');
@@ -4073,8 +4071,7 @@ function deleteTaskAttachment(i) {
   }
   renderAttachments(t.attachments);
   logActivity('첨부파일 삭제', `${t.name} / ${a ? a.fileName : ''}`);
-  syncToFirebase();
-  showSave();
+  syncTaskToFirebase(area, ci, ti, showSave);
 }
 // Overview 전체 갱신 헬퍼 (카드 + 차트 + 월간표 + 히어로 한번에)
 function renderOverviewAll() {
@@ -6531,6 +6528,28 @@ function _seedPresidentBiweekly() {
 let _fbWriting = 0;       // 현재 진행 중인 Firebase 쓰기 수
 let _fbPendingSnap = null; // 쓰기 중 도착한 원격 스냅샷
 let _fbMyWriteTs = 0;      // 내가 마지막으로 Firebase에 쓴 타임스탬프
+
+// 특정 과제 하나만 Firebase에 부분 업데이트 — 전체 덮어쓰기로 인한 크로스 디바이스 충돌 방지
+function syncTaskToFirebase(area, ci, ti, onSuccess) {
+  const t = taskData[area].tasks[ci].tasks[ti];
+  const writeTs = Date.now();
+  _fbWriting++;
+  _db.ref('taskData').update({
+    [`${area}/tasks/${ci}/tasks/${ti}`]: JSON.parse(JSON.stringify(t)),
+    '_writeTs': writeTs
+  }).then(() => {
+    _fbMyWriteTs = writeTs;
+    _fbWriting = Math.max(0, _fbWriting - 1);
+    if (onSuccess) onSuccess();
+    if (_fbWriting === 0 && _fbPendingSnap) {
+      const pending = _fbPendingSnap; _fbPendingSnap = null;
+      _applyRemoteTaskData(pending);
+    }
+  }).catch(e => {
+    _fbWriting = Math.max(0, _fbWriting - 1);
+    console.warn('Firebase 저장 실패 (task patch):', e);
+  });
+}
 
 function syncToFirebase(onSuccess) {
   _fbWriting++;
