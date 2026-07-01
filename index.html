@@ -4116,33 +4116,7 @@ function saveModal() {
   renderDetailPage(pid, area);
   renderAfterTaskChange();
   logActivity('과제 수정', `${area} / ${t.name}`);
-  // 해당 과제만 부분 업데이트 — 전체 덮어쓰기 시 다른 기기 변경사항이 지워지는 문제 방지
-  const writeTs = Date.now();
-  _fbWriting++;
-  _db.ref('taskData').update({
-    [`${area}/tasks/${ci}/tasks/${ti}`]: JSON.parse(JSON.stringify(t)),
-    '_writeTs': writeTs
-  }).then(() => {
-    _fbMyWriteTs = writeTs;
-    _fbWriting = Math.max(0, _fbWriting - 1);
-    showSave();
-    if (_fbWriting === 0 && _fbPendingSnap) {
-      const pending = _fbPendingSnap; _fbPendingSnap = null;
-      _applyRemoteTaskData(pending);
-    }
-  }).catch(e => {
-    _fbWriting = Math.max(0, _fbWriting - 1);
-    console.warn('Firebase 저장 실패:', e);
-    const el = document.getElementById('save-notice');
-    if (el) {
-      const orig = el.textContent;
-      el.textContent = '⚠ 저장 실패 — 네트워크를 확인하세요';
-      el.style.background = '#ef4444';
-      el.classList.add('show');
-      clearTimeout(window._st);
-      window._st = setTimeout(() => { el.classList.remove('show'); el.textContent = orig; el.style.background = ''; }, 4000);
-    }
-  });
+  syncTaskToFirebase(area, ci, ti, showSave);
 }
 function deleteFromModal() {
   const { area, pid, ci, ti } = _ctx;
@@ -6543,31 +6517,24 @@ function _seedPresidentBiweekly() {
 
 let _fbWriting = 0;       // 현재 진행 중인 Firebase 쓰기 수
 let _fbPendingSnap = null; // 쓰기 중 도착한 원격 스냅샷
-let _fbMyWriteTs = 0;      // 내가 마지막으로 Firebase에 쓴 타임스탬프
 
-// 최소 경로 Firebase update 공통 헬퍼 — _writeTs 포함, 완료/실패 모두 pendingSnap 처리
+// ── Firebase write 공통 헬퍼 ──
+// pendingSnap: 쓰기 도중 도착한 원격 스냅샷을 완료/실패 후 반드시 적용
+function _fbDone(onSuccess) {
+  _fbWriting = Math.max(0, _fbWriting - 1);
+  if (onSuccess) onSuccess();
+  if (_fbWriting === 0 && _fbPendingSnap) {
+    const p = _fbPendingSnap; _fbPendingSnap = null;
+    _applyRemoteTaskData(p);
+  }
+}
+
+// targeted update — 지정 경로만 write, 다른 경로 절대 불변
 function _fbUpdate(updates, onSuccess) {
-  const writeTs = Date.now();
-  updates['_writeTs'] = writeTs;
   _fbWriting++;
   _db.ref('taskData').update(updates)
-    .then(() => {
-      _fbMyWriteTs = writeTs;
-      _fbWriting = Math.max(0, _fbWriting - 1);
-      if (onSuccess) onSuccess();
-      if (_fbWriting === 0 && _fbPendingSnap) {
-        const pending = _fbPendingSnap; _fbPendingSnap = null;
-        _applyRemoteTaskData(pending);
-      }
-    })
-    .catch(e => {
-      _fbWriting = Math.max(0, _fbWriting - 1);
-      console.warn('Firebase 저장 실패:', e);
-      if (_fbWriting === 0 && _fbPendingSnap) {
-        const pending = _fbPendingSnap; _fbPendingSnap = null;
-        _applyRemoteTaskData(pending);
-      }
-    });
+    .then(() => _fbDone(onSuccess))
+    .catch(e => { console.warn('Firebase 저장 실패:', e); _fbDone(); });
 }
 
 // Firebase에서 특정 경로를 읽어 latest 배열 얻기 (object→array 자동 변환)
@@ -6580,86 +6547,61 @@ function _fbReadArr(path, fallback) {
   }).catch(() => JSON.parse(JSON.stringify(fallback)));
 }
 
-// 특정 과제 하나만 Firebase에 부분 업데이트 — 전체 덮어쓰기로 인한 크로스 디바이스 충돌 방지
+// 과제 1개 targeted write
 function syncTaskToFirebase(area, ci, ti, onSuccess) {
-  const t = taskData[area].tasks[ci].tasks[ti];
-  const writeTs = Date.now();
-  _fbWriting++;
-  _db.ref('taskData').update({
-    [`${area}/tasks/${ci}/tasks/${ti}`]: JSON.parse(JSON.stringify(t)),
-    '_writeTs': writeTs
-  }).then(() => {
-    _fbMyWriteTs = writeTs;
-    _fbWriting = Math.max(0, _fbWriting - 1);
-    if (onSuccess) onSuccess();
-    if (_fbWriting === 0 && _fbPendingSnap) {
-      const pending = _fbPendingSnap; _fbPendingSnap = null;
-      _applyRemoteTaskData(pending);
-    }
-  }).catch(e => {
-    _fbWriting = Math.max(0, _fbWriting - 1);
-    console.warn('Firebase 저장 실패 (task patch):', e);
-    // 실패해도 쓰기 중 밀린 원격 스냅샷 적용 (크로스 디바이스 업데이트 복구)
-    if (_fbWriting === 0 && _fbPendingSnap) {
-      const pending = _fbPendingSnap; _fbPendingSnap = null;
-      _applyRemoteTaskData(pending);
-    }
-  });
+  const t = JSON.parse(JSON.stringify(taskData[area].tasks[ci].tasks[ti]));
+  _fbUpdate({ [`${area}/tasks/${ci}/tasks/${ti}`]: t }, onSuccess);
 }
 
+// 빈 DB 최초 초기화 전용 (이후 절대 호출 금지)
 function syncToFirebase(onSuccess) {
   _fbWriting++;
   const payload = JSON.parse(JSON.stringify(taskData));
-  const writeTs = Date.now();
-  payload._writeTs = writeTs;  // 타임스탬프 기록 — 오래된 스냅샷 거부에 사용
   _db.ref('taskData').set(payload)
-    .then(() => {
-      _fbMyWriteTs = writeTs;  // 성공 확인 시 내 쓰기 시각 업데이트
-      _fbWriting = Math.max(0, _fbWriting - 1);
-      if (onSuccess) onSuccess();
-      // 쓰기 중 도착한 원격 스냅샷 적용
-      if (_fbWriting === 0 && _fbPendingSnap) {
-        const pending = _fbPendingSnap;
-        _fbPendingSnap = null;
-        _applyRemoteTaskData(pending);
-      }
-    })
+    .then(() => _fbDone(onSuccess))
     .catch(e => {
-      _fbWriting = Math.max(0, _fbWriting - 1);
-      console.warn('Firebase 저장 실패:', e);
-      // 실패해도 쓰기 중 밀린 원격 스냅샷 적용
-      if (_fbWriting === 0 && _fbPendingSnap) {
-        const pending = _fbPendingSnap; _fbPendingSnap = null;
-        _applyRemoteTaskData(pending);
-      }
+      console.warn('Firebase 초기화 실패:', e);
+      _fbDone();
       const el = document.getElementById('save-notice');
       if (el) {
-        const orig = el.textContent;
         el.textContent = '⚠ 저장 실패 — 네트워크를 확인하세요';
         el.style.background = '#ef4444';
         el.classList.add('show');
         clearTimeout(window._st);
         window._st = setTimeout(() => {
           el.classList.remove('show');
-          el.textContent = orig;
+          el.textContent = '저장됨';
           el.style.background = '';
         }, 4000);
       }
     });
 }
 
+// Firebase 배열/오브젝트 정규화 — Firebase는 배열을 숫자키 object로 저장할 수 있음
+function _toArr(v) {
+  if (!v) return [];
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'object') return Object.values(v);
+  return [];
+}
+function _normalizeAreas(data) {
+  Object.keys(data).forEach(areaKey => {
+    const area = data[areaKey];
+    if (!area || typeof area !== 'object' || !area.tasks) return;
+    area.tasks = _toArr(area.tasks).map(cat => {
+      if (!cat || typeof cat !== 'object') return cat;
+      cat.tasks = _toArr(cat.tasks);
+      return cat;
+    });
+  });
+}
+
+// 원격 Firebase 스냅샷 적용 — staleness 체크 없음 (멀티 디바이스 클럭 차이 문제 제거)
 function _applyRemoteTaskData(val) {
   if (!val) return;
-  // 내가 최근에 쓴 데이터보다 오래된 스냅샷이면 무시 (되돌림 방지)
-  const remoteTs = val._writeTs || 0;
-  if (remoteTs > 0 && remoteTs < _fbMyWriteTs) {
-    return;
-  }
-  // _writeTs는 메타 필드 — taskData에 섞이면 area 순회 시 크래시
   const { _writeTs: _ignored, ...areaData } = val;
+  _normalizeAreas(areaData);
   Object.assign(taskData, areaData);
-  // 원격 타임스탬프로 기준점 갱신 (타임스탬프 노후화 방지)
-  if (remoteTs > _fbMyWriteTs) _fbMyWriteTs = remoteTs;
   renderSummaryCards();
   renderCharts();
   renderMonthlyTable();
@@ -6679,28 +6621,21 @@ function loadFromFirebase(onDone) {
   let _firstLoad = true;
   _db.ref('taskData').on('value', snap => {
     const val = snap.val();
-
     if (_firstLoad) {
       _firstLoad = false;
       if (val && Object.keys(val).length > 0) {
-        // _writeTs는 메타 필드 — taskData에 섞이면 area 순회 시 크래시
         const { _writeTs: _ignored, ...areaData } = val;
+        _normalizeAreas(areaData);
         Object.assign(taskData, areaData);
-        // 로드 시 타임스탬프 동기화 (내가 쓴 게 아니라도 기준점으로 사용)
-        _fbMyWriteTs = val._writeTs || 0;
       } else {
-        syncToFirebase();
+        syncToFirebase(); // 빈 DB 최초 1회만
       }
       _fbLoaded = true;
       onDone();
       return;
     }
-
-    // 이후 실시간 업데이트
-    if (_fbWriting > 0) {
-      _fbPendingSnap = val;
-      return;
-    }
+    // 실시간 업데이트: 내 쓰기 완료 전이면 대기, 완료 후 적용
+    if (_fbWriting > 0) { _fbPendingSnap = val; return; }
     _applyRemoteTaskData(val);
   }, e => {
     console.warn('Firebase 로드 실패, 로컬 데이터 사용:', e);
