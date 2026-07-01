@@ -421,11 +421,31 @@ body{
   position:sticky;left:0;z-index:6;
 }
 .gantt-label.cat{font-weight:700;color:var(--accent);font-size:12px;padding-left:14px;}
-.task-order-btns{display:inline-flex;flex-direction:column;gap:1px;flex-shrink:0;}
-.task-order-btn{background:none;border:1px solid var(--border);border-radius:3px;color:var(--text2);font-size:8px;line-height:1;padding:1px 3px;cursor:pointer;transition:background .15s;}
+/* 과제 순서 버튼 - PC: 호버 시 우측 노출 */
+.gantt-label.sub{position:relative;}
+.task-order-btns{
+  display:none;flex-direction:column;gap:1px;flex-shrink:0;
+  position:absolute;right:4px;top:50%;transform:translateY(-50%);
+}
+.gantt-row:hover .task-order-btns{display:flex;}
+.task-order-btn{
+  background:rgba(255,255,255,0.9);border:1px solid var(--border);
+  border-radius:3px;color:var(--text2);font-size:7px;line-height:1;
+  padding:1px 3px;cursor:pointer;transition:background .15s,color .15s;
+  box-shadow:0 1px 2px rgba(0,0,0,0.08);
+}
 .task-order-btn:hover:not(:disabled){background:var(--accent);color:#fff;border-color:var(--accent);}
-.task-order-btn:disabled{opacity:0.25;cursor:default;}
-.task-order-btns.mob{margin-left:4px;}
+.task-order-btn:disabled{opacity:0.2;cursor:default;}
+/* 모바일: 항상 표시, 오른쪽 끝 세로 배치 */
+.task-order-btns.mob{
+  display:flex;position:static;transform:none;
+  flex-direction:column;gap:2px;margin-left:6px;
+}
+.task-order-btns.mob .task-order-btn{
+  font-size:9px;padding:2px 5px;background:rgba(255,255,255,0.08);
+  border-color:rgba(255,255,255,0.15);color:var(--text2);box-shadow:none;
+}
+.task-order-btns.mob .task-order-btn:hover:not(:disabled){background:var(--accent);color:#fff;}
 
 .gantt-label.sub{padding-left:26px;color:var(--text2);}
 .gantt-timeline{flex:1;display:flex;position:relative;height:32px;align-items:center;}
@@ -3482,12 +3502,12 @@ function buildGantt(data, areaKey, pid) {
       }
       const isFirst = ti === 0, isLast = ti === cg.tasks.length - 1;
       h += `<div class="gantt-row" data-status="${effStatus}" data-overdue="${overdue}" data-name="${t.name.toLowerCase()}">
-        <div class="gantt-label sub" style="display:flex;align-items:center;gap:4px;padding-left:10px;">
+        <div class="gantt-label sub" onclick="openModal('${areaKey}','${pid}',${ci},${ti})" title="클릭하여 편집" style="padding-right:28px;">
+          ${t.name}
           <span class="task-order-btns">
             <button class="task-order-btn" onclick="event.stopPropagation();moveTask('${areaKey}','${pid}',${ci},${ti},-1)" ${isFirst?'disabled':''} title="위로">▲</button>
             <button class="task-order-btn" onclick="event.stopPropagation();moveTask('${areaKey}','${pid}',${ci},${ti},1)" ${isLast?'disabled':''} title="아래로">▼</button>
           </span>
-          <span onclick="openModal('${areaKey}','${pid}',${ci},${ti})" title="클릭하여 편집" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.name}</span>
         </div>
         <div class="gantt-status-col ${sCls}" title="${sTitle}"><i data-lucide="${sIcon}" style="width:14px;height:14px;"></i></div>
         <div class="gantt-timeline" style="position:relative">
