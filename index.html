@@ -3903,25 +3903,34 @@ function confirmCatName() {
   const { mode, areaKey, pid, ci } = _catNameCtx;
   closeCatNameModal();
   if (mode === 'add') {
-    taskData[areaKey].tasks.push({ cat: name, tasks: [] });
+    const newCat = { cat: name, tasks: [] };
+    const newCi = taskData[areaKey].tasks.length;
+    taskData[areaKey].tasks.push(newCat);
     logActivity('카테고리 추가', `${areaKey} / ${name}`);
+    // 새 카테고리 경로만 write — 기존 카테고리/과제 불변
+    _fbUpdate({ [`${areaKey}/tasks/${newCi}`]: JSON.parse(JSON.stringify(newCat)) }, showSave);
   } else {
     const old = taskData[areaKey].tasks[ci].cat;
     taskData[areaKey].tasks[ci].cat = name;
     logActivity('카테고리 수정', `${areaKey} / ${old} → ${name}`);
+    // 이름 필드 하나만 write
+    _fbUpdate({ [`${areaKey}/tasks/${ci}/cat`]: name }, showSave);
   }
   renderDetailPage(pid, areaKey);
   renderAfterTaskChange();
-  syncAreaToFirebase(areaKey, showSave);
 }
 function delCat(areaKey, pid, ci) {
   const cat = taskData[areaKey].tasks[ci];
   if (!confirm(`"${cat.cat}" 카테고리와 하위 과제 ${cat.tasks.length}개를 모두 삭제하시겠습니까?`)) return;
-  taskData[areaKey].tasks.splice(ci, 1);
-  renderDetailPage(pid, areaKey);
-  renderAfterTaskChange();
   logActivity('카테고리 삭제', `${areaKey} / ${cat.cat} (과제 ${cat.tasks.length}개 포함)`);
-  syncAreaToFirebase(areaKey, showSave);
+  // Firebase 최신 카테고리 배열을 읽은 뒤 splice → 다른 기기 변경사항 보존
+  _fbReadArr(`taskData/${areaKey}/tasks`, taskData[areaKey].tasks).then(catsArr => {
+    catsArr.splice(ci, 1);
+    taskData[areaKey].tasks = catsArr;
+    renderDetailPage(pid, areaKey);
+    renderAfterTaskChange();
+    _fbUpdate({ [`${areaKey}/tasks`]: JSON.parse(JSON.stringify(catsArr)) }, showSave);
+  });
 }
 
 // ── 과제 추가 ──
@@ -3950,7 +3959,8 @@ function confirmAddTask() {
   renderDetailPage(pid, areaKey);
   renderAfterTaskChange();
   logActivity('과제 추가', `${areaKey} / ${cats[idx].cat}`);
-  syncAreaToFirebase(areaKey, showSave);
+  // 새 과제 경로만 write — 같은 카테고리의 기존 과제 불변
+  _fbUpdate({ [`${areaKey}/tasks/${idx}/tasks/${ti}`]: JSON.parse(JSON.stringify(newTask)) }, showSave);
   setTimeout(() => openModal(areaKey, pid, idx, ti), 80);
 }
 
@@ -4143,7 +4153,14 @@ function deleteFromModal() {
   renderDetailPage(pid, area);
   renderAfterTaskChange();
   logActivity('과제 삭제', `${area} / ${tname}`);
-  syncAreaToFirebase(area, showSave);
+  // Firebase 최신 과제 배열을 읽은 뒤 splice → 다른 기기 변경사항 보존
+  _fbReadArr(`taskData/${area}/tasks/${ci}/tasks`, taskData[area].tasks[ci].tasks).then(tasksArr => {
+    tasksArr.splice(ti, 1);
+    taskData[area].tasks[ci].tasks = tasksArr;
+    renderDetailPage(pid, area);
+    renderAfterTaskChange();
+    _fbUpdate({ [`${area}/tasks/${ci}/tasks`]: JSON.parse(JSON.stringify(tasksArr)) }, showSave);
+  });
 }
 function showSave() {
   const el = document.getElementById('save-notice');
@@ -5106,7 +5123,7 @@ function saveMenuLabel(key) {
     syncUiLabelsToFirebase();
   } else if (taskData[key]) {
     taskData[key].title = val;
-    syncAreaToFirebase(key);
+    _fbUpdate({ [`${key}/title`]: val }); // title 필드만 write — 과제 데이터 불변
   }
   applyMenuLabels();
   logActivity('메뉴명 수정', `${key} → ${val}`);
@@ -6528,30 +6545,39 @@ let _fbWriting = 0;       // 현재 진행 중인 Firebase 쓰기 수
 let _fbPendingSnap = null; // 쓰기 중 도착한 원격 스냅샷
 let _fbMyWriteTs = 0;      // 내가 마지막으로 Firebase에 쓴 타임스탬프
 
-// 영역 전체를 Firebase에 부분 업데이트 — 카테고리/과제 추가·삭제 등 구조 변경 시 사용
-function syncAreaToFirebase(area, onSuccess) {
-  const areaData = JSON.parse(JSON.stringify(taskData[area]));
+// 최소 경로 Firebase update 공통 헬퍼 — _writeTs 포함, 완료/실패 모두 pendingSnap 처리
+function _fbUpdate(updates, onSuccess) {
   const writeTs = Date.now();
+  updates['_writeTs'] = writeTs;
   _fbWriting++;
-  _db.ref('taskData').update({
-    [area]: areaData,
-    '_writeTs': writeTs
-  }).then(() => {
-    _fbMyWriteTs = writeTs;
-    _fbWriting = Math.max(0, _fbWriting - 1);
-    if (onSuccess) onSuccess();
-    if (_fbWriting === 0 && _fbPendingSnap) {
-      const pending = _fbPendingSnap; _fbPendingSnap = null;
-      _applyRemoteTaskData(pending);
-    }
-  }).catch(e => {
-    _fbWriting = Math.max(0, _fbWriting - 1);
-    console.warn('Firebase 저장 실패 (area patch):', e);
-    if (_fbWriting === 0 && _fbPendingSnap) {
-      const pending = _fbPendingSnap; _fbPendingSnap = null;
-      _applyRemoteTaskData(pending);
-    }
-  });
+  _db.ref('taskData').update(updates)
+    .then(() => {
+      _fbMyWriteTs = writeTs;
+      _fbWriting = Math.max(0, _fbWriting - 1);
+      if (onSuccess) onSuccess();
+      if (_fbWriting === 0 && _fbPendingSnap) {
+        const pending = _fbPendingSnap; _fbPendingSnap = null;
+        _applyRemoteTaskData(pending);
+      }
+    })
+    .catch(e => {
+      _fbWriting = Math.max(0, _fbWriting - 1);
+      console.warn('Firebase 저장 실패:', e);
+      if (_fbWriting === 0 && _fbPendingSnap) {
+        const pending = _fbPendingSnap; _fbPendingSnap = null;
+        _applyRemoteTaskData(pending);
+      }
+    });
+}
+
+// Firebase에서 특정 경로를 읽어 latest 배열 얻기 (object→array 자동 변환)
+function _fbReadArr(path, fallback) {
+  return _db.ref(path).once('value').then(snap => {
+    const v = snap.val();
+    if (Array.isArray(v)) return v;
+    if (v && typeof v === 'object') return Object.values(v);
+    return JSON.parse(JSON.stringify(fallback));
+  }).catch(() => JSON.parse(JSON.stringify(fallback)));
 }
 
 // 특정 과제 하나만 Firebase에 부분 업데이트 — 전체 덮어쓰기로 인한 크로스 디바이스 충돌 방지
