@@ -2784,19 +2784,21 @@ function renderHero() {
   const soon = new Date(_today); soon.setDate(soon.getDate() + 7);
   const issues = [];
   Object.keys(taskData).forEach(areaKey => {
+    if (!taskData[areaKey] || !taskData[areaKey].tasks) return;
     taskData[areaKey].tasks.forEach(cat => {
       cat.tasks.forEach(t => {
         const owners = (t.owner || '').split(',').map(s => s.trim()).filter(Boolean);
         if (!currentUser || !owners.includes(currentUser.id)) return;
+        const isDone = t.done || t.status === 'done';
         if (isOverdue(t)) {
           issues.push({ html: `⚠ <strong>${_areaLabelMap[areaKey]||areaKey}</strong> · ${t.name} ~ ${_dotDate(t.end)}`, overdue: true });
-        } else if (t.status !== 'done' && t.end) {
+        } else if (!isDone && t.end) {
           const ed = new Date(t.end); ed.setHours(0,0,0,0);
           if (ed >= _today && ed <= soon) {
             issues.push({ html: `⏰ <strong>${_areaLabelMap[areaKey]||areaKey}</strong> · ${t.name} ~ ${_dotDate(t.end)}` });
           }
         }
-        if (t.status === 'planned' && t.start) {
+        if (t.status === 'planned' && !isDone && t.start) {
           const st = new Date(t.start); st.setHours(0,0,0,0);
           if (st >= _today && st <= soon) {
             issues.push({ html: `🔔 <strong>${_areaLabelMap[areaKey]||areaKey}</strong> · ${t.name} ${_dotDate(t.start)}~` });
@@ -3231,7 +3233,7 @@ const statusCfg = {
 const _today = new Date();
 _today.setHours(0,0,0,0);
 function isOverdue(t) {
-  if (!t.end || t.status === 'done') return false;
+  if (!t.end || t.done || t.status === 'done') return false;
   const end = new Date(t.end);
   end.setHours(0,0,0,0);
   return end < _today;
@@ -3259,6 +3261,7 @@ function autoComputeStatus(t) {
 function applyAutoStatusAll() {
   let changed = false;
   Object.values(taskData).forEach(area => {
+    if (!area || !area.tasks) return;
     area.tasks.forEach(cat => {
       cat.tasks.forEach(t => {
         // 완료일이 있거나 done 상태인 과제는 절대 건드리지 않음
@@ -3589,13 +3592,14 @@ function renderIssuesPage() {
     taskData[areaKey].tasks.forEach(cat => {
       cat.tasks.forEach(t => {
         const entry = { t, areaKey, areaLabel, areaColor };
+        const isDone = t.done || t.status === 'done';
         if (isOverdue(t)) {
           overdueTasks.push(entry);
-        } else if (t.status !== 'done' && t.end) {
+        } else if (!isDone && t.end) {
           const ed = new Date(t.end); ed.setHours(0,0,0,0);
           if (ed >= todayNow && ed <= weekEnd) soonEndTasks.push(entry);
         }
-        if (t.status === 'planned' && t.start) {
+        if (t.status === 'planned' && !isDone && t.start) {
           const st = new Date(t.start); st.setHours(0,0,0,0);
           if (st >= todayNow && st <= weekEnd) thisWeekStartTasks.push(entry);
           else if (st >= nextWeekStart && st <= nextWeekEnd) nextWeekStartTasks.push(entry);
@@ -3607,14 +3611,16 @@ function renderIssuesPage() {
   // 통계 카드 (전체 기준 — 필터 무관)
   const allOver = [], allEnd = [], allStart = [];
   Object.keys(taskData).forEach(areaKey => {
+    if (!taskData[areaKey] || !taskData[areaKey].tasks) return;
     taskData[areaKey].tasks.forEach(cat => {
       cat.tasks.forEach(t => {
+        const isDone = t.done || t.status === 'done';
         if (isOverdue(t)) allOver.push(t);
-        else if (t.status !== 'done' && t.end) {
+        else if (!isDone && t.end) {
           const ed = new Date(t.end); ed.setHours(0,0,0,0);
           if (ed >= todayNow && ed <= weekEnd) allEnd.push(t);
         }
-        if (t.status === 'planned' && t.start) {
+        if (t.status === 'planned' && !isDone && t.start) {
           const st = new Date(t.start); st.setHours(0,0,0,0);
           if (st >= todayNow && st <= nextWeekEnd) allStart.push(t);
         }
@@ -6547,6 +6553,8 @@ function _applyRemoteTaskData(val) {
   // _writeTs는 메타 필드 — taskData에 섞이면 area 순회 시 크래시
   const { _writeTs: _ignored, ...areaData } = val;
   Object.assign(taskData, areaData);
+  // 원격 타임스탬프로 기준점 갱신 (타임스탬프 노후화 방지)
+  if (remoteTs > _fbMyWriteTs) _fbMyWriteTs = remoteTs;
   renderSummaryCards();
   renderCharts();
   renderMonthlyTable();
@@ -6642,8 +6650,9 @@ loadFromFirebase(function() {
       taskData[areaKey].tasks.forEach(cat => {
         cat.tasks.forEach(t => {
           if (isOverdue(t)) { total++; return; }
-          if (t.status !== 'done' && t.end) { const ed = new Date(t.end); ed.setHours(0,0,0,0); if (ed >= _today && ed <= soon2) total++; }
-          if (t.status === 'planned' && t.start) { const st = new Date(t.start); st.setHours(0,0,0,0); if (st >= _today && st <= soon2) total++; }
+          const isDone = t.done || t.status === 'done';
+          if (!isDone && t.end) { const ed = new Date(t.end); ed.setHours(0,0,0,0); if (ed >= _today && ed <= soon2) total++; }
+          if (t.status === 'planned' && !isDone && t.start) { const st = new Date(t.start); st.setHours(0,0,0,0); if (st >= _today && st <= soon2) total++; }
         });
       });
     });
