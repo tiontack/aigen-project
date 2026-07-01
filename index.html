@@ -6725,33 +6725,37 @@ loadFromFirebase(function() {
     // 담당자 미지정 과제에 영역별 메인 담당자 일괄 적용 (최초 1회만)
     const _ownerMigKey = 'aigen_ownerMigrated_v1';
     if (!localStorage.getItem(_ownerMigKey)) {
-      let ownerMigrated = false;
+      localStorage.setItem(_ownerMigKey, '1'); // 항상 먼저 표시 — 재실행 방지
       Object.keys(taskData).forEach(areaKey => {
         const mainOwner = areaOwners[areaKey];
         if (!mainOwner || mainOwner === '미정') return;
-        taskData[areaKey].tasks.forEach(cat => {
-          cat.tasks.forEach(t => {
-            if (!t.owner || !t.owner.trim()) { t.owner = mainOwner; ownerMigrated = true; }
+        if (!taskData[areaKey] || !taskData[areaKey].tasks) return;
+        taskData[areaKey].tasks.forEach((cat, ci) => {
+          cat.tasks.forEach((t, ti) => {
+            if (!t.owner || !t.owner.trim()) {
+              t.owner = mainOwner;
+              syncTaskToFirebase(areaKey, ci, ti); // 전체 overwrite 대신 개별 update
+            }
           });
         });
       });
-      if (ownerMigrated) { syncToFirebase(); localStorage.setItem(_ownerMigKey, '1'); }
     }
     // 완료 상태이지만 완료일이 없는 과제에 날짜 백필 (최초 1회)
     const _doneMigKey = 'aigen_doneDateMigrated_v1';
     if (!localStorage.getItem(_doneMigKey)) {
-      let doneMigrated = false;
+      localStorage.setItem(_doneMigKey, '1'); // 항상 먼저 표시 — 재실행 방지
       const today = new Date().toISOString().slice(0,10);
       Object.keys(taskData).forEach(areaKey => {
         if (!taskData[areaKey] || !taskData[areaKey].tasks) return;
-        taskData[areaKey].tasks.forEach(cat => {
-          cat.tasks.forEach(t => {
-            if (t.status === 'done' && !t.done) { t.done = today; doneMigrated = true; }
+        taskData[areaKey].tasks.forEach((cat, ci) => {
+          cat.tasks.forEach((t, ti) => {
+            if (t.status === 'done' && !t.done) {
+              t.done = today;
+              syncTaskToFirebase(areaKey, ci, ti); // 전체 overwrite 대신 개별 update
+            }
           });
         });
       });
-      if (doneMigrated) syncToFirebase();
-      localStorage.setItem(_doneMigKey, '1');
     }
   });
   loadMessagesFromFirebase(function() {});
