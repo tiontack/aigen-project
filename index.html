@@ -4106,12 +4106,37 @@ function saveModal() {
   t.output = document.getElementById('m-output').value.trim();
   t.owner  = document.getElementById('m-owner').value.trim();
   t.note   = document.getElementById('m-note').value.trim();
-  // 사용자가 직접 선택한 상태는 그대로 유지 (자동 재계산 없음)
   closeModal();
   renderDetailPage(pid, area);
   renderAfterTaskChange();
   logActivity('과제 수정', `${area} / ${t.name}`);
-  syncToFirebase(showSave);
+  // 해당 과제만 부분 업데이트 — 전체 덮어쓰기 시 다른 기기 변경사항이 지워지는 문제 방지
+  const writeTs = Date.now();
+  _fbWriting++;
+  _db.ref('taskData').update({
+    [`${area}/tasks/${ci}/tasks/${ti}`]: JSON.parse(JSON.stringify(t)),
+    '_writeTs': writeTs
+  }).then(() => {
+    _fbMyWriteTs = writeTs;
+    _fbWriting = Math.max(0, _fbWriting - 1);
+    showSave();
+    if (_fbWriting === 0 && _fbPendingSnap) {
+      const pending = _fbPendingSnap; _fbPendingSnap = null;
+      _applyRemoteTaskData(pending);
+    }
+  }).catch(e => {
+    _fbWriting = Math.max(0, _fbWriting - 1);
+    console.warn('Firebase 저장 실패:', e);
+    const el = document.getElementById('save-notice');
+    if (el) {
+      const orig = el.textContent;
+      el.textContent = '⚠ 저장 실패 — 네트워크를 확인하세요';
+      el.style.background = '#ef4444';
+      el.classList.add('show');
+      clearTimeout(window._st);
+      window._st = setTimeout(() => { el.classList.remove('show'); el.textContent = orig; el.style.background = ''; }, 4000);
+    }
+  });
 }
 function deleteFromModal() {
   const { area, pid, ci, ti } = _ctx;
