@@ -3912,7 +3912,7 @@ function confirmCatName() {
   }
   renderDetailPage(pid, areaKey);
   renderAfterTaskChange();
-  syncToFirebase(); showSave();
+  syncAreaToFirebase(areaKey, showSave);
 }
 function delCat(areaKey, pid, ci) {
   const cat = taskData[areaKey].tasks[ci];
@@ -3921,7 +3921,7 @@ function delCat(areaKey, pid, ci) {
   renderDetailPage(pid, areaKey);
   renderAfterTaskChange();
   logActivity('카테고리 삭제', `${areaKey} / ${cat.cat} (과제 ${cat.tasks.length}개 포함)`);
-  syncToFirebase(); showSave();
+  syncAreaToFirebase(areaKey, showSave);
 }
 
 // ── 과제 추가 ──
@@ -3950,8 +3950,7 @@ function confirmAddTask() {
   renderDetailPage(pid, areaKey);
   renderAfterTaskChange();
   logActivity('과제 추가', `${areaKey} / ${cats[idx].cat}`);
-  syncToFirebase();
-  showSave();
+  syncAreaToFirebase(areaKey, showSave);
   setTimeout(() => openModal(areaKey, pid, idx, ti), 80);
 }
 
@@ -4144,7 +4143,7 @@ function deleteFromModal() {
   renderDetailPage(pid, area);
   renderAfterTaskChange();
   logActivity('과제 삭제', `${area} / ${tname}`);
-  syncToFirebase(showSave);
+  syncAreaToFirebase(area, showSave);
 }
 function showSave() {
   const el = document.getElementById('save-notice');
@@ -5107,7 +5106,7 @@ function saveMenuLabel(key) {
     syncUiLabelsToFirebase();
   } else if (taskData[key]) {
     taskData[key].title = val;
-    syncToFirebase();
+    syncAreaToFirebase(key);
   }
   applyMenuLabels();
   logActivity('메뉴명 수정', `${key} → ${val}`);
@@ -6528,6 +6527,32 @@ function _seedPresidentBiweekly() {
 let _fbWriting = 0;       // 현재 진행 중인 Firebase 쓰기 수
 let _fbPendingSnap = null; // 쓰기 중 도착한 원격 스냅샷
 let _fbMyWriteTs = 0;      // 내가 마지막으로 Firebase에 쓴 타임스탬프
+
+// 영역 전체를 Firebase에 부분 업데이트 — 카테고리/과제 추가·삭제 등 구조 변경 시 사용
+function syncAreaToFirebase(area, onSuccess) {
+  const areaData = JSON.parse(JSON.stringify(taskData[area]));
+  const writeTs = Date.now();
+  _fbWriting++;
+  _db.ref('taskData').update({
+    [area]: areaData,
+    '_writeTs': writeTs
+  }).then(() => {
+    _fbMyWriteTs = writeTs;
+    _fbWriting = Math.max(0, _fbWriting - 1);
+    if (onSuccess) onSuccess();
+    if (_fbWriting === 0 && _fbPendingSnap) {
+      const pending = _fbPendingSnap; _fbPendingSnap = null;
+      _applyRemoteTaskData(pending);
+    }
+  }).catch(e => {
+    _fbWriting = Math.max(0, _fbWriting - 1);
+    console.warn('Firebase 저장 실패 (area patch):', e);
+    if (_fbWriting === 0 && _fbPendingSnap) {
+      const pending = _fbPendingSnap; _fbPendingSnap = null;
+      _applyRemoteTaskData(pending);
+    }
+  });
+}
 
 // 특정 과제 하나만 Firebase에 부분 업데이트 — 전체 덮어쓰기로 인한 크로스 디바이스 충돌 방지
 function syncTaskToFirebase(area, ci, ti, onSuccess) {
