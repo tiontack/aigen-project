@@ -5365,6 +5365,7 @@ function loadGcalEventsFromFirebase() {
     _gcalEvents = Array.isArray(val) ? val.filter(Boolean) : [];
     renderCalendar();
     renderMobHome();
+    renderHero(); // 메인 페이지 gcal 카드 반영
   }).catch(e => console.warn('구글 캘린더 일정 로드 실패:', e));
 }
 
@@ -6698,8 +6699,23 @@ function loadFromFirebase(onDone) {
         _normalizeAreas(areaData);
         Object.assign(taskData, areaData);
       } else {
-        console.warn('[FB INIT] Firebase 비어있음 → 기본값으로 초기화');
-        syncToFirebase(); // 빈 DB 최초 1회만
+        // Firebase가 null → 즉시 덮어쓰지 않고 3초 후 재확인 (네트워크 히컵 방지)
+        _fbLoaded = true;
+        onDone();
+        console.warn('[FB INIT] Firebase 빈 응답 → 3초 후 재확인');
+        setTimeout(() => {
+          _db.ref('taskData').once('value').then(retrySnap => {
+            const retryVal = retrySnap.val();
+            if (!retryVal || Object.keys(retryVal).length === 0) {
+              console.warn('[FB INIT] 재확인 후에도 비어있음 → 기본값 초기화');
+              syncToFirebase();
+            } else {
+              console.warn('[FB INIT] 재확인 시 데이터 있음 → 덮어쓰기 취소, 적용');
+              _applyRemoteTaskData(retryVal);
+            }
+          }).catch(() => {});
+        }, 3000);
+        return;
       }
       _fbLoaded = true;
       onDone();

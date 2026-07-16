@@ -2,8 +2,10 @@ name: Sync Google Calendar
 
 on:
   schedule:
-    - cron: '* * * * *'              # 1분마다
-  workflow_dispatch:                # 수동 실행 버튼도 유지
+    - cron: '*/30 * * * *'       # 30분마다 (GitHub 최소 5분, 안정적 간격)
+  workflow_dispatch:              # 수동 실행 버튼 유지
+  push:
+    branches: [main]             # 코드 push 시에도 1회 실행 → 60일 비활성화 방지
 
 jobs:
   sync:
@@ -14,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
 
       - name: Run Google Calendar sync
         run: node scripts/sync-gcal.js
