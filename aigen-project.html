@@ -4449,10 +4449,7 @@ function adminImportData(input) {
 }
 
 function adminInitData() {
-  if (!confirm('⚠️ 경고: 코드 기본값으로 전체 초기화합니다.
-모든 수정 데이터가 삭제됩니다. 먼저 백업을 권장합니다.
-
-정말 초기화하시겠습니까?')) return;
+  if (!confirm('⚠️ 경고: 코드 기본값으로 전체 초기화합니다.\n모든 수정 데이터가 삭제됩니다. 먼저 백업을 권장합니다.\n\n정말 초기화하시겠습니까?')) return;
   if (!confirm('한 번 더 확인: 이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?')) return;
   logActivity('데이터 초기화', '관리자가 기본값으로 초기화');
   syncToFirebase(() => {
